@@ -4,7 +4,6 @@ from scipy.linalg import eig
 from scipy.fft import fft, rfftfreq, rfft, fftshift, fftfreq
 from scipy import signal
 from qutip import *
-
 import numba
 import pandas as pd
 import matplotlib.pyplot as plt

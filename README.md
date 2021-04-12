@@ -6,7 +6,9 @@ The QuantumPolyspectra package is open-source software for analyzing and simulat
 ## Documentation
 The package is devided into two parts: the **generate** module and the **analyze** module. 
 ### Generate Module
-This module connects any timeindependet stochastic master equation with its corresponding 
+This module connects any measurement trace as defined by a timeindependet stochastic master equation with its corresponding polyspectra. Notice that spectra can be inferred via an actually simulation of the measurement trace by intergration of the SME or (much quicker) by directly evaluating the ???formulas as shown [here](https://link.aps.org/doi/10.1103/PhysRevB.98.205143). 
+### Analyze Module
+This module allows for a convient calculation of ployspectra from any measurement performed in the laboratory using state of the art cumulant estimators and window function. Error estimation is done automatically. All routines are implemented using the Arrayfire library which allows the code to run on any CPU and GPU (Nvidia and AMD). GPU are highly recommened for measurement trace exceeding 3 GB (binary size, not as .csv). The module also comes with a helper function for the conversion between .csv files to .h5 files which are needed to run the routines.
 
 ### Examples
 Examples for every function of the package are currently added to the folder Examples

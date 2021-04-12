@@ -7,7 +7,6 @@ from qutip import *
 import numba
 import pandas as pd
 import matplotlib.pyplot as plt
-
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
@@ -18,8 +17,6 @@ from cachetools.keys import hashkey
 
 from tqdm import tqdm_notebook
 from IPython.display import clear_output
-
-# from time import sleep
 
 cache = LRUCache(maxsize=int(1e5))
 cache2 = LRUCache(maxsize=int(1e5))

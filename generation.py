@@ -1,0 +1,968 @@
+import numpy as np
+from numpy.linalg import inv, eig
+from scipy.linalg import eig
+from scipy.fft import fft, rfftfreq, rfft, fftshift, fftfreq
+from scipy import signal
+from qutip import *
+
+import numba
+import pandas as pd
+import matplotlib.pyplot as plt
+
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+from itertools import permutations
+from cachetools import cached
+from cachetools import LRUCache
+from cachetools.keys import hashkey
+
+from tqdm import tqdm_notebook
+from IPython.display import clear_output
+
+# from time import sleep
+
+cache = LRUCache(maxsize=int(1e5))
+cache2 = LRUCache(maxsize=int(1e5))
+# cache3 = LRUCache(maxsize=int(1e5))
+cache4 = LRUCache(maxsize=int(1e5))
+cache5 = LRUCache(maxsize=int(1e5))
+
+
+def calc_super_A(op):
+    def calc_A(rho, op):
+        return (op @ rho + rho @ np.conj(op).T) / 2
+    m,n = op.shape
+    op_super = 1j * np.ones((n**2,n**2))
+    for j in range(n**2):
+        rho_vec = np.zeros(n**2)
+        rho_vec[j] = 1
+        rho_mat = rho_vec.reshape((m,n))
+        rho_dot = calc_A(rho_mat, op)
+        rho_dot = rho_dot.reshape((n**2))
+        op_super[:,j] = rho_dot
+    return op_super
+
+
+# @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
+# @numba.jit(nopython=True)  # 25% speedup
+@cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
+def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv):
+    zero_ind = np.argmax(np.real(eigvals))
+    diagonal = 1 / (-eigvals - 1j * nu)
+    diagonal[zero_ind] = 0
+
+    # eigvecs_inv = diagonal.reshape(-1, 1) * eigvecs_inv
+    # Fourier_G = eigvecs.dot(eigvecs_inv)
+
+    Fourier_G = eigvecs @ np.diag(diagonal) @ eigvecs_inv
+    return Fourier_G
+
+
+def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
+    zero_ind = np.argmax(np.real(eigvals))
+    diagonal = np.exp(eigvals * t)
+    diagonal[zero_ind] = 0
+    eigvecs_inv = diagonal.reshape(-1, 1) * eigvecs_inv
+    Fourier_G = eigvecs.dot(eigvecs_inv)
+    return Fourier_G
+
+
+# @cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv: hashkey(omega))
+def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv):
+    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv)
+    rho_prim = G_prim @ rho
+    out = a_prim @ rho_prim
+    return out
+
+
+# ------ can be cached for large systems --------
+# @cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv: hashkey(omega,omega2))
+def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv):
+    _ = omega2
+    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv)
+    rho_prim = G_prim @ rho
+    out = a_prim @ rho_prim
+    return out
+
+
+def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv):
+    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv)
+    rho_prim = G_prim @ rho
+    return a_prim @ rho_prim
+
+
+# ------- Second Term of S(4) ---------
+
+
+def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind):  # small s from Erratum (Eq. 7)
+    s_k = np.zeros_like(rho_steady)
+    zero_ind = np.argmax(np.real(eigvals))
+
+    for i in range(len(s_k)):
+        S = np.zeros_like(eigvecs)
+        if i == zero_ind:
+            s_k[i] = 0
+        else:
+            S[i, i] = 1
+            s_k[i] = ((a_prim @ eigvecs @ S @ eigvec_inv @ a_prim @ rho_steady)[reshape_ind]).sum()
+    return s_k
+
+
+@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals: hashkey(omega1, omega2, omega3))
+@numba.njit(fastmath = True)
+def second_term(omega1, omega2, omega3, s_k, eigvals):
+
+    out = 0
+    nu1 = omega1 + omega2 + omega3
+    nu2 = omega2 + omega3
+    nu3 = omega3
+
+    zero_ind = np.argmax(np.real(eigvals))
+    #iterator = list(range(len(s_k)))
+    #iterator.remove(zero_ind)
+
+    iterator = np.array(list(range(len(s_k))))
+    iterator = iterator[np.abs(s_k) > 1e-10*np.max(np.abs(s_k))]
+
+    for k in iterator:
+        for l in iterator:
+            out += s_k[k] * s_k[l] * 1 / ((eigvals[l] + 1j * nu1) * (eigvals[k] + 1j * nu3)
+                                            * (eigvals[k] + eigvals[l] + 1j * nu2))
+
+    return out
+
+
+@cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals: hashkey(omega1, omega2, omega3))
+@numba.njit(fastmath = True)
+def third_term(omega1, omega2, omega3, s_k, eigvals):
+
+    out = 0
+    nu1 = omega1 + omega2 + omega3
+    nu2 = omega2 + omega3
+    nu3 = omega3
+
+    zero_ind = np.argmax(np.real(eigvals))
+    #iterator = list(range(len(s_k)))
+    #iterator.remove(zero_ind)
+
+    iterator = np.array(list(range(len(s_k))))
+    iterator = iterator[np.abs(s_k) > 1e-10*np.max(np.abs(s_k))]
+
+    for k in iterator:
+        for l in iterator:
+            out += s_k[k] * s_k[l] * 1 / ((eigvals[k] + 1j * nu1) * (eigvals[k] + 1j * nu3)
+                                            * (eigvals[k] + eigvals[l] + 1j * nu2))
+
+    return out
+
+
+# ------- Hepler functions ----------
+
+
+def _full_bispec(r_in):
+    r = np.flipud(r_in)
+    s, t = r.shape
+    m = 1j * np.zeros((2 * s - 1, 2 * s - 1))
+    r_padded = np.vstack((r, np.zeros((s - 1, s))))
+    r_rolled = np.empty_like(r_padded)
+    for i in range(s):
+        r_rolled[:, i] = np.roll(r_padded[:, i], -i)
+    r_left = r_rolled[:s, :]
+    r_mirrored = r_left + np.flipud((np.flipud(r_left)).T) - np.fliplr(np.diag(np.diagonal(np.fliplr(r_left))))
+    r_top_left = np.fliplr(r_mirrored)
+    m[:s, :s] = r_top_left
+    m[:s, s - 1:] = r
+    m_full = np.fliplr(np.flipud(m)) + m
+    m_full[s - 1, :] -= m[s - 1, :]
+    return np.fliplr(m_full)
+
+
+def _full_trispec(r_in):
+    r = np.flipud(r_in)
+    s, t = r.shape
+    m = 1j * np.zeros((2 * s - 1, 2 * s - 1))
+    m[:s, s - 1:] = r
+    m[:s, :s - 1] = np.fliplr(r)[:, :-1]
+    m[s:, :] = np.flipud(m[:s - 1, :])
+    return m
+
+
+def time_series_setup(sc_ops, e_ops):
+    sc_names = [op + '_noise' for op in list(sc_ops.keys())]
+    cols = ['t'] + list(e_ops.keys()) + sc_names
+    return pd.DataFrame(columns=cols)
+
+
+def cgw(len_y):
+    def g(y):
+        return np.exp(-((y - N_window / 2) / (2 * L * sigma_t)) ** 2)
+
+    x = np.linspace(0, len_y, len_y)
+    L = len(x) + 1
+    N_window = len(x)
+    sigma_t = 0.14
+    window = g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
+    return window
+
+
+def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=None, filter_window=None):
+    if domain == 'freq' and order == 2:
+        fig = go.Figure(data=go.Scatter(x=x, y=y), layout_title_text=title)
+    elif domain == 'freq' and order > 2:
+        if type(y) is list:
+            x_label = 'f [GHz]'
+            y_label = 'S_3'
+            legend = ['(f,0)', '(f,f)', '(f,f_max)']
+            fig = go.Figure()
+            for i, trace in enumerate(y):
+                if filter_window is not None:
+                    trace = signal.savgol_filter(trace, filter_window, order)
+                fig.add_trace(go.Scatter(x=x, y=trace, name=legend[i]))
+        else:
+            x_label = 'f<sub>1</sub> [kHz]'
+            y_label = 'f<sub>2</sub> [kHz]'
+            contours = dict(start=np.min(y), end=np.max(y), size=(np.max(y) - np.min(y)) / 20)
+            fig = go.Figure(data=go.Contour(z=y, x=x, y=x,
+                                            contours=contours, colorscale='Bluered',
+                                            **{'contours_coloring': 'lines', 'line_width': 2}),
+                            layout_title_text=title)
+
+    else:
+        x_label = 't [ms]'
+        y_label = 'expectation value'
+        fig = go.Figure()
+        for i, trace in enumerate(y):
+            fig.add_trace(go.Scatter(x=x, y=trace, name=legend[i]))
+
+    fig.update_layout(autosize=False, width=850, height=600,
+                      xaxis_title=x_label,
+                      yaxis_title=y_label, title_text=title)
+    return fig
+
+
+class QD:
+
+    def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):
+        # ------- Store inputs --------
+        self.H = h
+        self.psi_0 = psi_0
+        self.c_ops = c_ops
+        self.sc_ops = sc_ops
+        self.e_ops = e_ops
+        self.c_measure_strength = c_measure_strength
+        self.sc_measure_strength = sc_measure_strength
+
+        # ------ Space for future caluclations ------
+        self.time_series_data_empty = time_series_setup(sc_ops, e_ops)
+        self.time_series_data = None
+        self.f_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
+        self.spec_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
+
+        self.numeric_f_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
+        self.numeric_spec_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
+
+        self.eigvals = np.array([])
+        self.eigvecs = np.array([])
+        self.eigvecs_inv = np.array([])
+        self.A_prim = np.array([])
+
+        self.expect_data = {}
+        self.expect_with_noise = {}
+
+        self.N = None  # Number of points in time series
+        self.fs = None
+        self.a_w = None
+        self.a_w_cut = None
+
+        # ------- Constants -----------
+        self.hbar = 6.582e-4  # eV kHz
+
+    def fourier_g_prim(self, omega):
+        return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)
+
+    def g_prim(self, t):
+        return _g_prim(t, self.eigvecs, self.eigvals, self.eigvecs_inv)
+
+    def first_matrix_step(self, rho, omega):
+        return _first_matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv)
+
+    def second_matrix_step(self, rho, omega, omega2):
+        return _second_matrix_step(rho, omega, omega2, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv)
+
+    def matrix_step(self, rho, omega):
+        return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv)
+
+    def calc_spectrum(self, f_data, order, mathcal_a, g_prim=False, bar=True, beta=1, correction_only=False, beta_offset=True):
+        if f_data.min() < 0:
+            print('Only positive freqencies allowed')
+            return None
+
+        omegas = 2 * np.pi * f_data  # [kHz]
+        f_full = np.hstack((np.flip(-f_data)[:-1], f_data))
+        self.f_data[order] = f_full
+
+        all_c_ops = {**self.c_ops, **self.sc_ops}
+        measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
+        c_ops_m = [measure_strength[op] * all_c_ops[op] for op in all_c_ops]
+
+        # L_q = liouvillian(self.H / self.hbar, c_ops=c_ops_m)
+
+        # -----with own functions-------
+        def calc_super_liou(h_, c_ops):
+
+            def calc_liou(rho_, h, c_ops_):
+                def cmtr(a, b):
+                    return a @ b - b @ a
+
+                liou = 1j / self.hbar * cmtr(rho_, h)
+                for c_op in c_ops_:
+                    # liou += -1 / 2 * cmtr(c_op.full(), cmtr(c_op.full(), rho))
+                    liou += c_op.full() @ rho_ @ c_op.dag().full() - \
+                            1 / 2 * (c_op.dag().full() @ c_op.full() @ rho_ + rho_ @ c_op.dag().full() @ c_op.full())
+                return liou
+
+            m, n = h_.shape
+            op_super = 1j * np.ones((n ** 2, n ** 2))
+            for j in range(n ** 2):
+                rho_vec = np.zeros(n ** 2)
+                rho_vec[j] = 1
+                rho_mat = rho_vec.reshape((m, n))
+                rho_dot = calc_liou(rho_mat, h_, c_ops)
+                rho_dot = rho_dot.reshape((n ** 2))
+                op_super[:, j] = rho_dot
+            return op_super
+
+        L = calc_super_liou(self.H.full(), c_ops_m)
+
+        self.eigvals, self.eigvecs = eig(L)
+        # self.eigvals, self.eigvecs = eig(L.full())
+        # self.eigvals -= np.max(self.eigvals)
+        self.eigvecs_inv = inv(self.eigvecs)
+
+        s = self.H.shape[0]  # For reshaping
+        reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
+
+        if order == 2:
+            spec_data = np.ones_like(omegas)
+        else:
+            spec_data = 1j * np.ones((len(omegas), len(omegas)))
+
+        zero_ind = np.argmax(np.real(self.eigvals))
+        rho_steady = self.eigvecs[:, zero_ind]
+        rho_steady = rho_steady / np.trace(rho_steady.reshape((s, s)))  # , order='F'))
+
+        self.rho_steady = rho_steady
+
+        # self.A_prim = mathcal_a.full() - np.trace((mathcal_a.full() @ rho_steady).reshape((s, s), order='F'))
+
+        self.A_prim = mathcal_a - np.eye(s ** 2) * np.trace((mathcal_a @ rho_steady).reshape((s, s)))  # , order='F'))
+
+        if g_prim:
+            S_1 = mathcal_a - np.eye(s ** 2) * np.trace(
+                (mathcal_a @ rho_steady).reshape((s, s), order='F'))
+            G_0 = self.g_prim(0)
+            self.A_prim = S_1 @ G_0 @ S_1
+
+        rho = self.A_prim @ rho_steady
+
+        if order == 2:
+            if bar:
+                print('Calculating power spectrum')
+                counter = tqdm_notebook(enumerate(omegas), total=len(omegas))
+            else:
+                counter = enumerate(omegas)
+            for (i, omega) in counter:
+                rho_prim = self.first_matrix_step(rho, omega)  # mathcal_a' * G'
+                rho_prim_neg = self.first_matrix_step(rho, -omega)
+                spec_data[i] = rho_prim[reshape_ind].sum() + rho_prim_neg[reshape_ind].sum()
+                #spec_data[i] = 2 * np.real(rho_prim[reshape_ind].sum())
+            self.spec_data[order] = np.hstack((np.flip(spec_data)[:-1], spec_data))
+            self.spec_data[order] = beta ** 4 * self.spec_data[order]
+            if beta_offset:
+                self.spec_data[order] += beta ** 2 / 4
+        if order == 3:
+            if bar:
+                print('Calculating bispectrum')
+                counter = tqdm_notebook(enumerate(omegas), total=len(omegas))
+            else:
+                counter = enumerate(omegas)
+            for ind_1, omega_1 in counter:
+                for ind_2, omega_2 in enumerate(omegas[ind_1:]):
+                    # Calculate all permutation for the trace_sum
+                    var = np.array([omega_1, omega_2, - omega_1 - omega_2])
+                    perms = list(permutations(var))
+                    trace_sum = 0
+                    for omega in perms:
+                        rho_prim = self.first_matrix_step(rho, omega[2] + omega[1])
+                        rho_prim = self.second_matrix_step(rho_prim, omega[1], omega[2] + omega[1])
+                        trace_sum += rho_prim[reshape_ind].sum()
+                    spec_data[ind_1, ind_2 + ind_1] = trace_sum  # np.real(trace_sum)
+                    spec_data[ind_2 + ind_1, ind_1] = trace_sum  # np.real(trace_sum)
+            if np.max(np.abs(np.imag(np.real_if_close(_full_bispec(spec_data))))) > 0:
+                print('Bispectrum might have an imaginary part')
+            self.spec_data[order] = np.real(_full_bispec(spec_data)) * beta ** 6
+        if order == 4:
+            if bar:
+                print('Calculating correlation spectrum')
+                counter = tqdm_notebook(enumerate(omegas), total=len(omegas))
+            else:
+                counter = enumerate(omegas)
+
+            s_k = small_s(rho_steady, self.A_prim, self.eigvals, self.eigvecs, self.eigvecs_inv, reshape_ind)
+            self.s_k = s_k
+
+            for ind_1, omega_1 in counter:
+                for ind_2, omega_2 in enumerate(omegas[ind_1:]):
+                    # Calculate all permutation for the trace_sum
+                    var = np.array([omega_1, -omega_1, omega_2, -omega_2])
+                    perms = list(permutations(var))
+                    trace_sum = 0
+                    second_term_sum = 0
+                    third_term_sum = 0
+
+                    if correction_only:
+
+                        for omega in perms:
+
+                            second_term_sum += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals)
+                            third_term_sum += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals)
+
+                        spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum
+                        spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum
+
+                    else:
+
+                        for omega in perms:
+                            # rho_prim = self.first_matrix_step(rho, omega[1] + omega[2] + omega[3])
+                            # rho_prim = self.second_matrix_step(rho_prim, omega[2] + omega[3],
+                            #                                   omega[1] + omega[2] + omega[3])
+
+                            rho_prim = self.matrix_step(rho, omega[1] + omega[2] + omega[3])
+                            rho_prim = self.matrix_step(rho_prim, omega[2] + omega[3])
+                            rho_prim = self.matrix_step(rho_prim, omega[3])
+                            trace_sum += rho_prim[reshape_ind].sum()
+
+                            second_term_sum += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals)
+                            third_term_sum += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals)
+
+                        spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum + trace_sum
+                        spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
+            if np.max(np.abs(np.imag(np.real_if_close(_full_trispec(spec_data))))) > 0:
+                print('Trispectrum might have an imaginary part')
+            self.spec_data[order] = np.real(_full_trispec(spec_data)) * beta ** 8
+
+        # Delete cache
+        cache.clear()
+        cache2.clear()
+        # cache3.clear()
+        cache4.clear()
+        cache5.clear()
+        return self.spec_data[order]
+
+    def plot_spectrum(self, order, title=None, log=False, x_range=False):
+        fig = None
+
+        if order == 2:
+            if title is None:
+                title = 'Power Spectrum'
+            x_axis_label = 'f [kHz]'
+            y_axis_label = 'S<sup>(2)</sup>(f)'
+            fs = self.f_data[order]
+            values = self.spec_data[order]
+            if log:
+                values = np.log(values)
+            fig = plotly(order=2, x=fs, y=values, title=title, domain='freq',
+                         x_label=x_axis_label, y_label=y_axis_label)
+            fig.update_layout(autosize=False, width=880, height=550)
+            if x_range:
+                fig.update_xaxes(range=x_range)
+            fig.show()
+
+        elif order > 2:
+            spec = self.spec_data[order]
+            if order == 3:
+                # spec = np.arcsinh(spec / spec.max() * 5)
+                # if np.abs(spec.min()) >= spec.max():
+                # lim = np.abs(spec.min())
+                # else:
+                # lim = spec.max()
+
+                # --------Plot the diagonal of the Bispectrum---------
+                # title = 'Bispectrum Cross Sections'
+                fs = self.f_data[order]
+                values = self.spec_data[order]
+                lines = [values[int(len(fs) / 2), :], values.diagonal(), values[-1, :]]
+
+                fig = make_subplots(rows=1, cols=2)
+                legend = ['(f,0)', '(f,f)', '(f,f<sub>max</sub>)']
+                for i, trace in enumerate(lines):
+                    fig.add_trace(go.Scatter(x=fs, y=trace, name=legend[i]),
+                                  row=1, col=1)
+                y = spec
+                contours = dict(start=np.min(y), end=np.max(y), size=(np.max(y) - np.min(y)) / 20)
+                fig.add_trace(go.Contour(z=y, x=fs, y=fs,
+                                         contours=contours, colorscale='Bluered',
+                                         **{'contours_coloring': 'lines', 'line_width': 2}),
+                              row=1, col=2)
+                fig.update_layout(legend_orientation="h", title_text=title,
+                                  autosize=False, width=1300, height=550)
+                fig.update_xaxes(title_text="f [kHz]", row=1, col=1)
+                fig.update_xaxes(title_text="f<sub>1</sub> [kHz]", row=1, col=2)
+                fig.update_yaxes(title_text="S<sup>(3)</sup>", row=1, col=1)
+                fig.update_yaxes(title_text="f<sub>2</sub> [kHz]", row=1, col=2)
+
+                fig.show()
+
+            elif order == 4:
+                # title = 'Correlation Spectrum, Max. value: {0:5.3e}'.format(np.max(spec))
+                # spec = np.arcsinh(spec / np.max(spec) * 5)
+                fs = self.f_data[order]
+                values = np.real(self.spec_data[order])
+                lines = [values[int(len(fs) / 2), :], values.diagonal(), values[-1, :]]
+
+                fig = make_subplots(rows=1, cols=2)
+                legend = ['(f,0)', '(f,f)', '(f,f<sub>max</sub>)']
+                for i, trace in enumerate(lines):
+                    fig.add_trace(go.Scatter(x=fs, y=trace, name=legend[i]),
+                                  row=1, col=1)
+                y = spec
+                contours = dict(start=np.min(y), end=np.max(y), size=(np.max(y) - np.min(y)) / 20)
+                fig.add_trace(go.Contour(z=y, x=fs, y=fs,
+                                         contours=contours, colorscale='Bluered',
+                                         **{'contours_coloring': 'lines', 'line_width': 2}),
+                              row=1, col=2)
+                fig.update_layout(legend_orientation="h", title_text=title,
+                                  autosize=False, width=1300, height=550)
+                fig.update_xaxes(title_text="f [kHz]", row=1, col=1)
+                fig.update_xaxes(title_text="f<sub>1</sub> [kHz]", row=1, col=2)
+                fig.update_yaxes(title_text="S<sup>(4)</sup>", row=1, col=1)
+                fig.update_yaxes(title_text="f<sub>2</sub> [kHz]", row=1, col=2)
+
+                fig.show()
+
+        return fig
+
+    def parallel_tranisent(self, seed, measure_op, t=None, _solver=None, with_noise=False,_nsubsteps=1, _normalize=None):  # , progress_bar='hide'):
+        c_ops_m = [self.c_measure_strength[op] * self.c_ops[op] for op in self.c_ops]
+        sc_ops_m = [self.sc_measure_strength[op] * self.sc_ops[op] for op in self.sc_ops]
+
+        result = smesolve(self.H / self.hbar, self.psi_0, t,
+                          c_ops=c_ops_m, sc_ops=sc_ops_m, e_ops={measure_op: self.e_ops[measure_op]}, noise=seed,
+                          solver=_solver,nsubsteps=_nsubsteps,
+                          normalize=_normalize)  # , progress_bar=progress_bar)
+
+        if with_noise:
+            beta = self.sc_measure_strength[measure_op]
+            noise = result.noise[0, :, 0, 0]
+            trace = list(result.expect.values())[0]
+            dt = (t[1] - t[0])
+            out = beta ** 2 * trace + beta / 2 * noise / dt
+            #out = trace + 1 / (2 * beta) * noise / dts
+        else:
+            out = list(result.expect.values())[0]
+        return out
+
+    def calc_transient(self, t, seed=None, _solver=None, progress_bar=None, _nsubsteps=1, _normalize=None):
+        self.time_series_data = self.time_series_data_empty.copy()  # [kHz]
+        self.time_series_data.t = t  # [kHz]
+        c_ops_m = [self.c_measure_strength[op] * self.c_ops[op] for op in self.c_ops]
+        sc_ops_m = [self.sc_measure_strength[op] * self.sc_ops[op] for op in self.sc_ops]
+
+        result = smesolve(self.H / self.hbar, self.psi_0, t,
+                          c_ops=c_ops_m, sc_ops=sc_ops_m, e_ops=self.e_ops, noise=seed,
+                          solver=_solver, progress_bar=progress_bar, nsubsteps=_nsubsteps,
+                          normalize=_normalize)
+
+        self.time_series_data.update(result.expect)
+        noise = result.noise[0, :, 0, :]
+        noise_data = {key: noise[:, n] for n, key in enumerate(self.sc_ops.keys())}
+
+        def real_view(op):
+            dt = (t[1] - t[0])
+            # out = self.time_series_data[op] + 1 / 2 / self.measure_strength[op] * noise_data[op] / dt
+            out = self.sc_measure_strength[op] ** 2 * self.time_series_data[op] + self.sc_measure_strength[op] / 2 * \
+                   noise_data[op] / dt
+            #out = self.time_series_data[op] + 1 / (2 * self.sc_measure_strength[op]) * \
+            #       noise_data[op] / dt
+            return out
+
+        if bool(self.sc_ops):
+            self.expect_with_noise = {op + '_noise': real_view(op) for op in self.sc_ops.keys()}
+        self.time_series_data.update(self.expect_with_noise)
+
+        return self.time_series_data.convert_dtypes()
+
+    def plot_transient(self, ops_with_power, title=None, shift=False):
+        t = self.time_series_data.t  # [kHz]
+        if shift:
+            values = [self.time_series_data[op] ** ops_with_power[op] + (0.5 * i ** 2 - 0.5) for i, op in
+                      enumerate(ops_with_power)]
+        else:
+            values = [self.time_series_data[op] ** ops_with_power[op] for i, op in
+                      enumerate(ops_with_power)]
+        fig = plotly(x=t, y=values, title=title, domain='time',
+                     legend=list(ops_with_power.keys()))
+        return fig
+
+    # -------- Realtime numerical spectra ---------
+
+    def calc_a_w3(self, a_w):
+        mat_size = len(self.a_w_cut)
+        a_w3 = 1j * np.ones((mat_size, mat_size))
+        for i in range(mat_size):
+            a_w3[i, :] = a_w[i:i + mat_size]
+        return a_w3.conj()
+
+    def numeric_spec(self, t_window_in, op, f_max, power, order, max_samples, solver_='milstein', plot_after=12,
+                     sum_cumulant=False, new_cumulant=False, title_in=None, with_noise=False, roll=False, plot_simulation=False):
+        self.fs = None
+        self.a_w = None
+        self.N = 0
+        n_chunks = 0
+        f_max_ind = 0
+        ind = 0
+
+        # -------for order 2 and 3 cumulant sum----------
+        sum_1 = 0
+        sum_2 = 0
+        sum_3 = 0
+        sum_12 = 0
+        sum_23 = 0
+        sum_13 = 0
+        sum_123 = 0
+
+        sum_11c22c = 0
+
+        sum_11c2 = 0
+        sum_122c = 0
+        sum_1c22c = 0
+        sum_11c2c = 0
+
+        sum_11c = 0
+        sum_22c = 0
+        sum_12c = 0
+        sum_1c2 = 0
+        sum_1c2c = 0
+
+        sum_1c = 0
+        sum_2c = 0
+
+        x = []
+        y = []
+        z = []
+        w = []
+        C4_sum = None
+        n_C4 = 0
+
+        # ------- throw away beginning of trace -------
+        # t_start = 5 / self.measure_strength[op]
+        delta_t = t_window_in[1]
+        start_ind = 100  # int(t_start / delta_t)
+        print(len(t_window_in) - start_ind)
+        t_window = t_window_in[:-start_ind]
+
+        # ------- frequancies can be perpared beforehand -------
+        self.N = len(t_window)  # Number of points in time series
+        self.fs = 1 / delta_t
+        if order == 2:
+            self.numeric_f_data[order] = rfftfreq(self.N, delta_t)
+        elif order == 3:
+            freq_no_shift_all_freq = fftfreq(self.N, delta_t)
+
+            # ------ Check if f_max is to high ---------
+            f_real_max_ = np.max(freq_no_shift_all_freq) / 2
+            f_real_max = max([k for k in freq_no_shift_all_freq if k <= f_real_max_])
+            if f_real_max < f_max:
+                f_max = f_real_max
+            f_max_ind = int(2 * f_max / freq_no_shift_all_freq[1])
+            freq_no_shift = np.concatenate(
+                (freq_no_shift_all_freq[:f_max_ind + 1], freq_no_shift_all_freq[-f_max_ind:]))
+            ind = len(freq_no_shift) // 4
+            freq_no_shift_cut = np.concatenate((freq_no_shift[:ind + 1], freq_no_shift[-ind:]))
+            self.numeric_f_data[order] = fftshift(freq_no_shift_cut)
+
+        elif order == 4:
+            freq_no_shift_all_freq = fftfreq(self.N, delta_t)
+
+            # ------ Check if f_max is to high ---------
+            f_real_max = np.max(freq_no_shift_all_freq)
+            if f_real_max < f_max:
+                f_max = f_real_max
+            f_max_ind = int(f_max / freq_no_shift_all_freq[1])
+            freq_no_shift = np.concatenate(
+                (freq_no_shift_all_freq[:f_max_ind + 1], freq_no_shift_all_freq[-f_max_ind:]))
+            self.numeric_f_data[order] = fftshift(freq_no_shift)
+
+        window = cgw(self.N)
+
+        while n_chunks < max_samples:
+            if len(t_window) % 2 == 0:
+                print('Window length must be odd')
+                break
+            #traces = parallel.parallel_map(self.parallel_tranisent,
+            #                               np.random.randint(1e8, size=plot_after).tolist(),
+            #                               task_kwargs={'t': t_window_in, '_solver': solver_,
+            #                                            'with_noise': with_noise})
+
+            for i in tqdm_notebook(range(plot_after)):
+                traces = [self.parallel_tranisent(None, op, t=t_window_in, _solver='milstein', _normalize=True, with_noise=with_noise)]
+
+                for trace in traces:
+
+                    if plot_simulation:
+                        plt.plot(trace)
+                        plt.show()
+
+                    if np.isnan(trace).any() or np.max(np.abs(trace)) > 1e9:
+                        print('Simulation error')
+                        continue
+
+                    n_chunks += 1
+                    if not roll:
+                        trace = trace[start_ind:] ** power
+                    elif roll:
+                        trace = trace[start_ind:] * np.roll(trace[start_ind:], 3)
+
+                    if order == 2:
+                        self.a_w = rfft(window * trace) * delta_t
+
+                        # ---------calculate spectrum-----------
+                        # C_2 = m / (m - 1) * (< a_w * a_w* > - < a_w > < a_w* >)
+                        #                          sum_1         sum_2   sum_3
+                        sum_1 += self.a_w * self.a_w.conj()
+                        sum_2 += self.a_w
+                        sum_3 += self.a_w.conj()
+
+                    elif order == 3:
+                        # ------ reduction of frequencies to the desired range ---------
+                        a_w_no_shift_all_freq = fft(window * trace) * delta_t
+                        a_w_no_shift = np.concatenate(
+                            (a_w_no_shift_all_freq[:f_max_ind + 1], a_w_no_shift_all_freq[-f_max_ind:]))
+                        a_w = fftshift(a_w_no_shift)
+                        a_w_no_shift_cut = np.concatenate((a_w_no_shift[:ind + 1], a_w_no_shift[-ind:]))
+                        self.a_w_cut = fftshift(a_w_no_shift_cut)
+
+                        a_w1 = np.outer(np.ones_like(self.a_w_cut), self.a_w_cut)  # varies horizontally
+                        a_w2 = np.outer(self.a_w_cut, np.ones_like(self.a_w_cut))  # varies vertically
+
+                        a_w3 = self.calc_a_w3(a_w)
+
+                        # C_3 = m^2 / (m - 1)(m - 2) * (< a_w1 * a_w2 * a_w3 >
+                        #                                      sum_123
+                        #       - < a_w1 >< a_w2 * a_w3 > - < a_w1 * a_w2 >< a_w3 > - < a_w1 * a_w3 >< a_w2 >
+                        #          sum_1      sum_23           sum_12        sum_3         sum_13      sum_2
+                        #       + 2 < a_w1 >< a_w2 >< a_w3 >)
+                        #             sum_1   sum_2   sum_3
+                        # with w3 = - w1 - w2
+                        sum_1 += a_w1
+                        sum_2 += a_w2
+                        sum_3 += a_w3
+                        a_w12 = a_w1 * a_w2
+                        sum_12 += a_w12
+                        sum_23 += a_w2 * a_w3
+                        sum_13 += a_w1 * a_w3
+                        sum_123 += a_w12 * a_w3
+
+                    elif order == 4:
+                        a_w_no_shift_all_freq = fft(window * trace) * delta_t
+                        a_w_no_shift = np.concatenate(
+                            (a_w_no_shift_all_freq[:f_max_ind + 1], a_w_no_shift_all_freq[-f_max_ind:]))
+                        self.a_w_cut = fftshift(a_w_no_shift)
+
+                        a_w1 = np.outer(np.ones_like(self.a_w_cut), self.a_w_cut)  # varies horizontally
+                        a_w2 = np.outer(self.a_w_cut, np.ones_like(self.a_w_cut))  # varies vertically
+
+                        if sum_cumulant:
+                            x.append(a_w1)
+                            y.append(a_w1.conj())
+                            z.append(a_w2)
+                            w.append(a_w2.conj())
+
+                            if n_chunks % 20 == 0:
+                                m = 20
+
+                                def calc_avg(x_):
+                                    avg = np.zeros_like(x_[0])
+                                    for x_arg in x_:
+                                        avg += x_arg
+                                    avg /= len(x_)
+                                    return avg
+
+                                def calc_big_avg4(x_, x_avg_, y_, y_avg_, z_, z_avg_, w_, w_avg_):
+                                    big_avg4 = np.zeros_like(x_avg_)
+                                    for x_var, y_var, z_var, w_var in zip(x_, y_, z_, w_):
+                                        big_avg4 += (x_var - x_avg_) * (y_var - y_avg_) * (z_var - z_avg_) * (
+                                                w_var - w_avg_)
+                                    big_avg4 /= len(x_)
+                                    return big_avg4
+
+                                def calc_big_avg2(x_, x_avg_, y_, y_avg_):
+                                    big_avg2 = np.zeros_like(x_avg_)
+                                    for x_var, y_var in zip(x_, y_):
+                                        big_avg2 += (x_var - x_avg_) * (y_var - y_avg_)
+                                    big_avg2 /= len(x_)
+                                    return big_avg2
+
+                                x_avg = calc_avg(x)
+                                y_avg = calc_avg(y)
+                                z_avg = calc_avg(z)
+                                w_avg = calc_avg(w)
+
+                                C4 = m ** 2 / ((m - 1) * (m - 2) * (m - 3)) * (
+                                        (m + 1) * calc_big_avg4(x, x_avg, y, y_avg, z, z_avg, w, w_avg)
+                                        - (m - 1) * (calc_big_avg2(x, x_avg, y, y_avg) * calc_big_avg2(z, z_avg, w,
+                                                                                                       w_avg)
+                                                     + calc_big_avg2(x, x_avg, z, z_avg) * calc_big_avg2(w, w_avg, y,
+                                                                                                         y_avg)
+                                                     + calc_big_avg2(x, x_avg, w, w_avg) * calc_big_avg2(z, z_avg, y,
+                                                                                                         y_avg))
+                                )
+
+                                n_C4 += 1
+                                x = []
+                                y = []
+                                z = []
+                                w = []
+
+                                if C4_sum is None:
+                                    C4_sum = C4
+                                else:
+                                    print('updating C4')
+                                    C4_sum += C4
+
+                        else:
+                            # C_4 = (Eq. 49)
+                            sum_11c22c += a_w1 * a_w1.conj() * a_w2 * a_w2.conj()
+
+                            sum_11c2 += a_w1 * a_w1.conj() * a_w2
+                            sum_122c += a_w1 * a_w2 * a_w2.conj()
+                            sum_1c22c += a_w1.conj() * a_w2 * a_w2.conj()
+                            sum_11c2c += a_w1 * a_w1.conj() * a_w2.conj()
+
+                            sum_11c += a_w1 * a_w1.conj()
+                            sum_22c += a_w2 * a_w2.conj()
+                            sum_12c += a_w1 * a_w2.conj()
+                            sum_1c2 += a_w1.conj() * a_w2
+                            sum_12 += a_w1 * a_w2
+                            sum_1c2c += a_w1.conj() * a_w2.conj()
+
+                            sum_1 += a_w1
+                            sum_1c += a_w1.conj()
+                            sum_2 += a_w2
+                            sum_2c += a_w2.conj()
+
+            # ------ Realtime spectrum plots
+            if order == 2 and n_chunks >= 2:
+                title = 'Realtime Powerspectrum of ' + op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
+                    n_chunks) + '<br>' + title_in
+                self.numeric_spec_data[order] = n_chunks / (n_chunks - 1) * (
+                        sum_1 / n_chunks - sum_2 * sum_3 / n_chunks ** 2)
+                self.numeric_spec_data[order] /= delta_t * (window ** 2).sum()
+
+                # ------ save current state of simulation --------
+                #np.save('simulated_spectra/order_2_data2', self.numeric_spec_data[order])
+                #np.save('simulated_spectra/order_2_freq2', self.numeric_f_data[order])
+
+                clear_output(wait=True)
+                fig = plotly(self.numeric_f_data[order], np.real_if_close(self.numeric_spec_data[order]),
+                             order=order,
+                             title=title, domain='freq', y_label='S<sup>(2)</sup>(f)', x_label='f [kHz]')
+                fig['layout']['xaxis1'].update(range=[0, f_max])
+                fig.show()
+
+            elif order > 2 and n_chunks >= 4:
+                m = n_chunks
+                if order == 3:
+                    self.numeric_spec_data[order] = m ** 2 / ((m - 1) * (m - 2)) * (
+                            sum_123 / m - sum_1 * sum_23 / m ** 2 - sum_12 * sum_3 / m ** 2
+                            - sum_13 * sum_2 / m ** 2 + 2 * sum_1 * sum_2 * sum_3 / m ** 3)
+                    self.numeric_spec_data[order] /= delta_t * (window ** 3).sum()
+
+                    # ------ save current state of simulation --------
+                    #np.save('simulated_spectra/weak_s3_data_n', self.numeric_spec_data[order])
+                    #np.save('simulated_spectra/weak_s3_f_n', self.numeric_f_data[order])
+
+                    title = 'Realtime Bispectrum of ' + op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
+                        n_chunks) + '<br>' + title_in
+                else:
+                    if sum_cumulant:
+                        self.numeric_spec_data[order] = C4_sum / n_C4
+
+                    elif new_cumulant:
+                        self.numeric_spec_data[order] = m ** 2 / (m - 1) * (m - 2) * (
+                                sum_11c22c / m - sum_1c22c * sum_1 / m ** 2 - sum_122c * sum_1c / m ** 2 - sum_11c * sum_22c / m ** 2 +
+                                2 * sum_22c * sum_1 * sum_1c / m ** 3
+                        )
+                    else:
+                        self.numeric_spec_data[order] = m ** 2 / ((m - 1) * (m - 2) * (m - 3)) * (
+                                (m + 1) * sum_11c22c / m - (m + 1) * (sum_11c2 * sum_2c + sum_11c2c * sum_2 +
+                                                                      sum_122c * sum_1c + sum_1c22c * sum_1) / m ** 2
+                                - (m - 1) * (sum_11c * sum_22c + sum_12 * sum_1c2c + sum_12c * sum_1c2) / m ** 2
+                                + 2 * m * (sum_11c * sum_2 * sum_2c + sum_12 * sum_1c * sum_2c +
+                                           sum_12c * sum_1c * sum_2 + sum_22c * sum_1 * sum_1c +
+                                           sum_1c2c * sum_1 * sum_2 + sum_1c2 * sum_1 * sum_2c) / m ** 3
+                                - 6 * m * sum_1 * sum_1c * sum_2 * sum_2c / m ** 4)
+                    self.numeric_spec_data[order] /= delta_t * (window ** 4).sum()
+
+                    # ------ save current state of simulation --------
+                    #np.save('simulated_spectra/weak_s4_data_n1', self.numeric_spec_data[order])
+                    #np.save('simulated_spectra/weak_s4_f_n1', self.numeric_f_data[order])
+
+                    title = 'Realtime Trispectrum of ' + op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
+                        n_chunks) + '<br>' + title_in
+
+                f = self.numeric_f_data[order]
+                spec = np.real(self.numeric_spec_data[order])
+
+                clear_output(wait=True)
+
+                lines = [spec[int(len(f) / 2), :], spec.diagonal(), spec[-1, :]]
+
+                fig = make_subplots(rows=1, cols=2)
+                legend = ['(f,0)', '(f,f)', '(f,f<sub>max</sub>)']
+                for i, trace in enumerate(lines):
+                    fig.add_trace(go.Scatter(x=f, y=trace, name=legend[i]),
+                                  row=1, col=1)
+
+                contours = dict(start=np.min(spec), end=np.max(spec), size=(np.max(spec) - np.min(spec)) / 20)
+                fig.add_trace(go.Contour(z=spec, x=f, y=f,
+                                         contours=contours, colorscale='Bluered',
+                                         **{'contours_coloring': 'lines', 'line_width': 2}),
+                              row=1, col=2)
+                fig.update_layout(legend_orientation="h", title_text=title,
+                                  autosize=False, width=1300, height=550)
+                fig.update_xaxes(title_text="f [kHz]", row=1, col=1)
+                fig.update_xaxes(title_text="f<sub>1</sub> [kHz]", row=1, col=2)
+                if order == 3:
+                    fig.update_yaxes(title_text="S<sup>(3)</sup>", row=1, col=1)
+                elif order == 4:
+                    fig.update_yaxes(title_text="S<sup>(4)</sup>", row=1, col=1)
+                fig.update_yaxes(title_text="f<sub>2</sub> [kHz]", row=1, col=2)
+                fig.show()
+
+        # if n_chunks > 2 and order == 2:
+        #     self.numeric_spec_data[order] = n_chunks / (n_chunks - 1) * (
+        #             sum_1 / n_chunks - sum_2 * sum_3 / n_chunks ** 2)
+        #     self.numeric_spec_data[order] /= delta_t * (window ** 2).sum()
+        # elif n_chunks > 3 and order == 3:
+        #     m = n_chunks
+        #     self.numeric_spec_data[order] = m ** 2 / ((m - 1) * (m - 2)) * (
+        #             sum_123 / m - sum_1 * sum_23 / m ** 2 - sum_1 * sum_23 / m ** 2
+        #             - sum_13 * sum_2 / m ** 2 + 2 * sum_1 * sum_2 * sum_3 / m ** 3)
+        #     self.numeric_spec_data[order] /= delta_t * (window ** 3).sum()
+        # elif n_chunks > 4 and order == 4:
+        #     m = n_chunks
+        #     self.numeric_spec_data[order] = m ** 2 / ((m - 1) * (m - 2) * (m - 3)) * (
+        #             (m + 1) * sum_11c22c / m - (m + 1) * (sum_11c2 * sum_2c + sum_11c2c * sum_2 +
+        #                                                   sum_122c * sum_1c + sum_1c22c * sum_1) / m ** 2
+        #             - (m - 1) * (sum_11c * sum_22c + sum_12 * sum_1c2c + sum_12c * sum_1c2) / m ** 2
+        #             + 2 * m * (sum_11c * sum_2 * sum_2c + sum_12 * sum_1c * sum_2c +
+        #                        sum_12c * sum_1c * sum_2 + sum_22c * sum_1 * sum_1c +
+        #                        sum_1c2c * sum_1 * sum_2 + sum_1c2 * sum_1 * sum_2c) / m ** 3
+        #             - 6 * m * sum_1 * sum_1c * sum_2 * sum_2c / m ** 4)
+        #     self.numeric_spec_data[order] /= delta_t * (window ** 4).sum()
+        # else:
+        #     print('More windows required')
+
+        return [self.numeric_f_data[order], self.numeric_spec_data[order]]

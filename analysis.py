@@ -282,7 +282,7 @@ class Spectrum:
         plt.plot(t, first_frame)
         plt.show()
 
-    def calc_spec_af(self, order, window_size, f_max, backend='opencl', gw_scale=1, corr_data=None, corr_shift=0,
+    def calc_spec(self, order, window_size, f_max, backend='opencl', gw_scale=1, corr_data=None, corr_shift=0,
                      break_after=1e6, m=10, window_shift=1, random_phase=False):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
         n_chunks = 0
@@ -484,7 +484,7 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def paper_plot(self, f_max, f_min=0, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
+    def poly_plot(self, f_max, f_min=0, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
                    contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
                    s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None):
 
@@ -587,8 +587,12 @@ class Spectrum:
             (ax[1]).set_ylabel(r"$\omega_2 / 2 \pi $ (Hz)", fontdict={'fontsize': 14})
             (ax[1]).set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
             ax[1].tick_params(axis='both', direction='in')
-            ax[1].set_title(r'$S^{(3)}_z $ (Hz$^{-2}$) (%i$\sigma$ confidence)' % sigma,
-                            fontdict={'fontsize': 16})
+            if green_alpha == 0:
+                ax[1].set_title(r'$S^{(3)}_z $ (Hz$^{-2}$)',
+                                fontdict={'fontsize': 16})
+            else:
+                ax[1].set_title(r'$S^{(3)}_z $ (Hz$^{-2}$) (%i$\sigma$ confidence)' % sigma,
+                                fontdict={'fontsize': 16})
             cbar = fig.colorbar(c, ax=(ax[1]))
 
         # -------- S4 ---------
@@ -626,8 +630,12 @@ class Spectrum:
             (ax[2]).set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
             (ax[2]).set_ylabel(r"$\omega_2 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
             ax[2].tick_params(axis='both', direction='in')
-            ax[2].set_title(r'$S^{(4)}_z $ (Hz$^{-3}$) (%i$\sigma$ confidence)' % (sigma),
-                            fontdict={'fontsize': 16})
+            if green_alpha == 0:
+                ax[2].set_title(r'$S^{(4)}_z $ (Hz$^{-3}$)',
+                                fontdict={'fontsize': 16})
+            else:
+                ax[2].set_title(r'$S^{(4)}_z $ (Hz$^{-3}$) (%i$\sigma$ confidence)' % (sigma),
+                                fontdict={'fontsize': 16})
             cbar = fig.colorbar(c, ax=(ax[2]))
 
         plt.show()

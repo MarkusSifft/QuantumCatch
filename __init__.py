@@ -1,29 +1,36 @@
-# print('Loading QuantumOptics')
+# This file is part of QuantumPolyspectra: a Python Package for the
+# Analysis and Simulation of Quantum Measurements
 #
-# import numpy as np
-# # from numpy import diag
-# from numpy.linalg import inv, eig
-# from scipy.linalg import eig
-# #from scipy.sparse import diags
-# # import matplotlib.pyplot as plt
+#    Copyright (c) 2011 and later, Paul D. Nation and Robert J. Johansson.
+#    All rights reserved.
 #
-# print('.')
+#    Redistribution and use in source and binary forms, with or without
+#    modification, are permitted provided that the following conditions are
+#    met:
 #
-# from qutip import *
-# # import progressbar
-# import numba
-# # import tensorflow as tf
-# # from tensorflow import constant
+#    1. Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
 #
-# print('.')
+#    2. Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #
-# from bokeh.plotting import figure, output_file, show
-# from bokeh.palettes import Viridis8 as palette
-# from bokeh.models import LinearColorMapper, ColorBar, LogColorMapper
-# # from bokeh.layouts import gridplot
-# import itertools
-# from itertools import permutations
-# # from functools import lru_cache
-# #from QuantumOptics import ZnOSystem
+#    3. Neither the name of the QuTiP: Quantum Toolbox in Python nor the names
+#       of its contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
 #
-# print('Done')
+#    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+#    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+#    HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+#    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
+from QuantumPolyspectra.analysis import *
+from QuantumPolyspectra.generation import *

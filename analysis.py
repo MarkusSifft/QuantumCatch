@@ -1,3 +1,37 @@
+# This file is part of QuantumPolyspectra: a Python Package for the
+# Analysis and Simulation of Quantum Measurements
+#
+#    Copyright (c) 2011 and later, Paul D. Nation and Robert J. Johansson.
+#    All rights reserved.
+#
+#    Redistribution and use in source and binary forms, with or without
+#    modification, are permitted provided that the following conditions are
+#    met:
+#
+#    1. Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#
+#    2. Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#
+#    3. Neither the name of the QuTiP: Quantum Toolbox in Python nor the names
+#       of its contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+#
+#    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+#    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+#    HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+#    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
 import arrayfire as af
 import h5py
 import matplotlib.colors as colors
@@ -17,6 +51,7 @@ from scipy.ndimage.filters import gaussian_filter
 from tqdm import tqdm_notebook
 
 
+
 @njit(parallel=False)
 def calc_a_w3(a_w_all, f_max_ind, m):
     """Preparation of a_(w1+w2) for the calculation of the bispectrum"""
@@ -26,11 +61,11 @@ def calc_a_w3(a_w_all, f_max_ind, m):
     return a_w3.conj()
 
 
-def import_data(path, group_key):
+def import_data(path, group_key, dataset):
     """Import of .h5 data with format group_key -> data + attrs[dt]"""
     main = h5py.File(path, 'r')
     main_group = main[group_key]
-    main_data = main_group['data']
+    main_data = main_group[dataset]
     delta_t = main_data.attrs['dt']
     return main_data, delta_t
 
@@ -139,7 +174,7 @@ def c4(a_w, a_w_corr, m):
 
 class Spectrum:
 
-    def __init__(self, path, group_key):
+    def __init__(self, path, group_key, dataset):
         self.path = path
         self.freq = [None, None, None, None, None]
         self.f_max = 0
@@ -150,6 +185,7 @@ class Spectrum:
         self.S_sigma_gpu = [None, None, None, None, None]
         self.S_sigmas = [[], [], [], [], []]
         self.group_key = group_key
+        self.dataset = dataset
         self.S_intergral = []
         self.window_size = None
         self.m = None
@@ -263,12 +299,12 @@ class Spectrum:
         sigma_counter = 0
 
         # -------data setup---------
-        main_data, delta_t = import_data(self.path, self.group_key)
+        main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
         self.delta_t = delta_t
         corr_shift /= delta_t  # convertion of shift in seconds to shift in dt
 
         if corr_data and not corr_data == 'white_noise':
-            corr_data, _ = import_data(corr_data, self.group_key)
+            corr_data, _ = import_data(corr_data, self.group_key, self.dataset)
 
         n_data_points = main_data.shape[0]
         print('Number of data points:', n_data_points)

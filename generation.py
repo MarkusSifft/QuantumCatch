@@ -970,28 +970,4 @@ class System:
                 fig.update_yaxes(title_text="f<sub>2</sub> [kHz]", row=1, col=2)
                 fig.show()
 
-        # if n_chunks > 2 and order == 2:
-        #     self.numeric_spec_data[order] = n_chunks / (n_chunks - 1) * (
-        #             sum_1 / n_chunks - sum_2 * sum_3 / n_chunks ** 2)
-        #     self.numeric_spec_data[order] /= delta_t * (window ** 2).sum()
-        # elif n_chunks > 3 and order == 3:
-        #     m = n_chunks
-        #     self.numeric_spec_data[order] = m ** 2 / ((m - 1) * (m - 2)) * (
-        #             sum_123 / m - sum_1 * sum_23 / m ** 2 - sum_1 * sum_23 / m ** 2
-        #             - sum_13 * sum_2 / m ** 2 + 2 * sum_1 * sum_2 * sum_3 / m ** 3)
-        #     self.numeric_spec_data[order] /= delta_t * (window ** 3).sum()
-        # elif n_chunks > 4 and order == 4:
-        #     m = n_chunks
-        #     self.numeric_spec_data[order] = m ** 2 / ((m - 1) * (m - 2) * (m - 3)) * (
-        #             (m + 1) * sum_11c22c / m - (m + 1) * (sum_11c2 * sum_2c + sum_11c2c * sum_2 +
-        #                                                   sum_122c * sum_1c + sum_1c22c * sum_1) / m ** 2
-        #             - (m - 1) * (sum_11c * sum_22c + sum_12 * sum_1c2c + sum_12c * sum_1c2) / m ** 2
-        #             + 2 * m * (sum_11c * sum_2 * sum_2c + sum_12 * sum_1c * sum_2c +
-        #                        sum_12c * sum_1c * sum_2 + sum_22c * sum_1 * sum_1c +
-        #                        sum_1c2c * sum_1 * sum_2 + sum_1c2 * sum_1 * sum_2c) / m ** 3
-        #             - 6 * m * sum_1 * sum_1c * sum_2 * sum_2c / m ** 4)
-        #     self.numeric_spec_data[order] /= delta_t * (window ** 4).sum()
-        # else:
-        #     print('More windows required')
-
         return [self.numeric_f_data[order], self.numeric_spec_data[order]]

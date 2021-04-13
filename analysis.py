@@ -458,10 +458,6 @@ class Spectrum:
         self.S_sigmas[order] /= (delta_t * (single_window ** order).sum() * np.sqrt(n_chunks))
 
         if order == 2:
-            # self.S_sigma_gpu = sqrt(
-            #     n_chunks / (n_chunks - 1) * (mean(self.S_sigmas[order] * conj(self.S_sigmas[order]), dim=1) -
-            #                                  mean(self.S_sigmas[order], dim=1) * conj(
-            #                 mean(self.S_sigmas[order], dim=1))))
 
             self.S_sigma_gpu = np.sqrt(
                 n_chunks / (n_chunks - 1) * (np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
@@ -469,18 +465,12 @@ class Spectrum:
                             np.mean(self.S_sigmas[order], axis=1))))
 
         else:
-            # self.S_sigma_gpu = sqrt(n_chunks / (n_chunks - 1) * (
-            #         mean(self.S_sigmas[order] * conj(self.S_sigmas[order]), dim=2) -
-            #         mean(self.S_sigmas[order], dim=2) * conj(mean(self.S_sigmas[order], dim=2))))
 
             self.S_sigma_gpu = np.sqrt(n_chunks / (n_chunks - 1) * (
                     np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
                     np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
 
-        # self.S_sigma_gpu /= np.sqrt(n_chunks)
-        # self.S_sigma_gpu /= delta_t * (single_window ** order).sum()
-
-        self.S_sigma[order] = self.S_sigma_gpu  # .to_ndarray()
+        self.S_sigma[order] = self.S_sigma_gpu
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 

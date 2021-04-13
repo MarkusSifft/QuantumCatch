@@ -305,7 +305,7 @@ class QD:
         self.a_w_cut = None
 
         # ------- Constants -----------
-        self.hbar = 6.582e-4  # eV kHz
+        self.hbar = 1 # 6.582e-4  # eV kHz
 
     def fourier_g_prim(self, omega):
         return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)

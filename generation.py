@@ -333,7 +333,7 @@ class QD:
 
         all_c_ops = {**self.c_ops, **self.sc_ops}
         measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
-        c_ops_m = [measure_strength[op]**0.5 * all_c_ops[op] for op in all_c_ops]
+        c_ops_m = [measure_strength[op] * all_c_ops[op] for op in all_c_ops]
 
         # L_q = liouvillian(self.H / self.hbar, c_ops=c_ops_m)
 
@@ -573,8 +573,8 @@ class QD:
         return fig
 
     def parallel_tranisent(self, seed, measure_op, t=None, _solver=None, with_noise=False,_nsubsteps=1, _normalize=None):  # , progress_bar='hide'):
-        c_ops_m = [self.c_measure_strength[op]**0.5 * self.c_ops[op] for op in self.c_ops]
-        sc_ops_m = [self.sc_measure_strength[op]**0.5 * self.sc_ops[op] for op in self.sc_ops]
+        c_ops_m = [self.c_measure_strength[op] * self.c_ops[op] for op in self.c_ops]
+        sc_ops_m = [self.sc_measure_strength[op] * self.sc_ops[op] for op in self.sc_ops]
 
         result = smesolve(self.H / self.hbar, self.psi_0, t,
                           c_ops=c_ops_m, sc_ops=sc_ops_m, e_ops={measure_op: self.e_ops[measure_op]}, noise=seed,
@@ -582,7 +582,7 @@ class QD:
                           normalize=_normalize)  # , progress_bar=progress_bar)
 
         if with_noise:
-            beta = self.sc_measure_strength[measure_op]**0.5
+            beta = self.sc_measure_strength[measure_op]
             noise = result.noise[0, :, 0, 0]
             trace = list(result.expect.values())[0]
             dt = (t[1] - t[0])
@@ -595,8 +595,8 @@ class QD:
     def calc_transient(self, t, seed=None, _solver=None, progress_bar=None, _nsubsteps=1, _normalize=None):
         self.time_series_data = self.time_series_data_empty.copy()  # [kHz]
         self.time_series_data.t = t  # [kHz]
-        c_ops_m = [self.c_measure_strength[op]**0.5 * self.c_ops[op] for op in self.c_ops]
-        sc_ops_m = [self.sc_measure_strength[op]**0.5 * self.sc_ops[op] for op in self.sc_ops]
+        c_ops_m = [self.c_measure_strength[op] * self.c_ops[op] for op in self.c_ops]
+        sc_ops_m = [self.sc_measure_strength[op] * self.sc_ops[op] for op in self.sc_ops]
 
         result = smesolve(self.H / self.hbar, self.psi_0, t,
                           c_ops=c_ops_m, sc_ops=sc_ops_m, e_ops=self.e_ops, noise=seed,
@@ -610,7 +610,7 @@ class QD:
         def real_view(op):
             dt = (t[1] - t[0])
             # out = self.time_series_data[op] + 1 / 2 / self.measure_strength[op] * noise_data[op] / dt
-            out = self.sc_measure_strength[op] * self.time_series_data[op] + self.sc_measure_strength[op]**0.5 / 2 * \
+            out = self.sc_measure_strength[op] ** 2 * self.time_series_data[op] + self.sc_measure_strength[op] / 2 * \
                    noise_data[op] / dt
             #out = self.time_series_data[op] + 1 / (2 * self.sc_measure_strength[op]) * \
             #       noise_data[op] / dt

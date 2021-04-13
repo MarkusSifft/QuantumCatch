@@ -270,7 +270,7 @@ def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=N
     return fig
 
 
-class QD:
+class System:
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):
         # ------- Store inputs --------

@@ -51,6 +51,12 @@ from scipy.ndimage.filters import gaussian_filter
 from tqdm import tqdm_notebook
 
 
+def to_hdf(dt, data, path, group_name, dataset_name):
+    with h5py.File(path, "w") as f:
+        grp = f.create_group(group_name)
+        d = grp.create_dataset(dataset_name, data=data)
+        d.attrs['dt'] = dt
+
 
 @njit(parallel=False)
 def calc_a_w3(a_w_all, f_max_ind, m):
@@ -357,15 +363,15 @@ class Spectrum:
                 single_window = self.cgw(int(window_size))
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
 
-                #self.S_sigmas[2] = af.array.Array(dims=[f_max_ind, n_windows], dtype=af.Dtype.c64)
-                #self.S_sigmas[3] = af.array.Array(dims=[f_max_ind // 2, f_max_ind // 2, n_windows], dtype=af.Dtype.c64)
-                #self.S_sigmas[4] = af.array.Array(dims=[f_max_ind, f_max_ind, n_windows], dtype=af.Dtype.c64)
+                # self.S_sigmas[2] = af.array.Array(dims=[f_max_ind, n_windows], dtype=af.Dtype.c64)
+                # self.S_sigmas[3] = af.array.Array(dims=[f_max_ind // 2, f_max_ind // 2, n_windows], dtype=af.Dtype.c64)
+                # self.S_sigmas[4] = af.array.Array(dims=[f_max_ind, f_max_ind, n_windows], dtype=af.Dtype.c64)
 
-                if order==2:
+                if order == 2:
                     self.S_sigmas[2] = 1j * np.empty((f_max_ind, n_windows))
-                elif order==3:
+                elif order == 3:
                     self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, n_windows))
-                elif order==4:
+                elif order == 4:
                     self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
 
             if order == 2:
@@ -471,8 +477,8 @@ class Spectrum:
                     np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
                     np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
 
-        #self.S_sigma_gpu /= np.sqrt(n_chunks)
-        #self.S_sigma_gpu /= delta_t * (single_window ** order).sum()
+        # self.S_sigma_gpu /= np.sqrt(n_chunks)
+        # self.S_sigma_gpu /= delta_t * (single_window ** order).sum()
 
         self.S_sigma[order] = self.S_sigma_gpu  # .to_ndarray()
 
@@ -496,8 +502,8 @@ class Spectrum:
             s2_sigma_m = []
 
             for i in range(0, 5):
-                s2_sigma_p.append(s2_data + (i+1) * s2_sigma)
-                s2_sigma_m.append(s2_data - (i+1) * s2_sigma)
+                s2_sigma_p.append(s2_data + (i + 1) * s2_sigma)
+                s2_sigma_m.append(s2_data - (i + 1) * s2_sigma)
 
             if arcsinh_plot:
                 x_max = np.max(np.abs(s2_data))
@@ -515,13 +521,13 @@ class Spectrum:
 
             for i in range(0, 5):
                 ax[0].plot(s2_f, s2_sigma_p[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
-                           linewidth=2, label=r"$%i\sigma$" % (i+1))
+                           linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
             #  labelLines(ax[0].get_lines(), zorder=2.5, align=False, fontsize=14)
 
             for i in range(0, 5):
                 ax[0].plot(s2_f, s2_sigma_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
-                           linewidth=2, label=r"$%i\sigma$" % (i+1))
+                           linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
             ax[0].plot(s2_f, s2_data, color=[0, 0.5, 0.9], linewidth=3)
 
@@ -689,7 +695,8 @@ class Spectrum:
 
         for gamma_in, gamma_out in gamma_range:
 
-            out = self.fit_telegraph(s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, plot=plot, with_s4=with_s4)
+            out = self.fit_telegraph(s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, plot=plot,
+                                     with_s4=with_s4)
 
             if (out.params['gOut_1']).stderr is None or (out.params['gIn_1']).stderr is None:
                 continue
@@ -712,7 +719,8 @@ class Spectrum:
     def fit_telegraph(self, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, plot=False, with_s4=True):
 
         data = np.array([np.real(s2_data), np.real(s3_data), np.real(s4_data)])
-        err = np.concatenate([np.real(self.S_sigma[2]).flatten(), np.real(self.S_sigma[3]).flatten(), np.real(self.S_sigma[4]).flatten()])
+        err = np.concatenate([np.real(self.S_sigma[2]).flatten(), np.real(self.S_sigma[3]).flatten(),
+                              np.real(self.S_sigma[4]).flatten()])
         omega_list = [s2_f, s3_f, s4_f]
 
         def s2(a, c, gIn, gOut, omegas):
@@ -809,7 +817,7 @@ class Spectrum:
                 resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max())
 
             resid = np.concatenate(resid)
-            weighted = np.sqrt(resid**2 / err**2)
+            weighted = np.sqrt(resid ** 2 / err ** 2)
             return weighted
 
         fit_params = Parameters()

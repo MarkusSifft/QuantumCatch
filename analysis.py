@@ -384,10 +384,6 @@ class Spectrum:
                 single_window = self.cgw(int(window_size))
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
 
-                # self.S_sigmas[2] = af.array.Array(dims=[f_max_ind, n_windows], dtype=af.Dtype.c64)
-                # self.S_sigmas[3] = af.array.Array(dims=[f_max_ind // 2, f_max_ind // 2, n_windows], dtype=af.Dtype.c64)
-                # self.S_sigmas[4] = af.array.Array(dims=[f_max_ind, f_max_ind, n_windows], dtype=af.Dtype.c64)
-
                 if order == 2:
                     self.S_sigmas[2] = 1j * np.empty((f_max_ind, n_windows))
                 elif order == 3:

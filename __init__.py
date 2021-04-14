@@ -34,3 +34,4 @@
 
 from QuantumPolyspectra.analysis import *
 from QuantumPolyspectra.generation import *
+from QuantumPolyspectra.telegraph_noise_tools import *

@@ -207,10 +207,8 @@ class Spectrum:
         plt.rcParams["axes.axisbelow"] = False
 
         s2_array = np.real(self.S_sigmas[2])
-        print(s2_array.shape)
 
         s2_array = gaussian_filter(s2_array, sigma=[0, s2_filter])
-        print(s2_array.shape)
 
         if normalize == 'area':
             s2_array /= np.sum(s2_array, axis=0)

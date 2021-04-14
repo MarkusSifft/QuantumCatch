@@ -693,7 +693,7 @@ class System(Spectrum):
                     window_size = np.floor(len(t_window) / m)
 
                     f_data, spec_data, _ = self.calc_spec(order, window_size, f_max, dt=delta_t, data=trace,
-                                                          m=m, backend=backend)
+                                                          m=m, backend=backend, verbose=False)
 
                     all_spectra.append(spec_data)
                     self.numeric_f_data[order], self.numeric_spec_data[order] = f_data, spec_data

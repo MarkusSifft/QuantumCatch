@@ -302,7 +302,7 @@ class Spectrum:
         return sigma_counter
 
     def calc_spec(self, order, window_size, f_max, dt=None, data=None, backend='opencl', scaling_factor=1,
-                  corr_data=None, corr_shift=0,
+                  corr_data=None, corr_shift=0, verbose=True,
                   break_after=1e6, m=10, window_shift=1, random_phase=False):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
         n_chunks = 0
@@ -342,7 +342,7 @@ class Spectrum:
         n_windows = int(
             np.floor(n_windows - corr_shift / (m * window_size)))  # number of windows is reduce if corr shifted
 
-        for i in tqdm_notebook(np.arange(0, n_windows - 1 + window_shift, window_shift)):
+        for i in tqdm_notebook(np.arange(0, n_windows - 1 + window_shift, window_shift), leave=False):
             chunk = scaling_factor * main_data[int(i * (window_size * m)): int((i + 1) * (window_size * m))]
 
             if not self.first_frame_plotted:
@@ -359,7 +359,8 @@ class Spectrum:
                 chunk_corr_gpu = to_gpu(chunk_corr.reshape((window_size, 1, m), order='F'))
 
             if n_chunks == 0:
-                print('chunk shape: ', chunk_gpu.shape[0])
+                if verbose:
+                    print('chunk shape: ', chunk_gpu.shape[0])
 
             # ---------count windows-----------
             n_chunks += 1
@@ -368,7 +369,8 @@ class Spectrum:
             if self.fs is None:
                 self.fs = 1 / delta_t
                 freq_all_freq = rfftfreq(int(window_size), delta_t)
-                print('Maximum frequency:', np.max(freq_all_freq))
+                if verbose:
+                    print('Maximum frequency:', np.max(freq_all_freq))
 
                 # ------ Check if f_max is too high ---------
                 f_mask = freq_all_freq <= f_max
@@ -381,8 +383,8 @@ class Spectrum:
                     self.freq[order] = freq_all_freq[f_mask][:int(f_max_ind // 2)]
                 else:
                     self.freq[order] = freq_all_freq[f_mask]
-
-                print('Number of points: ' + str(len(self.freq[order])))
+                if verbose:
+                    print('Number of points: ' + str(len(self.freq[order])))
                 single_window = self.cgw(int(window_size))
 
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))

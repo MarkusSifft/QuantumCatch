@@ -646,92 +646,24 @@ class System(Spectrum):
             a_w3[i, :] = a_w[i:i + mat_size]
         return a_w3.conj()
 
-    def numeric_spec(self, t_window_in, op, f_max, power, order, max_samples, m=5, solver_='milstein', plot_after=12,
-                     sum_cumulant=False, new_cumulant=False, title_in=None, with_noise=False,
+    def numeric_spec(self, t_window_in, op, f_max, power, order, max_samples, m=5, _solver='milstein', plot_after=12,
+                     title_in=None, with_noise=False,
                      roll=False, plot_simulation=False, backend='opencl'):
         self.fs = None
         self.a_w = None
         self.N = 0
         n_chunks = 0
-        f_max_ind = 0
-        ind = 0
         all_spectra = []
-
-        # -------for order 2 and 3 cumulant sum----------
-        # sum_1 = 0
-        # sum_2 = 0
-        # sum_3 = 0
-        # sum_12 = 0
-        # sum_23 = 0
-        # sum_13 = 0
-        # sum_123 = 0
-        #
-        # sum_11c22c = 0
-        #
-        # sum_11c2 = 0
-        # sum_122c = 0
-        # sum_1c22c = 0
-        # sum_11c2c = 0
-        #
-        # sum_11c = 0
-        # sum_22c = 0
-        # sum_12c = 0
-        # sum_1c2 = 0
-        # sum_1c2c = 0
-        #
-        # sum_1c = 0
-        # sum_2c = 0
-        #
-        # x = []
-        # y = []
-        # z = []
-        # w = []
-        # C4_sum = None
-        # n_C4 = 0
 
         # ------- throw away beginning of trace -------
         # t_start = 5 / self.measure_strength[op]
         delta_t = t_window_in[1] - t_window_in[0]
-        start_ind = 0 # 100  # int(t_start / delta_t)
+        start_ind = 0  # 100  # int(t_start / delta_t)
         print(len(t_window_in) - start_ind)
-        t_window = t_window_in# [:-start_ind]
-
-        # ------- frequancies can be perpared beforehand -------
-        # self.N = len(t_window)  # Number of points in time series
-        # self.fs = 1 / delta_t
-        # if order == 2:
-        #     self.numeric_f_data[order] = rfftfreq(self.N, delta_t)
-        # elif order == 3:
-        #     freq_no_shift_all_freq = fftfreq(self.N, delta_t)
-        #
-        #     # ------ Check if f_max is to high ---------
-        #     f_real_max_ = np.max(freq_no_shift_all_freq) / 2
-        #     f_real_max = max([k for k in freq_no_shift_all_freq if k <= f_real_max_])
-        #     if f_real_max < f_max:
-        #         f_max = f_real_max
-        #     f_max_ind = int(2 * f_max / freq_no_shift_all_freq[1])
-        #     freq_no_shift = np.concatenate(
-        #         (freq_no_shift_all_freq[:f_max_ind + 1], freq_no_shift_all_freq[-f_max_ind:]))
-        #     ind = len(freq_no_shift) // 4
-        #     freq_no_shift_cut = np.concatenate((freq_no_shift[:ind + 1], freq_no_shift[-ind:]))
-        #     self.numeric_f_data[order] = fftshift(freq_no_shift_cut)
-        #
-        # elif order == 4:
-        #     freq_no_shift_all_freq = fftfreq(self.N, delta_t)
-        #
-        #     # ------ Check if f_max is to high ---------
-        #     f_real_max = np.max(freq_no_shift_all_freq)
-        #     if f_real_max < f_max:
-        #         f_max = f_real_max
-        #     f_max_ind = int(f_max / freq_no_shift_all_freq[1])
-        #     freq_no_shift = np.concatenate(
-        #         (freq_no_shift_all_freq[:f_max_ind + 1], freq_no_shift_all_freq[-f_max_ind:]))
-        #     self.numeric_f_data[order] = fftshift(freq_no_shift)
-        #
-        # window = cgw(self.N)
+        t_window = t_window_in  # [:-start_ind]
 
         while n_chunks < max_samples:
-            #if len(t_window) % 2 == 0:
+            # if len(t_window) % 2 == 0:
             #    print('Window length must be odd')
             #    break
             # traces = parallel.parallel_map(self.parallel_tranisent,
@@ -740,7 +672,7 @@ class System(Spectrum):
             #                                            'with_noise': with_noise})
 
             for i in tqdm_notebook(range(plot_after)):
-                traces = [self.parallel_tranisent(None, op, t=t_window_in, _solver='milstein', _normalize=True,
+                traces = [self.parallel_tranisent(None, op, t=t_window_in, _solver=_solver, _normalize=True,
                                                   with_noise=with_noise)]
 
                 for trace in traces:
@@ -767,148 +699,13 @@ class System(Spectrum):
                     all_spectra.append(spec_data)
                     self.numeric_f_data[order], self.numeric_spec_data[order] = f_data, spec_data
 
-                    # if order == 2:
-                    #     self.a_w = rfft(window * trace) * delta_t
-                    #
-                    #     # ---------calculate spectrum-----------
-                    #     # C_2 = m / (m - 1) * (< a_w * a_w* > - < a_w > < a_w* >)
-                    #     #                          sum_1         sum_2   sum_3
-                    #     sum_1 += self.a_w * self.a_w.conj()
-                    #     sum_2 += self.a_w
-                    #     sum_3 += self.a_w.conj()
-                    #
-                    # elif order == 3:
-                    #     # ------ reduction of frequencies to the desired range ---------
-                    #     a_w_no_shift_all_freq = fft(window * trace) * delta_t
-                    #     a_w_no_shift = np.concatenate(
-                    #         (a_w_no_shift_all_freq[:f_max_ind + 1], a_w_no_shift_all_freq[-f_max_ind:]))
-                    #     a_w = fftshift(a_w_no_shift)
-                    #     a_w_no_shift_cut = np.concatenate((a_w_no_shift[:ind + 1], a_w_no_shift[-ind:]))
-                    #     self.a_w_cut = fftshift(a_w_no_shift_cut)
-                    #
-                    #     a_w1 = np.outer(np.ones_like(self.a_w_cut), self.a_w_cut)  # varies horizontally
-                    #     a_w2 = np.outer(self.a_w_cut, np.ones_like(self.a_w_cut))  # varies vertically
-                    #
-                    #     a_w3 = self.calc_a_w3(a_w)
-                    #
-                    #     # C_3 = m^2 / (m - 1)(m - 2) * (< a_w1 * a_w2 * a_w3 >
-                    #     #                                      sum_123
-                    #     #       - < a_w1 >< a_w2 * a_w3 > - < a_w1 * a_w2 >< a_w3 > - < a_w1 * a_w3 >< a_w2 >
-                    #     #          sum_1      sum_23           sum_12        sum_3         sum_13      sum_2
-                    #     #       + 2 < a_w1 >< a_w2 >< a_w3 >)
-                    #     #             sum_1   sum_2   sum_3
-                    #     # with w3 = - w1 - w2
-                    #     sum_1 += a_w1
-                    #     sum_2 += a_w2
-                    #     sum_3 += a_w3
-                    #     a_w12 = a_w1 * a_w2
-                    #     sum_12 += a_w12
-                    #     sum_23 += a_w2 * a_w3
-                    #     sum_13 += a_w1 * a_w3
-                    #     sum_123 += a_w12 * a_w3
-                    #
-                    # elif order == 4:
-                    #     a_w_no_shift_all_freq = fft(window * trace) * delta_t
-                    #     a_w_no_shift = np.concatenate(
-                    #         (a_w_no_shift_all_freq[:f_max_ind + 1], a_w_no_shift_all_freq[-f_max_ind:]))
-                    #     self.a_w_cut = fftshift(a_w_no_shift)
-                    #
-                    #     a_w1 = np.outer(np.ones_like(self.a_w_cut), self.a_w_cut)  # varies horizontally
-                    #     a_w2 = np.outer(self.a_w_cut, np.ones_like(self.a_w_cut))  # varies vertically
-                    #
-                    #     if sum_cumulant:
-                    #         x.append(a_w1)
-                    #         y.append(a_w1.conj())
-                    #         z.append(a_w2)
-                    #         w.append(a_w2.conj())
-                    #
-                    #         if n_chunks % 20 == 0:
-                    #             m = 20
-                    #
-                    #             def calc_avg(x_):
-                    #                 avg = np.zeros_like(x_[0])
-                    #                 for x_arg in x_:
-                    #                     avg += x_arg
-                    #                 avg /= len(x_)
-                    #                 return avg
-                    #
-                    #             def calc_big_avg4(x_, x_avg_, y_, y_avg_, z_, z_avg_, w_, w_avg_):
-                    #                 big_avg4 = np.zeros_like(x_avg_)
-                    #                 for x_var, y_var, z_var, w_var in zip(x_, y_, z_, w_):
-                    #                     big_avg4 += (x_var - x_avg_) * (y_var - y_avg_) * (z_var - z_avg_) * (
-                    #                             w_var - w_avg_)
-                    #                 big_avg4 /= len(x_)
-                    #                 return big_avg4
-                    #
-                    #             def calc_big_avg2(x_, x_avg_, y_, y_avg_):
-                    #                 big_avg2 = np.zeros_like(x_avg_)
-                    #                 for x_var, y_var in zip(x_, y_):
-                    #                     big_avg2 += (x_var - x_avg_) * (y_var - y_avg_)
-                    #                 big_avg2 /= len(x_)
-                    #                 return big_avg2
-                    #
-                    #             x_avg = calc_avg(x)
-                    #             y_avg = calc_avg(y)
-                    #             z_avg = calc_avg(z)
-                    #             w_avg = calc_avg(w)
-                    #
-                    #             C4 = m ** 2 / ((m - 1) * (m - 2) * (m - 3)) * (
-                    #                     (m + 1) * calc_big_avg4(x, x_avg, y, y_avg, z, z_avg, w, w_avg)
-                    #                     - (m - 1) * (calc_big_avg2(x, x_avg, y, y_avg) * calc_big_avg2(z, z_avg, w,
-                    #                                                                                    w_avg)
-                    #                                  + calc_big_avg2(x, x_avg, z, z_avg) * calc_big_avg2(w, w_avg, y,
-                    #                                                                                      y_avg)
-                    #                                  + calc_big_avg2(x, x_avg, w, w_avg) * calc_big_avg2(z, z_avg, y,
-                    #                                                                                      y_avg))
-                    #             )
-                    #
-                    #             n_C4 += 1
-                    #             x = []
-                    #             y = []
-                    #             z = []
-                    #             w = []
-                    #
-                    #             if C4_sum is None:
-                    #                 C4_sum = C4
-                    #             else:
-                    #                 print('updating C4')
-                    #                 C4_sum += C4
-                    #
-                    #     else:
-                    #         # C_4 = (Eq. 49)
-                    #         sum_11c22c += a_w1 * a_w1.conj() * a_w2 * a_w2.conj()
-                    #
-                    #         sum_11c2 += a_w1 * a_w1.conj() * a_w2
-                    #         sum_122c += a_w1 * a_w2 * a_w2.conj()
-                    #         sum_1c22c += a_w1.conj() * a_w2 * a_w2.conj()
-                    #         sum_11c2c += a_w1 * a_w1.conj() * a_w2.conj()
-                    #
-                    #         sum_11c += a_w1 * a_w1.conj()
-                    #         sum_22c += a_w2 * a_w2.conj()
-                    #         sum_12c += a_w1 * a_w2.conj()
-                    #         sum_1c2 += a_w1.conj() * a_w2
-                    #         sum_12 += a_w1 * a_w2
-                    #         sum_1c2c += a_w1.conj() * a_w2.conj()
-                    #
-                    #         sum_1 += a_w1
-                    #         sum_1c += a_w1.conj()
-                    #         sum_2 += a_w2
-                    #         sum_2c += a_w2.conj()
-
             self.numeric_f_data[order] = f_data
             # ------ Realtime spectrum plots
             if order == 2 and n_chunks >= 2:
                 title = 'Realtime Powerspectrum of ' + op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
                     n_chunks) + '<br>' + title_in
-                # self.numeric_spec_data[order] = n_chunks / (n_chunks - 1) * (
-                #         sum_1 / n_chunks - sum_2 * sum_3 / n_chunks ** 2)
-                # self.numeric_spec_data[order] /= delta_t * (window ** 2).sum()
 
                 self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
-
-                # ------ save current state of simulation --------
-                # np.save('simulated_spectra/order_2_data2', self.numeric_spec_data[order])
-                # np.save('simulated_spectra/order_2_freq2', self.numeric_f_data[order])
 
                 clear_output(wait=True)
                 fig = plotly(self.numeric_f_data[order], np.real_if_close(self.numeric_spec_data[order]),
@@ -920,43 +717,14 @@ class System(Spectrum):
             elif order > 2 and n_chunks >= 4:
                 m = n_chunks
                 if order == 3:
-                    # self.numeric_spec_data[order] = m ** 2 / ((m - 1) * (m - 2)) * (
-                    #         sum_123 / m - sum_1 * sum_23 / m ** 2 - sum_12 * sum_3 / m ** 2
-                    #         - sum_13 * sum_2 / m ** 2 + 2 * sum_1 * sum_2 * sum_3 / m ** 3)
-                    # self.numeric_spec_data[order] /= delta_t * (window ** 3).sum()
 
                     self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
-
-                    # ------ save current state of simulation --------
-                    # np.save('simulated_spectra/weak_s3_data_n', self.numeric_spec_data[order])
-                    # np.save('simulated_spectra/weak_s3_f_n', self.numeric_f_data[order])
 
                     title = 'Realtime Bispectrum of ' + op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
                         n_chunks) + '<br>' + title_in
                 else:
-                    # if sum_cumulant:
-                    #     self.numeric_spec_data[order] = C4_sum / n_C4
-                    #
-                    # elif new_cumulant:
-                    #     self.numeric_spec_data[order] = m ** 2 / (m - 1) * (m - 2) * (
-                    #             sum_11c22c / m - sum_1c22c * sum_1 / m ** 2 - sum_122c * sum_1c / m ** 2 - sum_11c * sum_22c / m ** 2 +
-                    #             2 * sum_22c * sum_1 * sum_1c / m ** 3
-                    #     )
-                    # else:
-                    #     self.numeric_spec_data[order] = m ** 2 / ((m - 1) * (m - 2) * (m - 3)) * (
-                    #             (m + 1) * sum_11c22c / m - (m + 1) * (sum_11c2 * sum_2c + sum_11c2c * sum_2 +
-                    #                                                   sum_122c * sum_1c + sum_1c22c * sum_1) / m ** 2
-                    #             - (m - 1) * (sum_11c * sum_22c + sum_12 * sum_1c2c + sum_12c * sum_1c2) / m ** 2
-                    #             + 2 * m * (sum_11c * sum_2 * sum_2c + sum_12 * sum_1c * sum_2c +
-                    #                        sum_12c * sum_1c * sum_2 + sum_22c * sum_1 * sum_1c +
-                    #                        sum_1c2c * sum_1 * sum_2 + sum_1c2 * sum_1 * sum_2c) / m ** 3
-                    #             - 6 * m * sum_1 * sum_1c * sum_2 * sum_2c / m ** 4)
-                    # self.numeric_spec_data[order] /= delta_t * (window ** 4).sum()
-                    self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
-                    # ------ save current state of simulation --------
-                    # np.save('simulated_spectra/weak_s4_data_n1', self.numeric_spec_data[order])
-                    # np.save('simulated_spectra/weak_s4_f_n1', self.numeric_f_data[order])
+                    self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
                     title = 'Realtime Trispectrum of ' + op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
                         n_chunks) + '<br>' + title_in

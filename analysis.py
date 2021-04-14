@@ -282,6 +282,27 @@ class Spectrum:
         plt.plot(t, first_frame)
         plt.show()
 
+    def store_single_spectrum(self, i, single_spectrum, order, sigma_counter):
+        if self.S_gpu[order] is None:
+            self.S_gpu[order] = single_spectrum
+            if i % 1 == 0:
+                if order == 2:
+                    self.S_sigmas[order][:, sigma_counter] = single_spectrum.to_ndarray()
+                else:
+                    self.S_sigmas[order][:, :, sigma_counter] = single_spectrum.to_ndarray()
+                sigma_counter += 1
+
+        else:
+            self.S_gpu[order] += single_spectrum
+            if i % 1 == 0:
+                if order == 2:
+                    self.S_sigmas[order][:, sigma_counter] = single_spectrum.to_ndarray()
+                else:
+                    self.S_sigmas[order][:, :, sigma_counter] = single_spectrum.to_ndarray()
+                sigma_counter += 1
+
+        return sigma_counter
+
     def calc_spec(self, order, window_size, f_max, backend='opencl', gw_scale=1, corr_data=None, corr_shift=0,
                      break_after=1e6, m=10, window_shift=1, random_phase=False):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
@@ -384,21 +405,13 @@ class Spectrum:
                 if corr_data:
                     a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=delta_t)
                     a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
-                    s2 = c2(a_w, a_w_corr, m)
+                    single_spectrum = c2(a_w, a_w_corr, m)
 
                 else:
-                    s2 = c2(a_w, a_w, m)
+                    single_spectrum = c2(a_w, a_w, m)
 
-                if self.S_gpu[order] is None:
-                    self.S_gpu[order] = s2
-                    if i % 1 == 0:
-                        self.S_sigmas[2][:, sigma_counter] = s2.to_ndarray()
-                        sigma_counter += 1
-                else:
-                    self.S_gpu[order] += s2
-                    if i % 1 == 0:
-                        self.S_sigmas[2][:, sigma_counter] = s2.to_ndarray()
-                        sigma_counter += 1
+                sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+
 
             elif order > 2:
                 a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
@@ -409,19 +422,9 @@ class Spectrum:
                     a_w1 = af.lookup(a_w_all, af.Array(list(range(f_max_ind // 2))), dim=0)
                     a_w2 = a_w1
                     a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
-                    s3 = c3(a_w1, a_w2, a_w3, m)
+                    single_spectrum = c3(a_w1, a_w2, a_w3, m)
 
-                    if self.S_gpu[order] is None:
-                        self.S_gpu[order] = s3
-                        if i % 1 == 0:
-                            self.S_sigmas[3][:, :, sigma_counter] = s3.to_ndarray()
-                            sigma_counter += 1
-
-                    else:
-                        self.S_gpu[order] += s3
-                        if i % 1 == 0:
-                            self.S_sigmas[3][:, :, sigma_counter] = s3.to_ndarray()
-                            sigma_counter += 1
+                    sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
 
                 if order == 4:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
@@ -435,19 +438,9 @@ class Spectrum:
                     else:
                         a_w_corr = a_w
 
-                    s4 = c4(a_w, a_w_corr, m)
+                    single_spectrum = c4(a_w, a_w_corr, m)
 
-                    if self.S_gpu[order] is None:
-                        self.S_gpu[order] = s4
-                        if i % 1 == 0:
-                            self.S_sigmas[4][:, :, sigma_counter] = s4.to_ndarray()
-                            sigma_counter += 1
-
-                    else:
-                        self.S_gpu[order] += s4
-                        if i % 1 == 0:
-                            self.S_sigmas[4][:, :, sigma_counter] = s4.to_ndarray()
-                            sigma_counter += 1
+                    sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
 
             if n_chunks == break_after:
                 break

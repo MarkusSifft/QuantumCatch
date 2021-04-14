@@ -686,7 +686,7 @@ class System:
 
         # ------- throw away beginning of trace -------
         # t_start = 5 / self.measure_strength[op]
-        delta_t = t_window_in[1]
+        delta_t = t_window_in[1] - t_window_in[0]
         start_ind = 100  # int(t_start / delta_t)
         print(len(t_window_in) - start_ind)
         t_window = t_window_in[:-start_ind]

@@ -301,8 +301,9 @@ class Spectrum:
 
         return sigma_counter
 
-    def calc_spec(self, order, window_size, f_max, backend='opencl', gw_scale=1, corr_data=None, corr_shift=0,
-                     break_after=1e6, m=10, window_shift=1, random_phase=False):
+    def calc_spec(self, order, window_size, f_max, dt=None, data=None, backend='opencl', scaling_factor=1,
+                  corr_data=None, corr_shift=0,
+                  break_after=1e6, m=10, window_shift=1, random_phase=False):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
         n_chunks = 0
         af.set_backend(backend)
@@ -324,21 +325,25 @@ class Spectrum:
         sigma_counter = 0
 
         # -------data setup---------
-        main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
+        if data is None:
+            main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
+        else:
+            main_data = data
+            delta_t = dt
+
         self.delta_t = delta_t
-        corr_shift /= delta_t  # convertion of shift in seconds to shift in dt
+        corr_shift /= delta_t  # conversion of shift in seconds to shift in dt
 
         if corr_data and not corr_data == 'white_noise':
             corr_data, _ = import_data(corr_data, self.group_key, self.dataset)
 
         n_data_points = main_data.shape[0]
-        print('Number of data points:', n_data_points)
         n_windows = int(np.floor(n_data_points / (m * window_size)))
         n_windows = int(
             np.floor(n_windows - corr_shift / (m * window_size)))  # number of windows is reduce if corr shifted
 
         for i in tqdm_notebook(np.arange(0, n_windows - 1 + window_shift, window_shift)):
-            chunk = gw_scale * main_data[int(i * (window_size * m)): int((i + 1) * (window_size * m))]
+            chunk = scaling_factor * main_data[int(i * (window_size * m)): int((i + 1) * (window_size * m))]
 
             if not self.first_frame_plotted:
                 self.plot_first_frame(chunk, delta_t, window_size)
@@ -349,7 +354,7 @@ class Spectrum:
                 chunk_corr = np.random.randn(window_size, 1, m)
                 chunk_corr_gpu = to_gpu(chunk_corr)
             elif corr_data:
-                chunk_corr = gw_scale * corr_data[int(i * (window_size * m) + corr_shift): int(
+                chunk_corr = scaling_factor * corr_data[int(i * (window_size * m) + corr_shift): int(
                     (i + 1) * (window_size * m) + corr_shift)]
                 chunk_corr_gpu = to_gpu(chunk_corr.reshape((window_size, 1, m), order='F'))
 
@@ -360,6 +365,7 @@ class Spectrum:
             n_chunks += 1
 
             # --------- Calculate sampling rate and window function-----------
+            print('fs:', self.fs)
             if self.fs is None:
                 self.fs = 1 / delta_t
                 freq_all_freq = rfftfreq(int(window_size), delta_t)
@@ -380,6 +386,7 @@ class Spectrum:
 
                 print('Number of points: ' + str(len(self.freq[order])))
                 single_window = self.cgw(int(window_size))
+
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
 
                 if order == 2:
@@ -391,6 +398,7 @@ class Spectrum:
 
             if order == 2:
                 a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
+
                 if random_phase:
                     a_w_all = self.add_random_phase(a_w_all, order, window_size, delta_t, m)
 
@@ -405,7 +413,6 @@ class Spectrum:
                     single_spectrum = c2(a_w, a_w, m)
 
                 sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
-
 
             elif order > 2:
                 a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
@@ -444,26 +451,27 @@ class Spectrum:
 
         self.S_sigmas[order] /= (delta_t * (single_window ** order).sum() * np.sqrt(n_chunks))
 
-        if order == 2:
+        if n_chunks > 1:
+            if order == 2:
 
-            self.S_sigma_gpu = np.sqrt(
-                n_chunks / (n_chunks - 1) * (np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
-                                             np.mean(self.S_sigmas[order], axis=1) * np.conj(
-                            np.mean(self.S_sigmas[order], axis=1))))
+                self.S_sigma_gpu = np.sqrt(
+                    n_chunks / (n_chunks - 1) * (np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
+                                                 np.mean(self.S_sigmas[order], axis=1) * np.conj(
+                                np.mean(self.S_sigmas[order], axis=1))))
 
-        else:
+            else:
 
-            self.S_sigma_gpu = np.sqrt(n_chunks / (n_chunks - 1) * (
-                    np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
-                    np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
+                self.S_sigma_gpu = np.sqrt(n_chunks / (n_chunks - 1) * (
+                        np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
+                        np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
 
-        self.S_sigma[order] = self.S_sigma_gpu
+            self.S_sigma[order] = self.S_sigma_gpu
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
     def poly_plot(self, f_max, f_min=0, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
-                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
-                   s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None):
+                  contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
+                  s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None):
 
         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(24, 7), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
         plt.rc('text', usetex=False)
@@ -618,5 +626,3 @@ class Spectrum:
         plt.show()
 
         return fig
-
-

@@ -365,7 +365,6 @@ class Spectrum:
             n_chunks += 1
 
             # --------- Calculate sampling rate and window function-----------
-            print('fs:', self.fs)
             if self.fs is None:
                 self.fs = 1 / delta_t
                 freq_all_freq = rfftfreq(int(window_size), delta_t)
@@ -374,7 +373,6 @@ class Spectrum:
                 # ------ Check if f_max is too high ---------
                 f_mask = freq_all_freq <= f_max
                 f_max_ind = sum(f_mask)
-                print(f_max_ind)
 
                 if f_max > np.max(freq_all_freq):
                     f_max = np.max(freq_all_freq)

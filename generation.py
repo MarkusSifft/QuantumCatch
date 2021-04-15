@@ -158,7 +158,8 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
 # @cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv: hashkey(omega))
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv):
     """
-    Calculates first matrix multiplication in Eqs. 109-111 in 10.1103/PhysRevB.98.205143
+    Calculates first matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143. Used
+    for the calculation of power- and bispectrum.
     Parameters
     ----------
     rho : array
@@ -184,6 +185,27 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv):
 # ------ can be cached for large systems --------
 # @cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv: hashkey(omega,omega2))
 def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv):
+    """
+    Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used
+    for the calculation of bispectrum.
+    Parameters
+    ----------
+    rho : array
+        A @ Steadystate desity matrix of the system
+    omega : float
+        Desired frequency
+    omega2 : float
+        Frequency used in :func:_first_matrix_step
+    a_prim : array
+        Super operator A' as defined in 10.1103/PhysRevB.98.205143
+    eigvecs : array
+        Eigenvectors of the Liouvillian
+    eigvals : array
+        Eigenvalues of the Liouvillian
+    eigvecs_inv : array
+        The inverse eigenvectors of the Liouvillian
+
+    """
     _ = omega2
     G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv)
     rho_prim = G_prim @ rho
@@ -192,6 +214,25 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
 
 
 def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv):
+    """
+    Calculates one matrix multiplication in Eqs. 109 in 10.1103/PhysRevB.98.205143. Used
+    for the calculation of trispectrum.
+    Parameters
+    ----------
+    rho : array
+        A @ Steadystate desity matrix of the system
+    omega : float
+        Desired frequency
+    a_prim : array
+        Super operator A' as defined in 10.1103/PhysRevB.98.205143
+    eigvecs : array
+        Eigenvectors of the Liouvillian
+    eigvals : array
+        Eigenvalues of the Liouvillian
+    eigvecs_inv : array
+        The inverse eigenvectors of the Liouvillian
+
+    """
     G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv)
     rho_prim = G_prim @ rho
     return a_prim @ rho_prim
@@ -201,6 +242,25 @@ def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv):
 
 
 def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind):  # small s from Erratum (Eq. 7)
+    """
+    Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901
+
+    Parameters
+    ----------
+    rho_steady : array
+        A @ Steadystate desity matrix of the system
+    a_prim : array
+        Super operator A' as defined in 10.1103/PhysRevB.98.205143
+    eigvecs : array
+        Eigenvectors of the Liouvillian
+    eigvals : array
+        Eigenvalues of the Liouvillian
+    eigvecs_inv : array
+        The inverse eigenvectors of the Liouvillian
+    reshape_ind : array
+        Indices that give the trace of a flattened matrix
+
+    """
     s_k = np.zeros_like(rho_steady)
     zero_ind = np.argmax(np.real(eigvals))
 

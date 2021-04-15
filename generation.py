@@ -63,7 +63,7 @@ cache5 = LRUCache(maxsize=int(1e5))
 
 def calc_super_A(op):
     """
-    Calculates the super operator of A as defined in 0.1103/PhysRevB.102.119901
+    Calculates the super operator of A as defined in 10.1103/PhysRevB.98.205143
 
     Parameters
     ----------
@@ -77,7 +77,7 @@ def calc_super_A(op):
     """
     def calc_A(rho, op):
         """
-        Calculates A[op] as defined in 0.1103/PhysRevB.102.119901
+        Calculates A[op] as defined in 10.1103/PhysRevB.98.205143
         """
         return (op @ rho + rho @ np.conj(op).T) / 2
 
@@ -98,7 +98,7 @@ def calc_super_A(op):
 @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv):
     """
-    Calculates the fourier transform of \mathcal{G'} as defined in 0.1103/PhysRevB.102.119901
+    Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
 
     Parameters
     ----------
@@ -114,7 +114,7 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv):
     Returns
     -------
     Fourier_G : array
-        Fourier transform of \mathcal{G'} as defined in 0.1103/PhysRevB.102.119901
+        Fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
     """
     zero_ind = np.argmax(np.real(eigvals))
     diagonal = 1 / (-eigvals - 1j * nu)
@@ -129,7 +129,7 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv):
 
 def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     """
-    Calculates the fourier transform of \mathcal{G'} as defined in 0.1103/PhysRevB.102.119901
+    Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
 
     Parameters
     ----------
@@ -145,7 +145,7 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     Returns
     -------
     G_prim : array
-        \mathcal{G'} as defined in 0.1103/PhysRevB.102.119901
+        \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
     """
     zero_ind = np.argmax(np.real(eigvals))
     diagonal = np.exp(eigvals * t)
@@ -157,6 +157,24 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
 
 # @cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv: hashkey(omega))
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv):
+    """
+    Calculates first matrix multiplication in Eqs. 109-111 in 10.1103/PhysRevB.98.205143
+    Parameters
+    ----------
+    rho : array
+        A @ Steadystate desity matrix of the system
+    omega : float
+        Desired frequency
+    a_prim : array
+        Super operator A' as defined in 10.1103/PhysRevB.98.205143
+    eigvecs : array
+        Eigenvectors of the Liouvillian
+    eigvals : array
+        Eigenvalues of the Liouvillian
+    eigvecs_inv : array
+        The inverse eigenvectors of the Liouvillian
+
+    """
     G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv)
     rho_prim = G_prim @ rho
     out = a_prim @ rho_prim

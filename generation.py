@@ -580,7 +580,7 @@ class System(Spectrum):
         sc_ops_m = [self.sc_measure_strength[op] * self.sc_ops[op] for op in self.sc_ops]
 
         result = smesolve(self.H / self.hbar, self.psi_0, t,
-                          c_ops=c_ops_m, sc_ops=sc_ops_m, e_ops={measure_op: self.e_ops[measure_op]}, noise=seed,
+                          c_ops=c_ops_m, sc_ops=sc_ops_m, e_ops={measure_op: self.e_ops[measure_op]}, noise=int(seed),
                           solver=_solver, nsubsteps=_nsubsteps,
                           normalize=_normalize)  # , progress_bar=progress_bar)
 
@@ -612,11 +612,11 @@ class System(Spectrum):
 
         def real_view(op):
             dt = (t[1] - t[0])
-            # out = self.time_series_data[op] + 1 / 2 / self.measure_strength[op] * noise_data[op] / dt
+            # out = self.time_series_data[measure_op] + 1 / 2 / self.measure_strength[measure_op] * noise_data[measure_op] / dt
             out = self.sc_measure_strength[op] ** 2 * self.time_series_data[op] + self.sc_measure_strength[op] / 2 * \
                   noise_data[op] / dt
-            # out = self.time_series_data[op] + 1 / (2 * self.sc_measure_strength[op]) * \
-            #       noise_data[op] / dt
+            # out = self.time_series_data[measure_op] + 1 / (2 * self.sc_measure_strength[measure_op]) * \
+            #       noise_data[measure_op] / dt
             return out
 
         if bool(self.sc_ops):
@@ -646,8 +646,8 @@ class System(Spectrum):
             a_w3[i, :] = a_w[i:i + mat_size]
         return a_w3.conj()
 
-    def numeric_spec(self, t_window_in, op, f_max, power, order, max_samples, m=5, _solver='milstein', plot_after=12,
-                     title_in=None, with_noise=False,
+    def numeric_spec(self, t_window_in, measure_op, f_max, power, order, max_samples, m=5, _solver='milstein', plot_after=12,
+                     title_in=None, with_noise=False, _normalize=None,
                      roll=False, plot_simulation=False, backend='opencl'):
         self.fs = None
         self.a_w = None
@@ -656,7 +656,7 @@ class System(Spectrum):
         all_spectra = []
 
         # ------- throw away beginning of trace -------
-        # t_start = 5 / self.measure_strength[op]
+        # t_start = 5 / self.measure_strength[measure_op]
         delta_t = t_window_in[1] - t_window_in[0]
         start_ind = 0  # 100  # int(t_start / delta_t)
         t_window = t_window_in  # [:-start_ind]
@@ -665,96 +665,94 @@ class System(Spectrum):
             # if len(t_window) % 2 == 0:
             #    print('Window length must be odd')
             #    break
-            # traces = parallel.parallel_map(self.parallel_tranisent,
-            #                               np.random.randint(1e8, size=plot_after).tolist(),
-            #                               task_kwargs={'t': t_window_in, '_solver': solver_,
-            #                                            'with_noise': with_noise})
 
-            for i in tqdm_notebook(range(plot_after)):
-                traces = [self.parallel_tranisent(None, op, t=t_window_in, _solver=_solver, _normalize=True,
-                                                  with_noise=with_noise)]
+            traces = [self.parallel_tranisent(np.random.randint(1,1e5), measure_op, t=t_window_in, _solver=_solver, _normalize=_normalize,
+                                              with_noise=with_noise)]
 
-                for trace in traces:
+            for trace in traces:
 
-                    if plot_simulation:
-                        plt.plot(trace)
-                        plt.show()
+                if plot_simulation:
+                    plt.plot(trace)
+                    plt.show()
 
-                    if np.isnan(trace).any() or np.max(np.abs(trace)) > 1e9:
-                        print('Simulation error')
-                        continue
+                if np.isnan(trace).any() or np.max(np.abs(trace)) > 1e9:
+                    print('Simulation error')
+                    continue
 
-                    n_chunks += 1
-                    if not roll:
-                        trace = trace[start_ind:] ** power
-                    elif roll:
-                        trace = trace[start_ind:] * np.roll(trace[start_ind:], 3)
+                n_chunks += 1
+                if not roll:
+                    trace = trace[start_ind:] ** power
+                elif roll:
+                    trace = trace[start_ind:] * np.roll(trace[start_ind:], 3)
 
-                    window_size = np.floor(len(t_window) / m)
+                window_size = np.floor(len(t_window) / m)
 
-                    f_data, spec_data, _ = self.calc_spec(order, window_size, f_max, dt=delta_t, data=trace,
-                                                          m=m, backend=backend, verbose=False)
+                f_data, spec_data, _ = self.calc_spec(order, window_size, f_max, dt=delta_t, data=trace,
+                                                      m=m, backend=backend, verbose=False)
 
-                    all_spectra.append(spec_data)
-                    self.numeric_f_data[order], self.numeric_spec_data[order] = f_data, spec_data
+                all_spectra.append(spec_data)
+                self.numeric_f_data[order], self.numeric_spec_data[order] = f_data, spec_data
 
-            self.numeric_f_data[order] = f_data
-            # ------ Realtime spectrum plots
-            if order == 2 and n_chunks >= 2:
-                title = 'Realtime Powerspectrum of ' + op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
-                    n_chunks) + '<br>' + title_in
-
-                self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
-
-                clear_output(wait=True)
-                fig = plotly(self.numeric_f_data[order], np.real_if_close(self.numeric_spec_data[order]),
-                             order=order,
-                             title=title, domain='freq', y_label='S<sup>(2)</sup>(f)', x_label='f [kHz]')
-                fig['layout']['xaxis1'].update(range=[0, f_max])
-                fig.show()
-
-            elif order > 2 and n_chunks >= 4:
-                m = n_chunks
-                if order == 3:
+            if (n_chunks+1)%plot_after == 0:
+                self.numeric_f_data[order] = f_data
+                # ------ Realtime spectrum plots
+                if order == 2 and n_chunks >= 2:
+                    title = 'Realtime Powerspectrum of ' + measure_op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
+                        n_chunks) + '<br>' + title_in
 
                     self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
-                    title = 'Realtime Bispectrum of ' + op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
-                        n_chunks) + '<br>' + title_in
-                else:
+                    clear_output(wait=True)
+                    fig = plotly(self.numeric_f_data[order], np.real_if_close(self.numeric_spec_data[order]),
+                                 order=order,
+                                 title=title, domain='freq', y_label='S<sup>(2)</sup>(f)', x_label='f [kHz]')
+                    fig['layout']['xaxis1'].update(range=[0, f_max])
+                    fig.show()
 
-                    self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
+                elif order > 2 and n_chunks >= 4:
+                    m = n_chunks
+                    if order == 3:
 
-                    title = 'Realtime Trispectrum of ' + op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
-                        n_chunks) + '<br>' + title_in
+                        self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
-                f = self.numeric_f_data[order]
-                spec = np.real(self.numeric_spec_data[order])
+                        title = 'Realtime Bispectrum of ' + measure_op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
+                            n_chunks) + '<br>' + title_in
+                    else:
 
-                clear_output(wait=True)
+                        self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
-                lines = [spec[int(len(f) / 2), :], spec.diagonal(), spec[-1, :]]
+                        title = 'Realtime Trispectrum of ' + measure_op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
+                            n_chunks) + '<br>' + title_in
 
-                fig = make_subplots(rows=1, cols=2)
-                legend = ['(f,0)', '(f,f)', '(f,f<sub>max</sub>)']
-                for i, trace in enumerate(lines):
-                    fig.add_trace(go.Scatter(x=f, y=trace, name=legend[i]),
-                                  row=1, col=1)
+                    f = self.numeric_f_data[order]
+                    spec = np.real(self.numeric_spec_data[order])
 
-                contours = dict(start=np.min(spec), end=np.max(spec), size=(np.max(spec) - np.min(spec)) / 20)
-                fig.add_trace(go.Contour(z=spec, x=f, y=f,
-                                         contours=contours, colorscale='Bluered',
-                                         **{'contours_coloring': 'lines', 'line_width': 2}),
-                              row=1, col=2)
-                fig.update_layout(legend_orientation="h", title_text=title,
-                                  autosize=False, width=1300, height=550)
-                fig.update_xaxes(title_text="f [kHz]", row=1, col=1)
-                fig.update_xaxes(title_text="f<sub>1</sub> [kHz]", row=1, col=2)
-                if order == 3:
-                    fig.update_yaxes(title_text="S<sup>(3)</sup>", row=1, col=1)
-                elif order == 4:
-                    fig.update_yaxes(title_text="S<sup>(4)</sup>", row=1, col=1)
-                fig.update_yaxes(title_text="f<sub>2</sub> [kHz]", row=1, col=2)
-                fig.show()
+                    clear_output(wait=True)
+
+                    lines = [spec[int(len(f) / 2), :], spec.diagonal(), spec[-1, :]]
+
+                    fig = make_subplots(rows=1, cols=2)
+                    legend = ['(f,0)', '(f,f)', '(f,f<sub>max</sub>)']
+                    for i, trace in enumerate(lines):
+                        fig.add_trace(go.Scatter(x=f, y=trace, name=legend[i]),
+                                      row=1, col=1)
+
+                    contours = dict(start=np.min(spec), end=np.max(spec), size=(np.max(spec) - np.min(spec)) / 20)
+                    fig.add_trace(go.Contour(z=spec, x=f, y=f,
+                                             contours=contours, colorscale='Bluered',
+                                             **{'contours_coloring': 'lines', 'line_width': 2}),
+                                  row=1, col=2)
+                    fig.update_layout(legend_orientation="h", title_text=title,
+                                      autosize=False, width=1300, height=550)
+                    fig.update_xaxes(title_text="f [kHz]", row=1, col=1)
+                    fig.update_xaxes(title_text="f<sub>1</sub> [kHz]", row=1, col=2)
+                    if order == 3:
+                        fig.update_yaxes(title_text="S<sup>(3)</sup>", row=1, col=1)
+                    elif order == 4:
+                        fig.update_yaxes(title_text="S<sup>(4)</sup>", row=1, col=1)
+                    fig.update_yaxes(title_text="f<sub>2</sub> [kHz]", row=1, col=2)
+                    fig.show()
+
+        self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
         return [self.numeric_f_data[order], self.numeric_spec_data[order]]

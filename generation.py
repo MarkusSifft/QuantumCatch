@@ -53,6 +53,7 @@ from IPython.display import clear_output
 
 from QuantumPolyspectra.analysis import Spectrum
 
+# ------ setup caches for a speed up when summing over all permutations -------
 cache = LRUCache(maxsize=int(1e5))
 cache2 = LRUCache(maxsize=int(1e5))
 # cache3 = LRUCache(maxsize=int(1e5))
@@ -61,7 +62,23 @@ cache5 = LRUCache(maxsize=int(1e5))
 
 
 def calc_super_A(op):
+    """
+    Calculates the super operator of A as defined in 0.1103/PhysRevB.102.119901
+
+    Parameters
+    ----------
+    op : Qobj
+        Operator a for the calculation of A[a]
+
+    Returns
+    -------
+    op_super : Qobj
+        super operator A
+    """
     def calc_A(rho, op):
+        """
+        Calculates A[op] as defined in 0.1103/PhysRevB.102.119901
+        """
         return (op @ rho + rho @ np.conj(op).T) / 2
 
     m, n = op.shape

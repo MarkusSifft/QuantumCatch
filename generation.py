@@ -324,8 +324,12 @@ class System(Spectrum):
     def matrix_step(self, rho, omega):
         return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv)
 
-    def calc_spectrum(self, f_data, order, mathcal_a, g_prim=False, bar=True, beta=1, correction_only=False,
+    def calc_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True, beta=1, correction_only=False,
                       beta_offset=True):
+
+        if mathcal_a is None:
+            mathcal_a = calc_super_A(self.sc_ops[measure_op].full()).T
+
         if f_data.min() < 0:
             print('Only positive freqencies allowed')
             return None

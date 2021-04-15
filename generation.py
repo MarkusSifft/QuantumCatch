@@ -67,12 +67,12 @@ def calc_super_A(op):
 
     Parameters
     ----------
-    op : Qobj
+    op : array
         Operator a for the calculation of A[a]
 
     Returns
     -------
-    op_super : Qobj
+    op_super : array
         super operator A
     """
     def calc_A(rho, op):
@@ -97,6 +97,25 @@ def calc_super_A(op):
 # @numba.jit(nopython=True)  # 25% speedup
 @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv):
+    """
+    Calculates the fourier transform of \mathcal{G'} as defined in 0.1103/PhysRevB.102.119901
+
+    Parameters
+    ----------
+    nu : float
+        The desired frequency
+    eigvecs : array
+        Eigenvectors of the Liouvillian
+    eigvals : array
+        Eigenvalues of the Liouvillian
+    eigvecs_inv : array
+        The inverse eigenvectors of the Liouvillian
+
+    Returns
+    -------
+    Fourier_G : array
+        Fourier transform of \mathcal{G'} as defined in 0.1103/PhysRevB.102.119901
+    """
     zero_ind = np.argmax(np.real(eigvals))
     diagonal = 1 / (-eigvals - 1j * nu)
     diagonal[zero_ind] = 0
@@ -109,12 +128,31 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv):
 
 
 def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
+    """
+    Calculates the fourier transform of \mathcal{G'} as defined in 0.1103/PhysRevB.102.119901
+
+    Parameters
+    ----------
+    t : float
+        The desired time
+    eigvecs : array
+        Eigenvectors of the Liouvillian
+    eigvals : array
+        Eigenvalues of the Liouvillian
+    eigvecs_inv : array
+        The inverse eigenvectors of the Liouvillian
+
+    Returns
+    -------
+    G_prim : array
+        \mathcal{G'} as defined in 0.1103/PhysRevB.102.119901
+    """
     zero_ind = np.argmax(np.real(eigvals))
     diagonal = np.exp(eigvals * t)
     diagonal[zero_ind] = 0
     eigvecs_inv = diagonal.reshape(-1, 1) * eigvecs_inv
-    Fourier_G = eigvecs.dot(eigvecs_inv)
-    return Fourier_G
+    G_prim = eigvecs.dot(eigvecs_inv)
+    return G_prim
 
 
 # @cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv: hashkey(omega))

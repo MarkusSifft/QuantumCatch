@@ -277,6 +277,20 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind):  # s
 @cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals: hashkey(omega1, omega2, omega3))
 @numba.njit(fastmath=True)
 def second_term(omega1, omega2, omega3, s_k, eigvals):
+    """
+    Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+
+    Parameters
+    ----------
+    omega1 : float
+    omega2 : float
+    omega3 : float
+    s_k : array
+        Array calculated with :func:small_s
+    eigvals : array
+        Eigenvalues of the Liouvillian
+
+    """
     out = 0
     nu1 = omega1 + omega2 + omega3
     nu2 = omega2 + omega3
@@ -300,6 +314,20 @@ def second_term(omega1, omega2, omega3, s_k, eigvals):
 @cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals: hashkey(omega1, omega2, omega3))
 @numba.njit(fastmath=True)
 def third_term(omega1, omega2, omega3, s_k, eigvals):
+    """
+    Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+
+    Parameters
+    ----------
+    omega1 : float
+    omega2 : float
+    omega3 : float
+    s_k : array
+        Array calculated with :func:small_s
+    eigvals : array
+        Eigenvalues of the Liouvillian
+
+    """
     out = 0
     nu1 = omega1 + omega2 + omega3
     nu2 = omega2 + omega3
@@ -324,6 +352,17 @@ def third_term(omega1, omega2, omega3, s_k, eigvals):
 
 
 def _full_bispec(r_in):
+    """
+    Turns the partial bispectrum (only the half of quadrant) into a full plain.
+    Parameters
+    ----------
+    r_in : array
+        Partial spectrum
+    Returns
+    -------
+    m_full : array
+        Full plain of spectrum
+    """
     r = np.flipud(r_in)
     s, t = r.shape
     m = 1j * np.zeros((2 * s - 1, 2 * s - 1))

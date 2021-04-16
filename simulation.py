@@ -163,7 +163,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv):
     Parameters
     ----------
     rho : array
-        A @ Steadystate desity matrix of the system
+        rho equals matmul(A,Steadystate desity matrix of the system)
     omega : float
         Desired frequency
     a_prim : array

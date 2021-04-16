@@ -258,7 +258,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind):  # s
     eigvecs_inv : array
         The inverse eigenvectors of the Liouvillian
     reshape_ind : array
-        Indices that give the trace of a flattened matrix
+        Indices that give the trace of a flattened matrix.
 
     """
     s_k = np.zeros_like(rho_steady)

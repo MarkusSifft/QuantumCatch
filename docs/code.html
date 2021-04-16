@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Code Documentation &#8212; QuantumPolyspectra  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to QuantumPolyspectra’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-simulation">
+<span id="code-documentation"></span><h1>Code Documentation<a class="headerlink" href="#module-simulation" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="simulation.calc_super_A">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">calc_super_A</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">op</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.calc_super_A" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the super operator of A as defined in 10.1103/PhysRevB.98.205143</p>
+<dl class="simple">
+<dt>op<span class="classifier">array</span></dt><dd><p>Operator a for the calculation of A[a]</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>op_super<span class="classifier">array</span></dt><dd><p>super operator A</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="simulation.small_s">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">small_s</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho_steady</span></em>, <em class="sig-param"><span class="n">a_prim</span></em>, <em class="sig-param"><span class="n">eigvals</span></em>, <em class="sig-param"><span class="n">eigvecs</span></em>, <em class="sig-param"><span class="n">eigvec_inv</span></em>, <em class="sig-param"><span class="n">reshape_ind</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.small_s" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
+<dl class="simple">
+<dt>rho_steady<span class="classifier">array</span></dt><dd><p>A &#64; Steadystate desity matrix of the system</p>
+</dd>
+<dt>a_prim<span class="classifier">array</span></dt><dd><p>Super operator A’ as defined in 10.1103/PhysRevB.98.205143</p>
+</dd>
+<dt>eigvecs<span class="classifier">array</span></dt><dd><p>Eigenvectors of the Liouvillian</p>
+</dd>
+<dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
+</dd>
+<dt>eigvecs_inv<span class="classifier">array</span></dt><dd><p>The inverse eigenvectors of the Liouvillian</p>
+</dd>
+<dt>reshape_ind<span class="classifier">array</span></dt><dd><p>Indices that give the trace of a flattened matrix.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<span class="target" id="module-analysis"></span><dl class="py function">
+<dt id="analysis.c2">
+<code class="sig-prename descclassname">analysis.</code><code class="sig-name descname">c2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w</span></em>, <em class="sig-param"><span class="n">a_w_corr</span></em>, <em class="sig-param"><span class="n">m</span></em><span class="sig-paren">)</span><a class="headerlink" href="#analysis.c2" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculation of c2 for powerspectrum</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="analysis.c3">
+<code class="sig-prename descclassname">analysis.</code><code class="sig-name descname">c3</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w1</span></em>, <em class="sig-param"><span class="n">a_w2</span></em>, <em class="sig-param"><span class="n">a_w3</span></em>, <em class="sig-param"><span class="n">m</span></em><span class="sig-paren">)</span><a class="headerlink" href="#analysis.c3" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculation of c3 for bispectrum</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="analysis.c4">
+<code class="sig-prename descclassname">analysis.</code><code class="sig-name descname">c4</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w</span></em>, <em class="sig-param"><span class="n">a_w_corr</span></em>, <em class="sig-param"><span class="n">m</span></em><span class="sig-paren">)</span><a class="headerlink" href="#analysis.c4" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculation of c4 for trispectrum</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="analysis.calc_a_w3">
+<code class="sig-prename descclassname">analysis.</code><code class="sig-name descname">calc_a_w3</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w_all</span></em>, <em class="sig-param"><span class="n">f_max_ind</span></em>, <em class="sig-param"><span class="n">m</span></em><span class="sig-paren">)</span><a class="headerlink" href="#analysis.calc_a_w3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preparation of a_(w1+w2) for the calculation of the bispectrum</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="analysis.import_data">
+<code class="sig-prename descclassname">analysis.</code><code class="sig-name descname">import_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">group_key</span></em>, <em class="sig-param"><span class="n">dataset</span></em><span class="sig-paren">)</span><a class="headerlink" href="#analysis.import_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import of .h5 data with format group_key -&gt; data + attrs[dt]</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">QuantumPolyspectra</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Code Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to QuantumPolyspectra’s documentation!</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Markus Sifft, Daniel Hägele.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/code.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

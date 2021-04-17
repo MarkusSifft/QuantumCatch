@@ -48,6 +48,23 @@
 </dd></dl>
 
 <dl class="py function">
+<dt id="simulation.second_term">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">second_term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega1</span></em>, <em class="sig-param"><span class="n">omega2</span></em>, <em class="sig-param"><span class="n">omega3</span></em>, <em class="sig-param"><span class="n">s_k</span></em>, <em class="sig-param"><span class="n">eigvals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.second_term" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<p>omega1 : float
+omega2 : float
+omega3 : float
+s_k : array</p>
+<blockquote>
+<div><p>Array calculated with :func:small_s</p>
+</div></blockquote>
+<dl class="simple">
+<dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="simulation.small_s">
 <code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">small_s</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho_steady</span></em>, <em class="sig-param"><span class="n">a_prim</span></em>, <em class="sig-param"><span class="n">eigvals</span></em>, <em class="sig-param"><span class="n">eigvecs</span></em>, <em class="sig-param"><span class="n">eigvec_inv</span></em>, <em class="sig-param"><span class="n">reshape_ind</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.small_s" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
@@ -63,6 +80,23 @@
 <dt>eigvecs_inv<span class="classifier">array</span></dt><dd><p>The inverse eigenvectors of the Liouvillian</p>
 </dd>
 <dt>reshape_ind<span class="classifier">array</span></dt><dd><p>Indices that give the trace of a flattened matrix.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="simulation.third_term">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">third_term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega1</span></em>, <em class="sig-param"><span class="n">omega2</span></em>, <em class="sig-param"><span class="n">omega3</span></em>, <em class="sig-param"><span class="n">s_k</span></em>, <em class="sig-param"><span class="n">eigvals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.third_term" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<p>omega1 : float
+omega2 : float
+omega3 : float
+s_k : array</p>
+<blockquote>
+<div><p>Array calculated with :func:small_s</p>
+</div></blockquote>
+<dl class="simple">
+<dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
 </dd>
 </dl>
 </dd></dl>

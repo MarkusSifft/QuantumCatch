@@ -35,7 +35,6 @@
 import numpy as np
 from numpy.linalg import inv, eig
 from scipy.linalg import eig
-from scipy.fft import fft, rfftfreq, rfft, fftshift, fftfreq
 from scipy import signal
 from qutip import *
 import numba
@@ -255,7 +254,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind):  # s
         Eigenvectors of the Liouvillian
     eigvals : array
         Eigenvalues of the Liouvillian
-    eigvecs_inv : array
+    eigvec_inv : array
         The inverse eigenvectors of the Liouvillian
     reshape_ind : array
         Indices that give the trace of a flattened matrix.
@@ -354,6 +353,7 @@ def third_term(omega1, omega2, omega3, s_k, eigvals):
 def _full_bispec(r_in):
     """
     Turns the partial bispectrum (only the half of quadrant) into a full plain.
+
     Parameters
     ----------
     r_in : array
@@ -381,6 +381,18 @@ def _full_bispec(r_in):
 
 
 def _full_trispec(r_in):
+    """
+    Turns the partial trispectrum (only the half of quadrant) into a full plain.
+
+    Parameters
+    ----------
+    r_in : array
+        Partial spectrum
+    Returns
+    -------
+    m : array
+        Full plain of spectrum
+    """
     r = np.flipud(r_in)
     s, t = r.shape
     m = 1j * np.zeros((2 * s - 1, 2 * s - 1))
@@ -391,6 +403,20 @@ def _full_trispec(r_in):
 
 
 def time_series_setup(sc_ops, e_ops):
+    """
+    Creates a dataframe for storing the simulation results.
+
+    Parameters
+    ----------
+    sc_ops : dict
+        Dictionary with all stochastic collapse operators with corresponding names as keys.
+    e_ops : dict
+        Dictionary with all operators for the calculation of the expectation values with corresponding names as keys.
+
+    Returns
+    -------
+    A dataframe with columns names like the keys.
+    """
     sc_names = [op + '_noise' for op in list(sc_ops.keys())]
     cols = ['t'] + list(e_ops.keys()) + sc_names
     return pd.DataFrame(columns=cols)

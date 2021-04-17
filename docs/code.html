@@ -77,7 +77,7 @@ s_k : array</p>
 </dd>
 <dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
 </dd>
-<dt>eigvecs_inv<span class="classifier">array</span></dt><dd><p>The inverse eigenvectors of the Liouvillian</p>
+<dt>eigvec_inv<span class="classifier">array</span></dt><dd><p>The inverse eigenvectors of the Liouvillian</p>
 </dd>
 <dt>reshape_ind<span class="classifier">array</span></dt><dd><p>Indices that give the trace of a flattened matrix.</p>
 </dd>
@@ -99,6 +99,19 @@ s_k : array</p>
 <dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="simulation.time_series_setup">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">time_series_setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sc_ops</span></em>, <em class="sig-param"><span class="n">e_ops</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.time_series_setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a dataframe for storing the simulation results.</p>
+<dl class="simple">
+<dt>sc_ops<span class="classifier">dict</span></dt><dd><p>Dictionary with all stochastic collapse operators with corresponding names as keys.</p>
+</dd>
+<dt>e_ops<span class="classifier">dict</span></dt><dd><p>Dictionary with all operators for the calculation of the expectation values with corresponding names as keys.</p>
+</dd>
+</dl>
+<p>A dataframe with columns names like the keys.</p>
 </dd></dl>
 
 <span class="target" id="module-analysis"></span><dl class="py function">

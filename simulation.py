@@ -415,7 +415,7 @@ def time_series_setup(sc_ops, e_ops):
 
     Returns
     -------
-    A dataframe with columns names like the keys.
+    Returns a dataframe with columns names like the keys.
     """
     sc_names = [op + '_noise' for op in list(sc_ops.keys())]
     cols = ['t'] + list(e_ops.keys()) + sc_names
@@ -423,6 +423,18 @@ def time_series_setup(sc_ops, e_ops):
 
 
 def cgw(len_y):
+    """
+    Creates an array corresponding to the approx. confined gaussian window function
+
+    Parameters
+    ----------
+    len_y : int
+        Length of the window
+
+    Returns
+    -------
+    window : array
+    """
     def g(y):
         return np.exp(-((y - N_window / 2) / (2 * L * sigma_t)) ** 2)
 
@@ -435,6 +447,31 @@ def cgw(len_y):
 
 
 def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=None, filter_window=None):
+    """
+    Helper function for easy plotting with plotly.
+
+    Parameters
+    ----------
+    x : array
+    y : array
+    title : str
+        Plot title
+    domain : str ('freq', 'time')
+        Changes the plot style depending on input in frequency or time domain.
+    order : int (2, 3, 4)
+        Order of the spectrum to be shown.
+    y_label : str
+        Label of the y axis
+    x_label : str
+        Label of the x axis
+    legend : list
+        List of trace names for the legend.
+    filter_window : float
+        For noisy data the spectra can be convoluted with a gaussian of width filter_window
+    Returns
+    -------
+    Returns the figure.
+    """
     if domain == 'freq' and order == 2:
         fig = go.Figure(data=go.Scatter(x=x, y=y), layout_title_text=title)
     elif domain == 'freq' and order > 2:

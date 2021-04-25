@@ -76,15 +76,19 @@ def import_data(path, group_key, dataset):
     return main_data, delta_t
 
 
-def c2(a_w, a_w_corr, m):
+def c2(a_w, a_w_corr, m, coherent):
     """calculation of c2 for powerspectrum"""
     # ---------calculate spectrum-----------
     # C_2 = m / (m - 1) * (< a_w * a_w* > - < a_w > < a_w* >)
     #                          sum_1         sum_2   sum_3
     mean_1 = mean(a_w * conj(a_w_corr), dim=2)
-    mean_2 = mean(a_w, dim=2)
-    mean_3 = mean(conj(a_w_corr), dim=2)
-    s2 = m / (m - 1) * (mean_1 - mean_2 * mean_3)
+
+    if coherent:
+        s2 = mean_1
+    else:
+        mean_2 = mean(a_w, dim=2)
+        mean_3 = mean(conj(a_w_corr), dim=2)
+        s2 = m / (m - 1) * (mean_1 - mean_2 * mean_3)
     return s2
 
 
@@ -302,7 +306,7 @@ class Spectrum:
         return sigma_counter
 
     def calc_spec(self, order, window_size, f_max, dt=None, data=None, backend='opencl', scaling_factor=1,
-                  corr_data=None, corr_shift=0, verbose=True,
+                  corr_data=None, corr_shift=0, verbose=True, coherent=True,
                   break_after=1e6, m=10, window_shift=1, random_phase=False):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
         n_chunks = 0
@@ -410,7 +414,7 @@ class Spectrum:
                     single_spectrum = c2(a_w, a_w_corr, m)
 
                 else:
-                    single_spectrum = c2(a_w, a_w, m)
+                    single_spectrum = c2(a_w, a_w, m, coherent=coherent)
 
                 sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
 

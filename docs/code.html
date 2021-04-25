@@ -48,6 +48,44 @@
 </dd></dl>
 
 <dl class="py function">
+<dt id="simulation.cgw">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">cgw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">len_y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.cgw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an array corresponding to the approx. confined gaussian window function</p>
+<dl class="simple">
+<dt>len_y<span class="classifier">int</span></dt><dd><p>Length of the window</p>
+</dd>
+</dl>
+<p>window : array</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="simulation.plotly">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">plotly</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">title</span></em>, <em class="sig-param"><span class="n">domain</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y_label</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x_label</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">legend</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">filter_window</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.plotly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for easy plotting with plotly.</p>
+<p>x : array
+y : array
+title : str</p>
+<blockquote>
+<div><p>Plot title</p>
+</div></blockquote>
+<dl class="simple">
+<dt>domain<span class="classifier">str (‘freq’, ‘time’)</span></dt><dd><p>Changes the plot style depending on input in frequency or time domain.</p>
+</dd>
+<dt>order<span class="classifier">int (2, 3, 4)</span></dt><dd><p>Order of the spectrum to be shown.</p>
+</dd>
+<dt>y_label<span class="classifier">str</span></dt><dd><p>Label of the y axis</p>
+</dd>
+<dt>x_label<span class="classifier">str</span></dt><dd><p>Label of the x axis</p>
+</dd>
+<dt>legend<span class="classifier">list</span></dt><dd><p>List of trace names for the legend.</p>
+</dd>
+<dt>filter_window<span class="classifier">float</span></dt><dd><p>For noisy data the spectra can be convoluted with a gaussian of width filter_window</p>
+</dd>
+</dl>
+<p>Returns the figure.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt id="simulation.second_term">
 <code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">second_term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega1</span></em>, <em class="sig-param"><span class="n">omega2</span></em>, <em class="sig-param"><span class="n">omega3</span></em>, <em class="sig-param"><span class="n">s_k</span></em>, <em class="sig-param"><span class="n">eigvals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.second_term" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
@@ -111,7 +149,7 @@ s_k : array</p>
 <dt>e_ops<span class="classifier">dict</span></dt><dd><p>Dictionary with all operators for the calculation of the expectation values with corresponding names as keys.</p>
 </dd>
 </dl>
-<p>A dataframe with columns names like the keys.</p>
+<p>Returns a dataframe with columns names like the keys.</p>
 </dd></dl>
 
 <span class="target" id="module-analysis"></span><dl class="py function">

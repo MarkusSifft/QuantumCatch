@@ -507,6 +507,27 @@ def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=N
 
 
 class System(Spectrum):
+    """
+    Class that will represent the system of interest. It contain the parameters of the system and the
+    methods for calculating and storing the poly spectra.
+
+    Parameters
+    ----------
+    h : Qobj
+        Hamiltonian of the system.
+    psi_0 : Qobj
+        Initial state of the system for the integration of the SME.
+    c_ops : dict
+        Dictionary containing the collaps operators (as Qobj) with arbitrary str as keys.
+    sc_ops : dict
+        Dictionary containing the stochastic collaps operators (as Qobj) with arbitrary str as keys.
+    e_ops : dict
+        Dictionary containing the operators (as Qobj) used for the calculation of the
+        expectation values with arbitrary str as keys.
+
+    Attributes
+    ----------
+    """
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):
         # ------- Store inputs --------

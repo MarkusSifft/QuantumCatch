@@ -366,7 +366,7 @@ class Spectrum:
             if corr_data == 'white_noise':  # use white noise to check for false correlations
                 chunk_corr = np.random.randn(window_size, 1, m)
                 chunk_corr_gpu = to_gpu(chunk_corr)
-            elif corr_data:
+            elif self.corr_data is not None:
                 chunk_corr = scaling_factor * corr_data[int(i * (window_size * m) + corr_shift): int(
                     (i + 1) * (window_size * m) + corr_shift)]
                 chunk_corr_gpu = to_gpu(chunk_corr.reshape((window_size, 1, m), order='F'))
@@ -417,7 +417,7 @@ class Spectrum:
 
                 a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
-                if corr_data:
+                if self.corr_data is not None:
                     a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=delta_t)
                     a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
                     single_spectrum = c2(a_w, a_w_corr, m)
@@ -443,7 +443,7 @@ class Spectrum:
                 if order == 4:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
-                    if corr_data:
+                    if self.corr_data is not None:
                         a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=delta_t)
                         if random_phase:
                             a_w_all_corr = self.add_random_phase(a_w_all_corr, order, window_size, delta_t, m)

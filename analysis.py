@@ -184,7 +184,8 @@ def c4(a_w, a_w_corr, m):
 
 class Spectrum:
 
-    def __init__(self, path=None, group_key=None, dataset=None, dt=None, data=None):
+    def __init__(self, path=None, group_key=None, dataset=None, dt=None, data=None, corr_data=None,
+                 corr_path=None, corr_group_key=None, corr_dataset=None):
         self.path = path
         self.freq = [None, None, None, None, None]
         self.f_max = 0
@@ -202,6 +203,10 @@ class Spectrum:
         self.first_frame_plotted = False
         self.delta_t = 0
         self.data = data
+        self.corr_data = corr_data
+        self.corr_path = corr_path
+        self.corr_group_key = corr_group_key
+        self.corr_dataset = corr_dataset
         self.dt = dt
 
     def stationarity_plot(self, contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,
@@ -308,7 +313,7 @@ class Spectrum:
         return sigma_counter
 
     def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
-                  corr_data=None, corr_shift=0, verbose=True, coherent=True,
+                  corr_shift=0, verbose=True, coherent=False, corr_default=None,
                   break_after=1e6, m=10, window_shift=1, random_phase=False):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
         n_chunks = 0
@@ -340,8 +345,10 @@ class Spectrum:
         self.delta_t = delta_t
         corr_shift /= delta_t  # conversion of shift in seconds to shift in dt
 
-        if corr_data and not corr_data == 'white_noise':
-            corr_data, _ = import_data(corr_data, self.group_key, self.dataset)
+        if self.corr_data is None and not corr_default == 'white_noise':
+            corr_data, _ = import_data(self.corr_data_path, self.corr_group_key, self.corr_dataset)
+        else:
+            corr_data = self.corr_data
 
         n_data_points = main_data.shape[0]
         n_windows = int(np.floor(n_data_points / (m * window_size)))

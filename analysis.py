@@ -184,7 +184,7 @@ def c4(a_w, a_w_corr, m):
 
 class Spectrum:
 
-    def __init__(self, path, group_key, dataset):
+    def __init__(self, path=None, group_key=None, dataset=None, dt=None, data=None):
         self.path = path
         self.freq = [None, None, None, None, None]
         self.f_max = 0
@@ -305,7 +305,7 @@ class Spectrum:
 
         return sigma_counter
 
-    def calc_spec(self, order, window_size, f_max, dt=None, data=None, backend='opencl', scaling_factor=1,
+    def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
                   corr_data=None, corr_shift=0, verbose=True, coherent=True,
                   break_after=1e6, m=10, window_shift=1, random_phase=False):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
@@ -329,7 +329,7 @@ class Spectrum:
         sigma_counter = 0
 
         # -------data setup---------
-        if data is None:
+        if self.data is None:
             main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
         else:
             main_data = data

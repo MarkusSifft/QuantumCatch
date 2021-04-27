@@ -33,6 +33,26 @@
             
   <div class="section" id="module-simulation">
 <span id="code-documentation"></span><h1>Code Documentation<a class="headerlink" href="#module-simulation" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="simulation.System">
+<em class="property">class </em><code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">System</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">h</span></em>, <em class="sig-param"><span class="n">psi_0</span></em>, <em class="sig-param"><span class="n">c_ops</span></em>, <em class="sig-param"><span class="n">sc_ops</span></em>, <em class="sig-param"><span class="n">e_ops</span></em>, <em class="sig-param"><span class="n">c_measure_strength</span></em>, <em class="sig-param"><span class="n">sc_measure_strength</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.System" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class that will represent the system of interest. It contain the parameters of the system and the
+methods for calculating and storing the poly spectra.</p>
+<dl class="simple">
+<dt>h<span class="classifier">Qobj</span></dt><dd><p>Hamiltonian of the system.</p>
+</dd>
+<dt>psi_0<span class="classifier">Qobj</span></dt><dd><p>Initial state of the system for the integration of the SME.</p>
+</dd>
+<dt>c_ops<span class="classifier">dict</span></dt><dd><p>Dictionary containing the collaps operators (as Qobj) with arbitrary str as keys.</p>
+</dd>
+<dt>sc_ops<span class="classifier">dict</span></dt><dd><p>Dictionary containing the stochastic collaps operators (as Qobj) with arbitrary str as keys.</p>
+</dd>
+<dt>e_ops<span class="classifier">dict</span></dt><dd><p>Dictionary containing the operators (as Qobj) used for the calculation of the
+expectation values with arbitrary str as keys.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt id="simulation.calc_super_A">
 <code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">calc_super_A</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">op</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.calc_super_A" title="Permalink to this definition">¶</a></dt>
@@ -154,7 +174,7 @@ s_k : array</p>
 
 <span class="target" id="module-analysis"></span><dl class="py function">
 <dt id="analysis.c2">
-<code class="sig-prename descclassname">analysis.</code><code class="sig-name descname">c2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w</span></em>, <em class="sig-param"><span class="n">a_w_corr</span></em>, <em class="sig-param"><span class="n">m</span></em><span class="sig-paren">)</span><a class="headerlink" href="#analysis.c2" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">analysis.</code><code class="sig-name descname">c2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w</span></em>, <em class="sig-param"><span class="n">a_w_corr</span></em>, <em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">coherent</span></em><span class="sig-paren">)</span><a class="headerlink" href="#analysis.c2" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculation of c2 for powerspectrum</p>
 </dd></dl>
 

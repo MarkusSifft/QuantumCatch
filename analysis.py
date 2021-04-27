@@ -201,6 +201,8 @@ class Spectrum:
         self.m = None
         self.first_frame_plotted = False
         self.delta_t = 0
+        self.data = data
+        self.dt = dt
 
     def stationarity_plot(self, contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,
                           normalize='area'):
@@ -332,8 +334,8 @@ class Spectrum:
         if self.data is None:
             main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
         else:
-            main_data = data
-            delta_t = dt
+            main_data = self.data
+            delta_t = self.dt
 
         self.delta_t = delta_t
         corr_shift /= delta_t  # conversion of shift in seconds to shift in dt

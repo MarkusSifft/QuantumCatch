@@ -420,7 +420,7 @@ class Spectrum:
                 if self.corr_data is not None:
                     a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=delta_t)
                     a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
-                    single_spectrum = c2(a_w, a_w_corr, m)
+                    single_spectrum = c2(a_w, a_w_corr, m, coherent=coherent)
 
                 else:
                     single_spectrum = c2(a_w, a_w, m, coherent=coherent)
@@ -484,7 +484,7 @@ class Spectrum:
 
     def poly_plot(self, f_max, f_min=0, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
-                  s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None):
+                  s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False):
 
         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(24, 7), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
         plt.rc('text', usetex=False)
@@ -493,8 +493,12 @@ class Spectrum:
 
         # -------- S2 ---------
         if self.S[2] is not None:
-            s2_data = np.real(self.S[2]) if s2_data is None else np.real(s2_data)
-            s2_sigma = np.real(self.S_sigma[2]) if s2_sigma is None else np.real(s2_sigma)
+            if imag_plot:
+                s2_data = np.imag(self.S[2]) if s2_data is None else np.imag(s2_data)
+                s2_sigma = np.imag(self.S_sigma[2]) if s2_sigma is None else np.imag(s2_sigma)
+            else:
+                s2_data = np.real(self.S[2]) if s2_data is None else np.real(s2_data)
+                s2_sigma = np.real(self.S_sigma[2]) if s2_sigma is None else np.real(s2_sigma)
 
             s2_sigma_p = []
             s2_sigma_m = []
@@ -553,8 +557,13 @@ class Spectrum:
                 return np.ma.masked_array(np.interp(value, x_, y_), np.isnan(value))
 
         if self.S[3] is not None:
-            s3_data = np.real(self.S[3]).copy() if s3_data is None else np.real(s3_data).copy()
-            s3_sigma = np.real(self.S_sigma[3]).copy() if s3_sigma is None else np.real(s3_sigma).copy()
+
+            if imag_plot:
+                s3_data = np.imag(self.S[3]).copy() if s3_data is None else np.imag(s3_data).copy()
+                s3_sigma = np.imag(self.S_sigma[3]).copy() if s3_sigma is None else np.imag(s3_sigma).copy()
+            else:
+                s3_data = np.real(self.S[3]).copy() if s3_data is None else np.real(s3_data).copy()
+                s3_sigma = np.real(self.S_sigma[3]).copy() if s3_sigma is None else np.real(s3_sigma).copy()
 
             s3_sigma *= sigma
             if arcsinh_plot:
@@ -595,8 +604,12 @@ class Spectrum:
 
         # -------- S4 ---------
         if self.S[4] is not None:
-            s4_data = np.real(self.S[4]).copy() if s4_data is None else np.real(s4_data).copy()
-            s4_sigma = np.real(self.S_sigma[4]).copy() if s4_sigma is None else np.real(s4_sigma).copy()
+            if imag_plot:
+                s4_data = np.imag(self.S[4]).copy() if s4_data is None else np.imag(s4_data).copy()
+                s4_sigma = np.imag(self.S_sigma[4]).copy() if s4_sigma is None else np.imag(s4_sigma).copy()
+            else:
+                s4_data = np.real(self.S[4]).copy() if s4_data is None else np.real(s4_data).copy()
+                s4_sigma = np.real(self.S_sigma[4]).copy() if s4_sigma is None else np.real(s4_sigma).copy()
 
             s4_sigma *= sigma
             if arcsinh_plot:

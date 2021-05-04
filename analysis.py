@@ -208,6 +208,7 @@ class Spectrum:
         self.corr_group_key = corr_group_key
         self.corr_dataset = corr_dataset
         self.dt = dt
+        self.main_data = None
 
     def stationarity_plot(self, contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,
                           normalize='area'):
@@ -312,6 +313,40 @@ class Spectrum:
 
         return sigma_counter
 
+    def calc_overlap(self, unit, imag=False, scale_t=1):
+        plt.figure(figsize=(28, 13))
+
+        overlap_s2 = [np.sum(self.S_sigmas[2][:, i] * self.S[2]) for i in range(self.S_sigmas[2][1, :].shape[0])]
+
+        overlap_s3 = [np.sum(self.S_sigmas[3][:, :, i] * self.S[3]) for i in
+                      range(self.S_sigmas[3][1, 1, :].shape[0])]
+
+        overlap_s4 = [np.sum(self.S_sigmas[4][:, :, i] * self.S[4]) for i in
+                      range(self.S_sigmas[4][1, 1, :].shape[0])]
+
+        t = np.linspace(0, self.dt * self.main_data.shape[0], self.S_sigmas[4][1, 1, :].shape[0]) / scale_t
+        t_main = np.linspace(0, self.dt * self.main_data.shape[0], self.main_data.shape[0]) / scale_t
+
+        if imag:
+            overlap_s2 = np.imag(overlap_s2)
+            overlap_s3 = np.imag(overlap_s3)
+            overlap_s4 = np.imag(overlap_s4)
+
+        plt.plot(t, overlap_s2 / max(overlap_s2), label='s2')
+        plt.plot(t, overlap_s3 / max(overlap_s3), label='s3')
+        plt.plot(t, overlap_s4 / max(overlap_s4), label='s4')
+
+        plt.plot(t_main, self.main_data / max(self.main_data))
+        plt.legend()
+        plt.xlabel(unit)
+        plt.ylabel('normalized')
+        if not imag:
+            plt.title('real part')
+        else:
+            plt.title('imaginalry part')
+        plt.show()
+        return t, overlap_s2, overlap_s3, overlap_s4
+
     def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, verbose=True, coherent=False, corr_default=None,
                   break_after=1e6, m=10, window_shift=1, random_phase=False):
@@ -342,12 +377,13 @@ class Spectrum:
             main_data = self.data
             delta_t = self.dt
 
+        self.main_data = main_data
         self.delta_t = delta_t
         corr_shift /= delta_t  # conversion of shift in seconds to shift in dt
 
-        if self.corr_data is None and not corr_default == 'white_noise':
+        if self.corr_data is None and not corr_default == 'white_noise' and self.corr_path is not None:
             corr_data, _ = import_data(self.corr_data_path, self.corr_group_key, self.corr_dataset)
-        else:
+        elif self.corr_data is not None:
             corr_data = self.corr_data
 
         n_data_points = main_data.shape[0]
@@ -363,7 +399,7 @@ class Spectrum:
                 self.first_frame_plotted = True
 
             chunk_gpu = to_gpu(chunk.reshape((window_size, 1, m), order='F'))
-            if corr_data == 'white_noise':  # use white noise to check for false correlations
+            if self.corr_data == 'white_noise':  # use white noise to check for false correlations
                 chunk_corr = np.random.randn(window_size, 1, m)
                 chunk_corr_gpu = to_gpu(chunk_corr)
             elif self.corr_data is not None:

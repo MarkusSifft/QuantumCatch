@@ -520,7 +520,7 @@ class Spectrum:
 
     def poly_plot(self, f_max, f_min=0, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
-                  s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False):
+                  s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, plot_error=True):
 
         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(24, 7), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
         plt.rc('text', usetex=False)
@@ -557,15 +557,16 @@ class Spectrum:
 
             ax[0].set_xlim([f_min, f_max])
 
-            for i in range(0, 5):
-                ax[0].plot(s2_f, s2_sigma_p[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
-                           linewidth=2, label=r"$%i\sigma$" % (i + 1))
+            if plot_error:
+                for i in range(0, 5):
+                    ax[0].plot(s2_f, s2_sigma_p[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
+                               linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
-            #  labelLines(ax[0].get_lines(), zorder=2.5, align=False, fontsize=14)
+                #  labelLines(ax[0].get_lines(), zorder=2.5, align=False, fontsize=14)
 
-            for i in range(0, 5):
-                ax[0].plot(s2_f, s2_sigma_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
-                           linewidth=2, label=r"$%i\sigma$" % (i + 1))
+                for i in range(0, 5):
+                    ax[0].plot(s2_f, s2_sigma_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
+                               linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
             ax[0].plot(s2_f, s2_data, color=[0, 0.5, 0.9], linewidth=3)
 

@@ -534,39 +534,41 @@ class Spectrum:
                 s2_sigma = np.imag(self.S_sigma[2]) if s2_sigma is None else np.imag(s2_sigma)
             else:
                 s2_data = np.real(self.S[2]) if s2_data is None else np.real(s2_data)
-                s2_sigma = np.real(self.S_sigma[2]) if s2_sigma is None else np.real(s2_sigma)
+                if s2_sigma is not None or self.S_sigma[2] is not None:
+                    s2_sigma = np.real(self.S_sigma[2]) if s2_sigma is None else np.real(s2_sigma)
 
             s2_sigma_p = []
             s2_sigma_m = []
 
-            for i in range(0, 5):
-                s2_sigma_p.append(s2_data + (i + 1) * s2_sigma)
-                s2_sigma_m.append(s2_data - (i + 1) * s2_sigma)
+            if s2_sigma is not None or self.S_sigma[2] is not None:
+                for i in range(0, 5):
+                    s2_sigma_p.append(s2_data + (i + 1) * s2_sigma)
+                    s2_sigma_m.append(s2_data - (i + 1) * s2_sigma)
 
             if arcsinh_plot:
                 x_max = np.max(np.abs(s2_data))
                 alpha = 1 / (x_max * arcsinh_const)
                 s2_data = np.arcsinh(alpha * s2_data) / alpha
 
-                for i in range(0, 5):
-                    s2_sigma_p[i] = np.arcsinh(alpha * s2_sigma_p[i]) / alpha
-                    s2_sigma_m[i] = np.arcsinh(alpha * s2_sigma_m[i]) / alpha
+                if s2_sigma is not None or self.S_sigma[2] is not None:
+                    for i in range(0, 5):
+                        s2_sigma_p[i] = np.arcsinh(alpha * s2_sigma_p[i]) / alpha
+                        s2_sigma_m[i] = np.arcsinh(alpha * s2_sigma_m[i]) / alpha
 
             if s2_f is None:
                 s2_f = self.freq[2]
 
             ax[0].set_xlim([f_min, f_max])
 
-            if plot_error:
+            if plot_error and (s2_sigma is not None or self.S_sigma[2] is not None):
                 for i in range(0, 5):
                     ax[0].plot(s2_f, s2_sigma_p[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
                                linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
                 #  labelLines(ax[0].get_lines(), zorder=2.5, align=False, fontsize=14)
-
-                for i in range(0, 5):
-                    ax[0].plot(s2_f, s2_sigma_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
-                               linewidth=2, label=r"$%i\sigma$" % (i + 1))
+                    for i in range(0, 5):
+                        ax[0].plot(s2_f, s2_sigma_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
+                                   linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
             ax[0].plot(s2_f, s2_data, color=[0, 0.5, 0.9], linewidth=3)
 
@@ -600,14 +602,17 @@ class Spectrum:
                 s3_sigma = np.imag(self.S_sigma[3]).copy() if s3_sigma is None else np.imag(s3_sigma).copy()
             else:
                 s3_data = np.real(self.S[3]).copy() if s3_data is None else np.real(s3_data).copy()
-                s3_sigma = np.real(self.S_sigma[3]).copy() if s3_sigma is None else np.real(s3_sigma).copy()
+                if s3_sigma is not None or self.S_sigma[3] is not None:
+                    s3_sigma = np.real(self.S_sigma[3]).copy() if s3_sigma is None else np.real(s3_sigma).copy()
 
-            s3_sigma *= sigma
+            if s3_sigma is not None or self.S_sigma[3] is not None:
+                s3_sigma *= sigma
             if arcsinh_plot:
                 x_max = np.max(np.abs(s3_data))
                 alpha = 1 / (x_max * arcsinh_const)
                 s3_data = np.arcsinh(alpha * s3_data) / alpha
-                s3_sigma = np.arcsinh(alpha * s3_sigma) / alpha
+                if s3_sigma is not None or self.S_sigma[3] is not None:
+                    s3_sigma = np.arcsinh(alpha * s3_sigma) / alpha
 
             if s3_f is None:
                 s3_f = self.freq[3]
@@ -620,10 +625,12 @@ class Spectrum:
             y, x = np.meshgrid(s3_f, s3_f)
             z = s3_data.copy()
             sigma_matrix = np.zeros_like(z)
-            sigma_matrix[np.abs(s3_data) < s3_sigma] = 1
+            if s3_sigma is not None or self.S_sigma[3] is not None:
+                sigma_matrix[np.abs(s3_data) < s3_sigma] = 1
 
             c = (ax[1]).pcolormesh(x, y, z, cmap=cmap, norm=norm, shading='auto')
-            c1 = (ax[1]).pcolormesh(x, y, sigma_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
+            if s3_sigma is not None or self.S_sigma[3] is not None:
+                c1 = (ax[1]).pcolormesh(x, y, sigma_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
             if contours:
                 (ax[1]).contour(x, y, gaussian_filter(z, s3_filter), 15, colors='k', linewidths=0.7)
 
@@ -646,14 +653,17 @@ class Spectrum:
                 s4_sigma = np.imag(self.S_sigma[4]).copy() if s4_sigma is None else np.imag(s4_sigma).copy()
             else:
                 s4_data = np.real(self.S[4]).copy() if s4_data is None else np.real(s4_data).copy()
-                s4_sigma = np.real(self.S_sigma[4]).copy() if s4_sigma is None else np.real(s4_sigma).copy()
+                if s4_sigma is not None or self.S_sigma[4] is not None:
+                    s4_sigma = np.real(self.S_sigma[4]).copy() if s4_sigma is None else np.real(s4_sigma).copy()
 
-            s4_sigma *= sigma
+            if s4_sigma is not None or self.S_sigma[4] is not None:
+                s4_sigma *= sigma
             if arcsinh_plot:
                 x_max = np.max(np.abs(s4_data))
                 alpha = 1 / (x_max * arcsinh_const)
                 s4_data = np.arcsinh(alpha * s4_data) / alpha
-                s4_sigma = np.arcsinh(alpha * s4_sigma) / alpha
+                if s4_sigma is not None or self.S_sigma[4] is not None:
+                    s4_sigma = np.arcsinh(alpha * s4_sigma) / alpha
 
             if s4_f is None:
                 s4_f = self.freq[4]
@@ -666,10 +676,12 @@ class Spectrum:
             y, x = np.meshgrid(s4_f, s4_f)
             z = s4_data.copy()
             sigma_matrix = np.zeros_like(z)
-            sigma_matrix[np.abs(s4_data) < s4_sigma] = 1
+            if s4_sigma is not None or self.S_sigma[4] is not None:
+                sigma_matrix[np.abs(s4_data) < s4_sigma] = 1
 
             c = (ax[2]).pcolormesh(x, y, z, cmap=cmap, norm=norm, zorder=1, shading='auto')
-            c1 = (ax[2]).pcolormesh(x, y, sigma_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
+            if s4_sigma is not None or self.S_sigma[4] is not None:
+                c1 = (ax[2]).pcolormesh(x, y, sigma_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
 
             if contours:
                 (ax[2]).contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)

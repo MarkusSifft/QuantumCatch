@@ -543,8 +543,8 @@ class System(Spectrum):
         # ------ Space for future caluclations ------
         self.time_series_data_empty = time_series_setup(sc_ops, e_ops)
         self.time_series_data = None
-        self.f_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
-        self.spec_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
+        self.freq = {2: np.array([]), 3: np.array([]), 4: np.array([])}
+        self.S = {2: np.array([]), 3: np.array([]), 4: np.array([])}
 
         self.numeric_f_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
         self.numeric_spec_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
@@ -595,7 +595,7 @@ class System(Spectrum):
 
         omegas = 2 * np.pi * f_data  # [kHz]
         f_full = np.hstack((np.flip(-f_data)[:-1], f_data))
-        self.f_data[order] = f_full
+        self.freq[order] = f_full
 
         all_c_ops = {**self.c_ops, **self.sc_ops}
         measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
@@ -671,11 +671,11 @@ class System(Spectrum):
                 rho_prim = self.first_matrix_step(rho, omega)  # mathcal_a' * G'
                 rho_prim_neg = self.first_matrix_step(rho, -omega)
                 spec_data[i] = rho_prim[reshape_ind].sum() + rho_prim_neg[reshape_ind].sum()
-                # spec_data[i] = 2 * np.real(rho_prim[reshape_ind].sum())
-            self.spec_data[order] = np.hstack((np.flip(spec_data)[:-1], spec_data))
-            self.spec_data[order] = beta ** 4 * self.spec_data[order]
+                # S[i] = 2 * np.real(rho_prim[reshape_ind].sum())
+            self.S[order] = np.hstack((np.flip(spec_data)[:-1], spec_data))
+            self.S[order] = beta ** 4 * self.S[order]
             if beta_offset:
-                self.spec_data[order] += beta ** 2 / 4
+                self.S[order] += beta ** 2 / 4
         if order == 3:
             if bar:
                 print('Calculating bispectrum')
@@ -696,7 +696,7 @@ class System(Spectrum):
                     spec_data[ind_2 + ind_1, ind_1] = trace_sum  # np.real(trace_sum)
             if np.max(np.abs(np.imag(np.real_if_close(_full_bispec(spec_data))))) > 0:
                 print('Bispectrum might have an imaginary part')
-            self.spec_data[order] = np.real(_full_bispec(spec_data)) * beta ** 6
+            self.S[order] = np.real(_full_bispec(spec_data)) * beta ** 6
         if order == 4:
             if bar:
                 print('Calculating correlation spectrum')
@@ -744,7 +744,7 @@ class System(Spectrum):
                         spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
             if np.max(np.abs(np.imag(np.real_if_close(_full_trispec(spec_data))))) > 0:
                 print('Trispectrum might have an imaginary part')
-            self.spec_data[order] = np.real(_full_trispec(spec_data)) * beta ** 8
+            self.S[order] = np.real(_full_trispec(spec_data)) * beta ** 8
 
         # Delete cache
         cache.clear()
@@ -752,7 +752,7 @@ class System(Spectrum):
         # cache3.clear()
         cache4.clear()
         cache5.clear()
-        return self.spec_data[order]
+        return self.S[order]
 
     def plot_spectrum(self, order, title=None, log=False, x_range=False):
         fig = None
@@ -762,8 +762,8 @@ class System(Spectrum):
                 title = 'Power Spectrum'
             x_axis_label = 'f [kHz]'
             y_axis_label = 'S<sup>(2)</sup>(f)'
-            fs = self.f_data[order]
-            values = self.spec_data[order]
+            fs = self.freq[order]
+            values = self.S[order]
             if log:
                 values = np.log(values)
             fig = plotly(order=2, x=fs, y=values, title=title, domain='freq',
@@ -774,7 +774,7 @@ class System(Spectrum):
             fig.show()
 
         elif order > 2:
-            spec = self.spec_data[order]
+            spec = self.S[order]
             if order == 3:
                 # spec = np.arcsinh(spec / spec.max() * 5)
                 # if np.abs(spec.min()) >= spec.max():
@@ -784,8 +784,8 @@ class System(Spectrum):
 
                 # --------Plot the diagonal of the Bispectrum---------
                 # title = 'Bispectrum Cross Sections'
-                fs = self.f_data[order]
-                values = self.spec_data[order]
+                fs = self.freq[order]
+                values = self.S[order]
                 lines = [values[int(len(fs) / 2), :], values.diagonal(), values[-1, :]]
 
                 fig = make_subplots(rows=1, cols=2)
@@ -811,8 +811,8 @@ class System(Spectrum):
             elif order == 4:
                 # title = 'Correlation Spectrum, Max. value: {0:5.3e}'.format(np.max(spec))
                 # spec = np.arcsinh(spec / np.max(spec) * 5)
-                fs = self.f_data[order]
-                values = np.real(self.spec_data[order])
+                fs = self.freq[order]
+                values = np.real(self.S[order])
                 lines = [values[int(len(fs) / 2), :], values.diagonal(), values[-1, :]]
 
                 fig = make_subplots(rows=1, cols=2)

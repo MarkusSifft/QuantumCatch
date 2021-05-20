@@ -42,6 +42,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import matplotlib.colors as colors
+from matplotlib.colors import LinearSegmentedColormap
+from scipy.ndimage.filters import gaussian_filter
 
 from itertools import permutations
 from cachetools import cached
@@ -1019,3 +1022,134 @@ class System(Spectrum):
         self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
         return [self.numeric_f_data[order], self.numeric_spec_data[order]]
+
+    def single_plot(self, f_max, f_min=0, arcsinh_plot=False, arcsinh_const=0.02,
+                  contours=False, s3_filter=0, s4_filter=0, s2_data=None, s3_data=None,
+                  s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False):
+
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(12, 9))
+        plt.rc('text', usetex=False)
+        plt.rc('font', size=10)
+        plt.rcParams["axes.axisbelow"] = False
+
+        # -------- S2 ---------
+        if self.numeric_spec_data[2] is not None:
+            if imag_plot:
+                s2_data = np.imag(self.numeric_spec_data[2]) if s2_data is None else np.imag(s2_data)
+
+            else:
+                s2_data = np.real(self.numeric_spec_data[2]) if s2_data is None else np.real(s2_data)
+
+            if arcsinh_plot:
+                x_max = np.max(np.abs(s2_data))
+                alpha = 1 / (x_max * arcsinh_const)
+                s2_data = np.arcsinh(alpha * s2_data) / alpha
+
+            if s2_f is None:
+                s2_f = self.freq[2]
+
+            ax.set_xlim([f_min, f_max])
+
+            ax.plot(s2_f, s2_data, color=[0, 0.5, 0.9], linewidth=3)
+
+            ax.tick_params(axis='both', direction='in')
+            ax.set_ylabel(r"$S^{(2)}_z$ (Hz$^{-1}$)", labelpad=13, fontdict={'fontsize': 14})
+            ax.set_xlabel(r"$\omega / 2\pi$ (Hz)", labelpad=13, fontdict={'fontsize': 14})
+
+            ax.set_title(r"$S^{(2)}_z$ (Hz$^{-1}$)", fontdict={'fontsize': 16})
+
+        cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
+
+        color_array = np.array([[0., 0., 0., 0.],])
+        cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
+
+        # -------- S3 ---------
+
+        class MidpointNormalize(colors.Normalize):
+
+            def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+                self.midpoint = midpoint
+                colors.Normalize.__init__(self, vmin, vmax, clip)
+
+            def __call__(self, value, clip=None):
+                x_, y_ = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+                return np.ma.masked_array(np.interp(value, x_, y_), np.isnan(value))
+
+        if self.numeric_spec_data[3] is not None:
+
+            if imag_plot:
+                s3_data = np.imag(self.numeric_spec_data[3]).copy() if s3_data is None else np.imag(s3_data).copy()
+
+            else:
+                s3_data = np.real(self.numeric_spec_data[3]).copy() if s3_data is None else np.real(s3_data).copy()
+
+            if arcsinh_plot:
+                x_max = np.max(np.abs(s3_data))
+                alpha = 1 / (x_max * arcsinh_const)
+                s3_data = np.arcsinh(alpha * s3_data) / alpha
+
+            if s3_f is None:
+                s3_f = self.freq[3]
+
+            vmin = np.min(s3_data)
+            vmax = np.max(s3_data)
+
+            norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
+
+            y, x = np.meshgrid(s3_f, s3_f)
+            z = s3_data.copy()
+
+            c = ax.pcolormesh(x, y, z, cmap=cmap, norm=norm, shading='auto')
+
+            if contours:
+                (ax[1]).contour(x, y, gaussian_filter(z, s3_filter), 15, colors='k', linewidths=0.7)
+
+            ax.axis([f_min, f_max, f_min, f_max])
+            ax.set_ylabel(r"$\omega_2 / 2 \pi $ (Hz)", fontdict={'fontsize': 14})
+            ax.set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
+            ax.tick_params(axis='both', direction='in')
+            ax.set_title(r'$S^{(3)}_z $ (Hz$^{-2}$)',
+                            fontdict={'fontsize': 16})
+
+            cbar = fig.colorbar(c, ax=ax)
+
+        # -------- S4 ---------
+        if self.numeric_spec_data[4] is not None:
+            if imag_plot:
+                s4_data = np.imag(self.numeric_spec_data[4]).copy() if s4_data is None else np.imag(s4_data).copy()
+            else:
+                s4_data = np.real(self.numeric_spec_data[4]).copy() if s4_data is None else np.real(s4_data).copy()
+
+            if arcsinh_plot:
+                x_max = np.max(np.abs(s4_data))
+                alpha = 1 / (x_max * arcsinh_const)
+                s4_data = np.arcsinh(alpha * s4_data) / alpha
+
+            if s4_f is None:
+                s4_f = self.freq[4]
+
+            vmin = np.min(s4_data)
+            vmax = np.max(s4_data)
+
+            norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
+
+            y, x = np.meshgrid(s4_f, s4_f)
+            z = s4_data.copy()
+
+            c = ax.pcolormesh(x, y, z, cmap=cmap, norm=norm, zorder=1, shading='auto')
+
+            if contours:
+                ax.contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)
+
+            ax.axis([f_min, f_max, f_min, f_max])
+            ax.set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
+            ax.set_ylabel(r"$\omega_2 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
+            ax.tick_params(axis='both', direction='in')
+            ax.set_title(r'$S^{(4)}_z $ (Hz$^{-3}$)',
+                            fontdict={'fontsize': 16})
+
+            cbar = fig.colorbar(c, ax=ax)
+
+        plt.show()
+
+        return fig

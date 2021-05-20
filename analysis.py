@@ -349,8 +349,14 @@ class Spectrum:
 
     def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, verbose=True, coherent=False, corr_default=None,
-                  break_after=1e6, m=10, window_shift=1, random_phase=False):
+                  break_after=1e6, m=10, window_shift=1, random_phase=False, dt=None, data=None):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
+        if dt is not None:
+            self.dt = dt
+
+        if data is not None:
+            self.data = data
+
         n_chunks = 0
         af.set_backend(backend)
         window_size = int(window_size)

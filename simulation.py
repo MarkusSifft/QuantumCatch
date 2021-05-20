@@ -973,7 +973,7 @@ class System(Spectrum):
                     fig.show()
 
                 elif order > 2 and n_chunks >= 4:
-                    m = n_chunks
+
                     if order == 3:
 
                         self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)

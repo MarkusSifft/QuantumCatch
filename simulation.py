@@ -963,17 +963,16 @@ class System(Spectrum):
                 self.numeric_f_data[order] = f_data
                 # ------ Realtime spectrum plots
                 if order == 2 and n_chunks >= 2:
-                    title = 'Realtime Powerspectrum of ' + measure_op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
-                        n_chunks) + '<br>' + title_in
+                    title = 'Realtime Powerspectrum of ' + measure_op + ': {} Samples'.format(
+                        n_chunks) + title_in
 
                     self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
                     clear_output(wait=True)
-                    fig = plotly(self.numeric_f_data[order], np.real_if_close(self.numeric_spec_data[order]),
-                                 order=order,
-                                 title=title, domain='freq', y_label='S<sup>(2)</sup>(f)', x_label='f [kHz]')
-                    fig['layout']['xaxis1'].update(range=[0, f_max])
-                    fig.show()
+
+                    fig = self.single_plot(order, f_max, f_min=0, arcsinh_plot=False, arcsinh_const=0.02,
+                                contours=False, s3_filter=0, s4_filter=0, s2_data=None, s3_data=None,
+                                s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, title=title)
 
                 elif order > 2 and n_chunks >= 4:
 
@@ -995,45 +994,27 @@ class System(Spectrum):
 
                     clear_output(wait=True)
 
-                    lines = [spec[int(len(f) / 2), :], spec.diagonal(), spec[-1, :]]
-
-                    fig = make_subplots(rows=1, cols=2)
-                    legend = ['(f,0)', '(f,f)', '(f,f<sub>max</sub>)']
-                    for i, trace in enumerate(lines):
-                        fig.add_trace(go.Scatter(x=f, y=trace, name=legend[i]),
-                                      row=1, col=1)
-
-                    contours = dict(start=np.min(spec), end=np.max(spec), size=(np.max(spec) - np.min(spec)) / 20)
-                    fig.add_trace(go.Contour(z=spec, x=f, y=f,
-                                             contours=contours, colorscale='Bluered',
-                                             **{'contours_coloring': 'lines', 'line_width': 2}),
-                                  row=1, col=2)
-                    fig.update_layout(legend_orientation="h", title_text=title,
-                                      autosize=False, width=1300, height=550)
-                    fig.update_xaxes(title_text="f [kHz]", row=1, col=1)
-                    fig.update_xaxes(title_text="f<sub>1</sub> [kHz]", row=1, col=2)
-                    if order == 3:
-                        fig.update_yaxes(title_text="S<sup>(3)</sup>", row=1, col=1)
-                    elif order == 4:
-                        fig.update_yaxes(title_text="S<sup>(4)</sup>", row=1, col=1)
-                    fig.update_yaxes(title_text="f<sub>2</sub> [kHz]", row=1, col=2)
-                    fig.show()
+                    fig = self.single_plot(order, f_max, f_min=0, arcsinh_plot=False, arcsinh_const=0.02,
+                                           contours=False, s3_filter=0, s4_filter=0, s2_data=None, s3_data=None,
+                                           s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, title=title)
 
         self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
         return [self.numeric_f_data[order], self.numeric_spec_data[order]]
 
-    def single_plot(self, f_max, f_min=0, arcsinh_plot=False, arcsinh_const=0.02,
+    def single_plot(self, order, f_max, f_min=0, arcsinh_plot=False, arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s3_data=None,
-                  s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False):
-
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(12, 9))
+                  s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, title=None):
+        if order == 2:
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(11, 6))
+        else:
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(12, 9))
         plt.rc('text', usetex=False)
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
         # -------- S2 ---------
-        if self.numeric_spec_data[2] is not None:
+        if order == 2:
             if imag_plot:
                 s2_data = np.imag(self.numeric_spec_data[2]) if s2_data is None else np.imag(s2_data)
 
@@ -1046,7 +1027,7 @@ class System(Spectrum):
                 s2_data = np.arcsinh(alpha * s2_data) / alpha
 
             if s2_f is None:
-                s2_f = self.freq[2]
+                s2_f = self.numeric_f_data[2]
 
             ax.set_xlim([f_min, f_max])
 
@@ -1056,12 +1037,9 @@ class System(Spectrum):
             ax.set_ylabel(r"$S^{(2)}_z$ (Hz$^{-1}$)", labelpad=13, fontdict={'fontsize': 14})
             ax.set_xlabel(r"$\omega / 2\pi$ (Hz)", labelpad=13, fontdict={'fontsize': 14})
 
-            ax.set_title(r"$S^{(2)}_z$ (Hz$^{-1}$)", fontdict={'fontsize': 16})
+            ax.set_title(title, fontdict={'fontsize': 16})
 
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
-
-        color_array = np.array([[0., 0., 0., 0.],])
-        cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 
         # -------- S3 ---------
 
@@ -1075,7 +1053,7 @@ class System(Spectrum):
                 x_, y_ = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
                 return np.ma.masked_array(np.interp(value, x_, y_), np.isnan(value))
 
-        if self.numeric_spec_data[3] is not None:
+        if order == 3:
 
             if imag_plot:
                 s3_data = np.imag(self.numeric_spec_data[3]).copy() if s3_data is None else np.imag(s3_data).copy()
@@ -1089,7 +1067,7 @@ class System(Spectrum):
                 s3_data = np.arcsinh(alpha * s3_data) / alpha
 
             if s3_f is None:
-                s3_f = self.freq[3]
+                s3_f = self.numeric_f_data[3]
 
             vmin = np.min(s3_data)
             vmax = np.max(s3_data)
@@ -1102,19 +1080,18 @@ class System(Spectrum):
             c = ax.pcolormesh(x, y, z, cmap=cmap, norm=norm, shading='auto')
 
             if contours:
-                (ax[1]).contour(x, y, gaussian_filter(z, s3_filter), 15, colors='k', linewidths=0.7)
+                ax.contour(x, y, gaussian_filter(z, s3_filter), 15, colors='k', linewidths=0.7)
 
             ax.axis([f_min, f_max, f_min, f_max])
             ax.set_ylabel(r"$\omega_2 / 2 \pi $ (Hz)", fontdict={'fontsize': 14})
             ax.set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
             ax.tick_params(axis='both', direction='in')
-            ax.set_title(r'$S^{(3)}_z $ (Hz$^{-2}$)',
-                            fontdict={'fontsize': 16})
+            ax.set_title(title, fontdict={'fontsize': 16})
 
             cbar = fig.colorbar(c, ax=ax)
 
         # -------- S4 ---------
-        if self.numeric_spec_data[4] is not None:
+        if order == 4:
             if imag_plot:
                 s4_data = np.imag(self.numeric_spec_data[4]).copy() if s4_data is None else np.imag(s4_data).copy()
             else:
@@ -1126,7 +1103,7 @@ class System(Spectrum):
                 s4_data = np.arcsinh(alpha * s4_data) / alpha
 
             if s4_f is None:
-                s4_f = self.freq[4]
+                s4_f = self.numeric_f_data[4]
 
             vmin = np.min(s4_data)
             vmax = np.max(s4_data)
@@ -1145,8 +1122,7 @@ class System(Spectrum):
             ax.set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
             ax.set_ylabel(r"$\omega_2 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
             ax.tick_params(axis='both', direction='in')
-            ax.set_title(r'$S^{(4)}_z $ (Hz$^{-3}$)',
-                            fontdict={'fontsize': 16})
+            ax.set_title(title, fontdict={'fontsize': 16})
 
             cbar = fig.colorbar(c, ax=ax)
 

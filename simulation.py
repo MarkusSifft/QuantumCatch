@@ -58,13 +58,16 @@ from arrayfire.interop import from_ndarray as to_gpu
 
 from QuantumPolyspectra.analysis import Spectrum
 
+
 def conditional_decorator(dec, condition):
     def decorator(func):
         if not condition:
             # Return the function unchanged, not decorated.
             return func
         return dec(func)
+
     return decorator
+
 
 # ------ setup caches for a speed up when summing over all permutations -------
 cache = LFUCache(maxsize=int(3e2))
@@ -88,6 +91,7 @@ def calc_super_A(op):
     op_super : array
         super operator A
     """
+
     def calc_A(rho, op):
         """
         Calculates A[op] as defined in 10.1103/PhysRevB.98.205143
@@ -207,7 +211,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
 
 # ------ can be cached for large systems --------
 # @cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu: hashkey(omega,omega2))
-def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu):
+def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind):
     """
     Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used
     for the calculation of bispectrum.
@@ -230,7 +234,7 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
 
     """
     _ = omega2
-    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu)
+    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind)
     if enable_gpu:
         rho_prim = af.matmul(G_prim, rho)
         out = af.matmul(a_prim, rho_prim)
@@ -240,7 +244,7 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
     return out
 
 
-def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu):
+def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind):
     """
     Calculates one matrix multiplication in Eqs. 109 in 10.1103/PhysRevB.98.205143. Used
     for the calculation of trispectrum.
@@ -260,7 +264,7 @@ def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu):
         The inverse eigenvectors of the Liouvillian
 
     """
-    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu)
+    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind)
     if enable_gpu:
         rho_prim = af.matmul(G_prim, rho)
         out = af.matmul(a_prim, rho_prim)
@@ -273,7 +277,7 @@ def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu):
 # ------- Second Term of S(4) ---------
 
 # @njit(parallel=True, fastmath=True)
-def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enable_gpu):  # small s from Erratum (Eq. 7)
+def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enable_gpu, zero_ind):  # small s from Erratum (Eq. 7)
     """
     Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901
 
@@ -296,15 +300,11 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
     if enable_gpu:
         s_k = to_gpu(np.zeros_like(rho_steady))
-        _, zero_ind = af.algorithm.imax(af.arith.real(eigvals))
-        iterator = af.ParallelRange(len(s_k))
 
     else:
         s_k = np.zeros_like(rho_steady)
-        zero_ind = np.argmax(np.real(eigvals))
-        iterator = range(len(s_k))
 
-    for i in iterator:
+    for i in range(len(s_k)):
         if enable_gpu:
             S = to_gpu(np.zeros_like(eigvecs))
         else:
@@ -324,6 +324,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
             else:
                 s_k[i] = ((a_prim @ eigvecs @ S @ eigvec_inv @ a_prim @ rho_steady)[reshape_ind]).sum()
     return s_k
+
 
 # @njit(fastmath=True)
 ## @cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
@@ -351,18 +352,21 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     # iterator = list(range(len(s_k)))
     # iterator.remove(zero_ind)
 
-    #if enable_gpu:
+    # if enable_gpu:
     #    inner_iterator = af.ParallelRange(len(s_k))
-    #else:
+    # else:
     #    inner_iterator = np.array(list(range(len(s_k))))
     #    inner_iterator = inner_iterator[np.abs(s_k) > 1e-10 * np.max(np.abs(s_k))]
 
     if enable_gpu:
-        ones = to_gpu(np.ones_like(s_k.to_ndarray()))
+        # ones = to_gpu(np.ones_like(s_k.to_ndarray()))
+        # ones = af.constant(1, eigvals.shape[0], dtype=af.Dtype.c64)
         temp1 = af.matmulNT(s_k, s_k)
         temp2 = af.matmulNT(eigvals + 1j * nu1, eigvals + 1j * nu3)
-        temp3 = af.matmulNT(eigvals, ones) + af.matmulNT(ones, eigvals) + 1j * nu2
-        out = af.algorithm.sum(temp1 * 1 / (temp2 * temp3))
+        # temp3 = af.matmulNT(eigvals, ones) + af.matmulNT(ones, eigvals) + 1j * nu2
+        temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
+        out = temp1 * 1 / (temp2 * temp3)
+        out = af.data.moddims(out, d0=1, d1=1, d2=out.shape[0], d3=out.shape[1])
 
     else:
         iterator = np.array(list(range(len(s_k))))
@@ -376,7 +380,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     return out
 
 
-#@njit(fastmath=True)
+# @njit(fastmath=True)
 ## @cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
@@ -403,11 +407,17 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     # iterator.remove(zero_ind)
 
     if enable_gpu:
-        ones = to_gpu(np.ones_like(s_k.to_ndarray()))
+        # ones = to_gpu(np.ones_like(s_k.to_ndarray()))
         temp1 = af.matmulNT(s_k, s_k)
-        temp2 = af.matmulNT(eigvals + 1j * nu1, eigvals + 1j * nu3)
-        temp3 = af.matmulNT(eigvals, ones) + af.matmulNT(ones, eigvals) + 1j * nu2
-        out = af.algorithm.sum(temp1 * 1 / (temp2 * temp3))
+        # temp2 = af.matmulNT((eigvals + 1j * nu1)*(eigvals + 1j * nu3), ones)
+        temp2 = af.tile((eigvals + 1j * nu1) * (eigvals + 1j * nu3), 1, eigvals.shape[0])
+
+        #temp3 = af.matmulNT(eigvals, ones) + af.matmulNT(ones, eigvals) + 1j * nu2
+        temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
+
+        out = temp1 * 1 / (temp2 * temp3)
+
+        out = af.data.moddims(out, d0=1, d1=1, d2=out.shape[0], d3=out.shape[1])
 
     else:
         iterator = np.array(list(range(len(s_k))))
@@ -509,6 +519,7 @@ def cgw(len_y):
     -------
     window : array
     """
+
     def g(y):
         return np.exp(-((y - N_window / 2) / (2 * L * sigma_t)) ** 2)
 
@@ -653,10 +664,12 @@ class System(Spectrum):
                                   self.enable_gpu, self.zero_ind)
 
     def second_matrix_step(self, rho, omega, omega2):
-        return _second_matrix_step(rho, omega, omega2, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv, self.enable_gpu)
+        return _second_matrix_step(rho, omega, omega2, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
+                                   self.enable_gpu, self.zero_ind)
 
     def matrix_step(self, rho, omega):
-        return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv, self.enable_gpu)
+        return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
+                            self.enable_gpu, self.zero_ind)
 
     def calc_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True, beta=None,
                       correction_only=False, beta_offset=True, enable_gpu=False):
@@ -708,7 +721,6 @@ class System(Spectrum):
                 op_super[:, j] = rho_dot
             return op_super
 
-
         L = calc_super_liou(self.H.full(), c_ops_m)
 
         print('Diagonalizing L')
@@ -726,7 +738,7 @@ class System(Spectrum):
         if order == 2:
             spec_data = np.ones_like(omegas)
         else:
-            spec_data = 1j * np.ones((len(omegas), len(omegas)))
+            spec_data = 1j * np.zeros((len(omegas), len(omegas)))
 
         zero_ind = np.argmax(np.real(self.eigvals))
         rho_steady = self.eigvecs[:, zero_ind]
@@ -747,10 +759,20 @@ class System(Spectrum):
         rho = self.A_prim @ rho_steady
 
         if self.enable_gpu:
-            self.eigvals, self.eigvecs, self.eigvecs_inv = to_gpu(self.eigvals), to_gpu(self.eigvecs), to_gpu(self.eigvecs_inv)
+            self.eigvals, self.eigvecs, self.eigvecs_inv = to_gpu(self.eigvals), to_gpu(self.eigvecs), to_gpu(
+                self.eigvecs_inv)
             rho = to_gpu(rho)
             self.A_prim = to_gpu(self.A_prim)
-            rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(reshape_ind))))
+
+            if order == 2:
+                rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(reshape_ind))))
+            elif order == 3:
+                rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(reshape_ind))))
+            else:
+                rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(reshape_ind))))
+                second_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas), *rho_steady.shape, *rho_steady.shape)))
+                third_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas), *rho_steady.shape, *rho_steady.shape)))
+
             reshape_ind = to_gpu(reshape_ind)
             self.rho_steady = to_gpu(self.rho_steady)
 
@@ -793,11 +815,20 @@ class System(Spectrum):
                         rho_prim = self.first_matrix_step(rho, omega[2] + omega[1])
                         rho_prim = self.second_matrix_step(rho_prim, omega[1], omega[2] + omega[1])
                         if enable_gpu:
-                            trace_sum += af.algorithm.sum(rho_prim[reshape_ind])
+                            rho_prim_sum[ind_1, ind_2 + ind_1, :] += af.data.moddims(rho_prim[reshape_ind], d0=1, d1=1,
+                                                                                     d2=reshape_ind.shape[0])
                         else:
                             trace_sum += rho_prim[reshape_ind].sum()
-                    spec_data[ind_1, ind_2 + ind_1] = trace_sum  # np.real(trace_sum)
-                    spec_data[ind_2 + ind_1, ind_1] = trace_sum  # np.real(trace_sum)
+
+                    if not enable_gpu:
+                        spec_data[ind_1, ind_2 + ind_1] = trace_sum  # np.real(trace_sum)
+                        # spec_data[ind_2 + ind_1, ind_1] = trace_sum  # np.real(trace_sum)
+
+            if enable_gpu:
+                spec_data = af.algorithm.sum(rho_prim_sum, dim=2).to_ndarray()
+
+            spec_data[(spec_data == 0).nonzero()] = spec_data.T[(spec_data == 0).nonzero()]
+
             if np.max(np.abs(np.imag(np.real_if_close(_full_bispec(spec_data))))) > 0:
                 print('Bispectrum might have an imaginary part')
             self.S[order] = np.real(_full_bispec(spec_data)) * beta ** 6
@@ -809,13 +840,14 @@ class System(Spectrum):
                 counter = enumerate(omegas)
 
             print('Calculating small s')
-            s_k = small_s(self.rho_steady, self.A_prim, self.eigvals, self.eigvecs, self.eigvecs_inv, reshape_ind, enable_gpu)
+            s_k = small_s(self.rho_steady, self.A_prim, self.eigvals, self.eigvecs, self.eigvecs_inv, reshape_ind,
+                          enable_gpu, zero_ind)
             print('Done')
             self.s_k = s_k
 
             for ind_1, omega_1 in counter:
-                #for ind_2, omega_2 in enumerate(omegas[ind_1:]):
-                for ind_2, omega_2 in tqdm_notebook(enumerate(omegas[ind_1:]), total=len(omegas[ind_1:])):
+                # for ind_2, omega_2 in enumerate(omegas[ind_1:]):
+                for ind_2, omega_2 in enumerate(omegas[ind_1:]):
                     # Calculate all permutation for the trace_sum
                     var = np.array([omega_1, -omega_1, omega_2, -omega_2])
                     perms = list(permutations(var))
@@ -844,15 +876,26 @@ class System(Spectrum):
                             rho_prim = self.matrix_step(rho_prim, omega[3])
 
                             if enable_gpu:
-                                trace_sum += af.algorithm.sum(rho_prim[reshape_ind])
+
+                                rho_prim_sum[ind_1, ind_2 + ind_1, :] += af.data.moddims(rho_prim[reshape_ind], d0=1, d1=1,
+                                                                                        d2=reshape_ind.shape[0])
+                                second_term_mat[ind_1, ind_2 + ind_1, :, :] += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
+                                third_term_mat[ind_1, ind_2 + ind_1, :, :] += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
                             else:
+
                                 trace_sum += rho_prim[reshape_ind].sum()
+                                second_term_sum += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
+                                third_term_sum += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
 
-                            second_term_sum += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
-                            third_term_sum += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
+                        if not enable_gpu:
+                            spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum + trace_sum
+                            spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
+            if enable_gpu:
+                spec_data = af.algorithm.sum(rho_prim_sum, dim=2).to_ndarray()
+                spec_data += af.algorithm.sum(af.algorithm.sum(second_term_mat + third_term_mat, dim=3), dim=2).to_ndarray()
 
-                        spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum + trace_sum
-                        spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
+                spec_data[(spec_data == 0).nonzero()] = spec_data.T[(spec_data == 0).nonzero()]
+
             if np.max(np.abs(np.imag(np.real_if_close(_full_trispec(spec_data))))) > 0:
                 print('Trispectrum might have an imaginary part')
             self.S[order] = np.real(_full_trispec(spec_data)) * beta ** 8
@@ -1020,7 +1063,8 @@ class System(Spectrum):
             a_w3[i, :] = a_w[i:i + mat_size]
         return a_w3.conj()
 
-    def numeric_spec(self, t_window_in, measure_op, f_max, power, order, max_samples, m=5, _solver='milstein', plot_after=12,
+    def numeric_spec(self, t_window_in, measure_op, f_max, power, order, max_samples, m=5, _solver='milstein',
+                     plot_after=12,
                      title_in=None, with_noise=False, _normalize=None,
                      roll=False, plot_simulation=False, backend='opencl'):
         self.fs = None
@@ -1040,7 +1084,8 @@ class System(Spectrum):
             #    print('Window length must be odd')
             #    break
 
-            traces = [self.parallel_tranisent(np.random.randint(1,1e5), measure_op, t=t_window_in, _solver=_solver, _normalize=_normalize,
+            traces = [self.parallel_tranisent(np.random.randint(1, 1e5), measure_op, t=t_window_in, _solver=_solver,
+                                              _normalize=_normalize,
                                               with_noise=with_noise)]
 
             for trace in traces:
@@ -1067,7 +1112,7 @@ class System(Spectrum):
                 all_spectra.append(spec_data)
                 self.numeric_f_data[order], self.numeric_spec_data[order] = f_data, spec_data
 
-            if (n_chunks+1)%plot_after == 0:
+            if (n_chunks + 1) % plot_after == 0:
                 self.numeric_f_data[order] = f_data
                 # ------ Realtime spectrum plots
                 if order == 2 and n_chunks >= 2:
@@ -1079,8 +1124,8 @@ class System(Spectrum):
                     clear_output(wait=True)
 
                     fig = self.single_plot(order, f_max, f_min=0, arcsinh_plot=False, arcsinh_const=0.02,
-                                contours=False, s3_filter=0, s4_filter=0, s2_data=None, s3_data=None,
-                                s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, title=title)
+                                           contours=False, s3_filter=0, s4_filter=0, s2_data=None, s3_data=None,
+                                           s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, title=title)
 
                 elif order > 2 and n_chunks >= 4:
 
@@ -1088,13 +1133,15 @@ class System(Spectrum):
 
                         self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
-                        title = 'Realtime Bispectrum of ' + measure_op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
+                        title = 'Realtime Bispectrum of ' + measure_op + '<sup>' + str(
+                            power) + '</sup>: {} Samples'.format(
                             n_chunks) + '<br>' + title_in
                     else:
 
                         self.numeric_spec_data[order] = sum(all_spectra) / len(all_spectra)
 
-                        title = 'Realtime Trispectrum of ' + measure_op + '<sup>' + str(power) + '</sup>: {} Samples'.format(
+                        title = 'Realtime Trispectrum of ' + measure_op + '<sup>' + str(
+                            power) + '</sup>: {} Samples'.format(
                             n_chunks) + '<br>' + title_in
 
                     f = self.numeric_f_data[order]
@@ -1111,8 +1158,8 @@ class System(Spectrum):
         return [self.numeric_f_data[order], self.numeric_spec_data[order]]
 
     def single_plot(self, order, f_max, f_min=0, arcsinh_plot=False, arcsinh_const=0.02,
-                  contours=False, s3_filter=0, s4_filter=0, s2_data=None, s3_data=None,
-                  s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, title=None):
+                    contours=False, s3_filter=0, s4_filter=0, s2_data=None, s3_data=None,
+                    s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, title=None):
         if order == 2:
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(11, 6))
         else:

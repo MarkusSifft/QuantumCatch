@@ -416,8 +416,8 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
         temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
 
         out = temp1 * 1 / (temp2 * temp3)
-
-        out = af.data.moddims(out, d0=1, d1=1, d2=out.shape[0], d3=out.shape[1])
+        out = af.algorithm.sum(af.algorithm.sum(af.data.moddims(out, d0=eigvals.shape[0], d1=eigvals.shape[0], d2=1, d3=1), dim=0), dim=1)
+        #out = af.data.moddims(out, d0=1, d1=1, d2=out.shape[0], d3=out.shape[1])
 
     else:
         iterator = np.array(list(range(len(s_k))))

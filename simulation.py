@@ -366,7 +366,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
         # temp3 = af.matmulNT(eigvals, ones) + af.matmulNT(ones, eigvals) + 1j * nu2
         temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
         out = temp1 * 1 / (temp2 * temp3)
-        out = af.data.moddims(out, d0=1, d1=1, d2=out.shape[0], d3=out.shape[1])
+        out = af.data.moddims(af.algorithm.sum(af.algorithm.sum(out, dim=3), dim=2), d0=1, d1=1, d2=1, d3=1)
 
     else:
         iterator = np.array(list(range(len(s_k))))
@@ -771,8 +771,8 @@ class System(Spectrum):
                 rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(reshape_ind))))
             else:
                 rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(reshape_ind))))
-                second_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas), *rho_steady.shape, *rho_steady.shape)))
-                third_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas), *rho_steady.shape, *rho_steady.shape)))
+                second_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas))))
+                third_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas))))
 
             reshape_ind = to_gpu(reshape_ind)
             self.rho_steady = to_gpu(self.rho_steady)
@@ -880,8 +880,8 @@ class System(Spectrum):
 
                                 rho_prim_sum[ind_1, ind_2 + ind_1, :] += af.data.moddims(rho_prim[reshape_ind], d0=1, d1=1,
                                                                                         d2=reshape_ind.shape[0])
-                                second_term_mat[ind_1, ind_2 + ind_1, :, :] += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
-                                third_term_mat[ind_1, ind_2 + ind_1, :, :] += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
+                                second_term_mat[ind_1, ind_2 + ind_1] += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
+                                third_term_mat[ind_1, ind_2 + ind_1] += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
                             else:
 
                                 trace_sum += rho_prim[reshape_ind].sum()

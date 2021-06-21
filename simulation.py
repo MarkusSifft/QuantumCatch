@@ -616,7 +616,6 @@ class System(Spectrum):
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):
         # ------- Store inputs --------
-        print('new version')
         super().__init__(None, None, None)
         self.H = h
         self.psi_0 = psi_0
@@ -653,7 +652,7 @@ class System(Spectrum):
 
         # ------- Enable GPU for large systems -------
         self.enable_gpu = False
-        self.gpu_0 = to_gpu(np.array([0.]))
+        self.gpu_0 = to_gpu(np.array([0. * 1j]))
 
     def fourier_g_prim(self, omega):
         return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)

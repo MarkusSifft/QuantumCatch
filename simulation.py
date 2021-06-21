@@ -112,8 +112,8 @@ def calc_super_A(op):
 
 # @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-## @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu: hashkey(nu))  # eigvecs change with magnetic field
-def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind):
+@cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
+def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
 
@@ -136,7 +136,7 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind):
 
     if enable_gpu:
         diagonal = 1 / (-eigvals - 1j * nu)
-        diagonal[zero_ind] = 0
+        diagonal[zero_ind] = gpu_0 #0
         diag_mat = af.data.diag(diagonal, extract=False)
 
         tmp = af.matmul(diag_mat, eigvecs_inv)
@@ -178,8 +178,8 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     return G_prim
 
 
-# @cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu: hashkey(omega))
-def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind):
+@cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
+def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates first matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143. Used
     for the calculation of power- and bispectrum.
@@ -199,7 +199,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
         The inverse eigenvectors of the Liouvillian
 
     """
-    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind)
+    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
     if enable_gpu:
         rho_prim = af.matmul(G_prim, rho)
         out = af.matmul(a_prim, rho_prim)
@@ -210,8 +210,8 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
 
 
 # ------ can be cached for large systems --------
-# @cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu: hashkey(omega,omega2))
-def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind):
+# @cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, gpu_0: hashkey(omega,omega2))
+def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used
     for the calculation of bispectrum.
@@ -234,7 +234,7 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
 
     """
     _ = omega2
-    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind)
+    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
     if enable_gpu:
         rho_prim = af.matmul(G_prim, rho)
         out = af.matmul(a_prim, rho_prim)
@@ -244,7 +244,7 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
     return out
 
 
-def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind):
+def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates one matrix multiplication in Eqs. 109 in 10.1103/PhysRevB.98.205143. Used
     for the calculation of trispectrum.
@@ -264,7 +264,7 @@ def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, 
         The inverse eigenvectors of the Liouvillian
 
     """
-    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind)
+    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
     if enable_gpu:
         rho_prim = af.matmul(G_prim, rho)
         out = af.matmul(a_prim, rho_prim)
@@ -327,7 +327,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
 
 # @njit(fastmath=True)
-## @cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
@@ -381,7 +381,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
 
 
 # @njit(fastmath=True)
-## @cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
@@ -652,6 +652,7 @@ class System(Spectrum):
 
         # ------- Enable GPU for large systems -------
         self.enable_gpu = False
+        self.gpu_0 = to_gpu(np.array([0.]))
 
     def fourier_g_prim(self, omega):
         return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)
@@ -661,15 +662,15 @@ class System(Spectrum):
 
     def first_matrix_step(self, rho, omega):
         return _first_matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
-                                  self.enable_gpu, self.zero_ind)
+                                  self.enable_gpu, self.zero_ind, self.gpu_0)
 
     def second_matrix_step(self, rho, omega, omega2):
         return _second_matrix_step(rho, omega, omega2, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
-                                   self.enable_gpu, self.zero_ind)
+                                   self.enable_gpu, self.zero_ind, self.gpu_0)
 
     def matrix_step(self, rho, omega):
         return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
-                            self.enable_gpu, self.zero_ind)
+                            self.enable_gpu, self.zero_ind, self.gpu_0)
 
     def calc_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True, beta=None,
                       correction_only=False, beta_offset=True, enable_gpu=False):

@@ -616,6 +616,7 @@ class System(Spectrum):
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):
         # ------- Store inputs --------
+        print('new version')
         super().__init__(None, None, None)
         self.H = h
         self.psi_0 = psi_0

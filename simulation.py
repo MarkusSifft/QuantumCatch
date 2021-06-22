@@ -852,6 +852,7 @@ class System(Spectrum):
 
             for ind_1, omega_1 in counter:
                 af.device_gc()
+                af.device.print_mem_info()
                 # for ind_2, omega_2 in enumerate(omegas[ind_1:]):
                 for ind_2, omega_2 in enumerate(omegas[ind_1:]):
                     # Calculate all permutation for the trace_sum

@@ -699,8 +699,10 @@ class System(Spectrum):
         # L_q = liouvillian(self.H / self.hbar, c_ops=c_ops_m)
 
         # -----with own functions-------
+        @njit(cache=True)
         def calc_super_liou(h_, c_ops):
 
+            @njit(cache=True)
             def calc_liou(rho_, h, c_ops_):
                 def cmtr(a, b):
                     return a @ b - b @ a

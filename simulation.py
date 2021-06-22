@@ -648,7 +648,7 @@ class System(Spectrum):
         self.a_w_cut = None
 
         # ------- Constants -----------
-        self.hbar = 1  # 6.582e-4  # eV kHz
+        #  self.hbar = 1  # 6.582e-4  # eV kHz
 
         # ------- Enable GPU for large systems -------
         self.enable_gpu = False
@@ -699,15 +699,15 @@ class System(Spectrum):
         # L_q = liouvillian(self.H / self.hbar, c_ops=c_ops_m)
 
         # -----with own functions-------
-        @njit(cache=True)
+        # @njit(cache=True)
         def calc_super_liou(h_, c_ops):
 
-            @njit(cache=True)
+            # @njit(cache=True)
             def calc_liou(rho_, h, c_ops_):
                 def cmtr(a, b):
                     return a @ b - b @ a
 
-                liou = 1j / self.hbar * cmtr(rho_, h)
+                liou = 1j * cmtr(rho_, h) # / self.hbar
                 for c_op in c_ops_:
                     # liou += -1 / 2 * cmtr(c_op.full(), cmtr(c_op.full(), rho))
                     liou += c_op.full() @ rho_ @ c_op.dag().full() - \
@@ -851,6 +851,7 @@ class System(Spectrum):
             self.s_k = s_k
 
             for ind_1, omega_1 in counter:
+                af.device_gc()
                 # for ind_2, omega_2 in enumerate(omegas[ind_1:]):
                 for ind_2, omega_2 in enumerate(omegas[ind_1:]):
                     # Calculate all permutation for the trace_sum

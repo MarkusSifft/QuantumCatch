@@ -851,10 +851,9 @@ class System(Spectrum):
             self.s_k = s_k
 
             for ind_1, omega_1 in counter:
-                af.device_gc()
-                af.device.print_mem_info()
-                # for ind_2, omega_2 in enumerate(omegas[ind_1:]):
+
                 for ind_2, omega_2 in enumerate(omegas[ind_1:]):
+                    af.device_gc()
                     # Calculate all permutation for the trace_sum
                     var = np.array([omega_1, -omega_1, omega_2, -omega_2])
                     perms = list(permutations(var))

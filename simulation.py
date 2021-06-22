@@ -851,8 +851,6 @@ class System(Spectrum):
             self.s_k = s_k
 
             for ind_1, omega_1 in counter:
-                rho_prim, rho_prim_sum, second_term_mat, third_term_mat
-                af.device_gc()
 
                 for ind_2, omega_2 in enumerate(omegas[ind_1:]):
 

@@ -277,7 +277,7 @@ def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, 
 # ------- Second Term of S(4) ---------
 
 # @njit(parallel=True, fastmath=True)
-def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enable_gpu, zero_ind):  # small s from Erratum (Eq. 7)
+def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enable_gpu, zero_ind, gpu_zero_arr):  # small s from Erratum (Eq. 7)
     """
     Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901
 
@@ -306,7 +306,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
     for i in range(len(s_k)):
         if enable_gpu:
-            S = to_gpu(np.zeros_like(eigvecs))
+            S = gpu_zero_arr # to_gpu(np.zeros_like(eigvecs))
         else:
             S = np.zeros_like(eigvecs)
 
@@ -842,8 +842,9 @@ class System(Spectrum):
                 counter = enumerate(omegas)
 
             print('Calculating small s')
+            gpu_zero_arr = to_gpu(np.zeros(self.eigvecs.shape[0])) # Generate the zero array only ones
             s_k = small_s(self.rho_steady, self.A_prim, self.eigvals, self.eigvecs, self.eigvecs_inv, reshape_ind,
-                          enable_gpu, zero_ind)
+                          enable_gpu, zero_ind, gpu_zero_arr=gpu_zero_arr)
             print('Done')
             self.s_k = s_k
 

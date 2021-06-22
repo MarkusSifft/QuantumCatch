@@ -676,6 +676,7 @@ class System(Spectrum):
                       correction_only=False, beta_offset=True, enable_gpu=False):
 
         self.enable_gpu = enable_gpu
+        af.device_gc()
 
         if mathcal_a is None:
             mathcal_a = calc_super_A(self.sc_ops[measure_op].full()).T

@@ -326,8 +326,8 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
     return s_k
 
 
-# @njit(fastmath=True)
-@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+#  @njit(fastmath=True)
+#  @cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
@@ -380,8 +380,8 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     return out
 
 
-# @njit(fastmath=True)
-@cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+#  @njit(fastmath=True)
+#  @cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.

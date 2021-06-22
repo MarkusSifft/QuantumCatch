@@ -70,7 +70,7 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-cache = LFUCache(maxsize=int(1e2))
+cache = LFUCache(maxsize=int(170))
 cache2 = LFUCache(maxsize=int(10e1))
 cache3 = LFUCache(maxsize=int(10e1))
 cache4 = LFUCache(maxsize=int(3e2))

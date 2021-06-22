@@ -70,7 +70,7 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-cache = LFUCache(maxsize=int(3e2))
+cache = LFUCache(maxsize=int(1e2))
 cache2 = LFUCache(maxsize=int(10e1))
 cache3 = LFUCache(maxsize=int(10e1))
 cache4 = LFUCache(maxsize=int(3e2))
@@ -112,7 +112,7 @@ def calc_super_A(op):
 
 # @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-#  @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
+@cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143

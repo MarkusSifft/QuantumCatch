@@ -1024,7 +1024,7 @@ class System(Spectrum):
         c_ops_m = [self.c_measure_strength[op] * self.c_ops[op] for op in self.c_ops]
         sc_ops_m = [self.sc_measure_strength[op] * self.sc_ops[op] for op in self.sc_ops]
 
-        result = smesolve(self.H / self.hbar, self.psi_0, t,
+        result = smesolve(self.H, self.psi_0, t,
                           c_ops=c_ops_m, sc_ops=sc_ops_m, e_ops=self.e_ops, noise=seed,
                           solver=_solver, progress_bar=progress_bar, nsubsteps=_nsubsteps,
                           normalize=_normalize)

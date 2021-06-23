@@ -727,6 +727,8 @@ class System(Spectrum):
 
         L = calc_super_liou(self.H.full(), c_ops_m)
 
+        self.L = L
+
         print('Diagonalizing L')
         self.eigvals, self.eigvecs = eig(L)
         print('L has been diagonalized')

@@ -70,11 +70,11 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-cache = LRUCache(maxsize=int(230))
+cache = LRUCache(maxsize=int(180))
 cache2 = LFUCache(maxsize=int(10e1))
 cache3 = LFUCache(maxsize=int(10e1))
-cache4 = LFUCache(maxsize=int(3e2))
-cache5 = LFUCache(maxsize=int(3e2))
+cache4 = LRUCache(maxsize=int(30))
+cache5 = LRUCache(maxsize=int(30))
 
 
 def calc_super_A(op):
@@ -327,7 +327,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
 
 #  @njit(fastmath=True)
-#  @cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
@@ -381,7 +381,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
 
 
 #  @njit(fastmath=True)
-#  @cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.

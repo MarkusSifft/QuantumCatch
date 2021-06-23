@@ -57,7 +57,7 @@ import arrayfire as af
 from arrayfire.interop import from_ndarray as to_gpu
 
 from QuantumPolyspectra.analysis import Spectrum
-
+from pympler import asizeof
 
 def conditional_decorator(dec, condition):
     def decorator(func):
@@ -70,12 +70,17 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-cache = LRUCache(maxsize=int(200))
-cache2 = LFUCache(maxsize=int(10e1))
-cache3 = LFUCache(maxsize=int(10e1))
-cache4 = LRUCache(maxsize=int(40))
-cache5 = LRUCache(maxsize=int(40))
+#cache = LRUCache(maxsize=int(200))
+#cache2 = LFUCache(maxsize=int(10e1))
+#cache3 = LFUCache(maxsize=int(10e1))
+#cache4 = LRUCache(maxsize=int(40))
+#cache5 = LRUCache(maxsize=int(40))
 
+# ------ new cache implementation -------
+GB = 1024**3
+cache = LRUCache(5 * GB, getsizeof=asizeof.asizeof)
+cache4 = LRUCache(1 * GB, getsizeof=asizeof.asizeof)
+cache5 = LRUCache(1 * GB, getsizeof=asizeof.asizeof)
 
 def calc_super_A(op):
     """

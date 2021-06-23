@@ -306,7 +306,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
     for i in range(len(s_k)):
         if enable_gpu:
-            S = gpu_zero_arr # to_gpu(np.zeros_like(eigvecs))
+            S = gpu_zero_arr.copy() # to_gpu(np.zeros_like(eigvecs))
         else:
             S = np.zeros_like(eigvecs)
 

@@ -725,7 +725,7 @@ class System(Spectrum):
             m, n = h_.shape
             op_super = 1j * np.ones((n ** 2, n ** 2))
             for j in range(n ** 2):
-                rho_vec = np.zeros(n ** 2)
+                rho_vec = 1j * np.zeros(n ** 2)
                 rho_vec[j] = 1
                 rho_mat = rho_vec.reshape((m, n))
                 rho_dot = calc_liou(rho_mat, h_, c_ops)

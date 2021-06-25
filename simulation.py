@@ -334,7 +334,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
 #  @njit(fastmath=True)
 @cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
-def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu, gpu_one_arr):
+def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
 
@@ -372,14 +372,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu, gpu_one_arr):
         temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
         out = temp1 * 1 / (temp2 * temp3)
         #out_sum = af.algorithm.sum(af.algorithm.sum(af.data.moddims(out, d0=eigvals.shape[0], d1=eigvals.shape[0], d2=1, d3=1), dim=0), dim=1)
-        #out_sum = af.algorithm.sum(af.algorithm.sum(out, dim=0), dim=1)
-        #out_sum = af.algorithm.sum(out)
-
-        out1 = af.matmul(out, gpu_one_arr)
-
-        out_sum = af.matmulTN(gpu_one_arr, out1)
-
-
+        out_sum = af.algorithm.sum(af.algorithm.sum(out, dim=0), dim=1)
 
     else:
         out_sum = 0
@@ -861,7 +854,7 @@ class System(Spectrum):
 
             print('Calculating small s')
             gpu_zero_mat = to_gpu(np.zeros_like(self.eigvecs)) # Generate the zero array only ones
-            gpu_ones_arr = to_gpu(0*1j + np.ones(len(self.eigvecs[0])))
+            #  gpu_ones_arr = to_gpu(0*1j + np.ones(len(self.eigvecs[0])))
             s_k = small_s(self.rho_steady, self.A_prim, self.eigvals, self.eigvecs, self.eigvecs_inv, reshape_ind,
                           enable_gpu, zero_ind, gpu_zero_mat)
             print('Done')
@@ -902,7 +895,7 @@ class System(Spectrum):
 
                                 rho_prim_sum[ind_1, ind_2 + ind_1, :] += af.data.moddims(rho_prim[reshape_ind], d0=1, d1=1,
                                                                                         d2=reshape_ind.shape[0])
-                                second_term_mat[ind_1, ind_2 + ind_1] += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu, gpu_ones_arr)
+                                second_term_mat[ind_1, ind_2 + ind_1] += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
                                 third_term_mat[ind_1, ind_2 + ind_1] += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
                             else:
 

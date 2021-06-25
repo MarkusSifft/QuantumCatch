@@ -371,19 +371,19 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
         temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
         out = temp1 * 1 / (temp2 * temp3)
         #out = af.algorithm.sum(af.algorithm.sum(af.data.moddims(out, d0=eigvals.shape[0], d1=eigvals.shape[0], d2=1, d3=1), dim=0), dim=1)
-        out = af.algorithm.sum(af.algorithm.sum(out, dim=0), dim=1)
+        out_sum = af.algorithm.sum(af.algorithm.sum(out, dim=0), dim=1)
 
     else:
-        out = 0
+        out_sum = 0
         iterator = np.array(list(range(len(s_k))))
         iterator = iterator[np.abs(s_k) > 1e-10 * np.max(np.abs(s_k))]
 
         for k in iterator:
             for l in iterator:
-                out += s_k[k] * s_k[l] * 1 / ((eigvals[l] + 1j * nu1) * (eigvals[k] + 1j * nu3)
+                out_sum += s_k[k] * s_k[l] * 1 / ((eigvals[l] + 1j * nu1) * (eigvals[k] + 1j * nu3)
                                               * (eigvals[k] + eigvals[l] + 1j * nu2))
 
-    return out
+    return out_sum
 
 
 #  @njit(fastmath=True)

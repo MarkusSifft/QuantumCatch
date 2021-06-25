@@ -861,7 +861,7 @@ class System(Spectrum):
                 counter = enumerate(omegas)
 
             print('Calculating small s')
-            gpu_zero_mat = to_gpu(np.zeros_like(self.eigvecs)) # Generate the zero array only ones
+            gpu_zero_mat = to_gpu(1j * np.zeros_like(self.eigvecs)) # Generate the zero array only ones
             gpu_zero_arr = to_gpu(np.zeros(len(self.eigvecs[0])))
             s_k = small_s(self.rho_steady, self.A_prim, self.eigvals, self.eigvecs, self.eigvecs_inv, reshape_ind,
                           enable_gpu, zero_ind, gpu_zero_mat)

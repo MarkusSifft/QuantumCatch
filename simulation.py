@@ -74,8 +74,8 @@ def conditional_decorator(dec, condition):
 cache = LRUCache(maxsize=int(200))
 cache2 = LRUCache(maxsize=int(10e1))
 cache3 = LRUCache(maxsize=int(10e1))
-cache4 = LRUCache(maxsize=int(200))
-cache5 = LRUCache(maxsize=int(200))
+cache4 = LRUCache(maxsize=int(20e5))
+cache5 = LRUCache(maxsize=int(20e5))
 
 # ------ new cache implementation -------
 #GB = 1024**3

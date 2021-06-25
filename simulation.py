@@ -701,15 +701,15 @@ class System(Spectrum):
 
         all_c_ops = {**self.c_ops, **self.sc_ops}
         measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
-        c_ops_m = [measure_strength[op] * all_c_ops[op] for op in all_c_ops]
+        c_ops_m = [measure_strength[op] * all_c_ops[op].full() for op in all_c_ops]
 
         # L_q = liouvillian(self.H / self.hbar, c_ops=c_ops_m)
 
         # -----with own functions-------
-        # @njit(cache=True)
+        @njit(cache=True)
         def calc_super_liou(h_, c_ops):
 
-            # @njit(cache=True)
+            @njit(cache=True)
             def calc_liou(rho_, h, c_ops_):
                 def cmtr(a, b):
                     return a @ b - b @ a
@@ -717,8 +717,10 @@ class System(Spectrum):
                 liou = 1j * cmtr(rho_, h) # / self.hbar
                 for c_op in c_ops_:
                     # liou += -1 / 2 * cmtr(c_op.full(), cmtr(c_op.full(), rho))
-                    liou += c_op.full() @ rho_ @ c_op.dag().full() - \
-                            1 / 2 * (c_op.dag().full() @ c_op.full() @ rho_ + rho_ @ c_op.dag().full() @ c_op.full())
+                    # liou += c_op.full() @ rho_ @ c_op.dag().full() - \
+                    #         1 / 2 * (c_op.dag().full() @ c_op.full() @ rho_ + rho_ @ c_op.dag().full() @ c_op.full())
+                    liou += c_op @ rho_ @ c_op.conj().T - \
+                            1 / 2 * (c_op.conj().T @ c_op @ rho_ + rho_ @ c_op.conj().T @ c_op)
                 return liou
 
             m, n = h_.shape

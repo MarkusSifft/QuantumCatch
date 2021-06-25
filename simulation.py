@@ -79,9 +79,9 @@ cache3 = LFUCache(maxsize=int(10e1))
 
 # ------ new cache implementation -------
 GB = 1024**3
-cache = LRUCache(5 * GB, getsizeof=asizeof.asizeof)
-cache4 = LRUCache(1 * GB, getsizeof=asizeof.asizeof)
-cache5 = LRUCache(1 * GB, getsizeof=asizeof.asizeof)
+cache = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
+cache4 = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
+cache5 = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
 
 def calc_super_A(op):
     """
@@ -118,7 +118,7 @@ def calc_super_A(op):
 
 # @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-# @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
+@cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
@@ -184,7 +184,7 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     return G_prim
 
 
-#  @cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
+@cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates first matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143. Used
@@ -216,7 +216,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
 
 
 # ------ can be cached for large systems --------
-# @cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, gpu_0: hashkey(omega,omega2))
+@cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, gpu_0: hashkey(omega,omega2))
 def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used
@@ -333,7 +333,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
 
 #  @njit(fastmath=True)
-#@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu, gpu_one_arr):
     """
     Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
@@ -395,7 +395,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu, gpu_one_arr):
 
 
 #  @njit(fastmath=True)
-#@cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
@@ -913,6 +913,12 @@ class System(Spectrum):
                         if not enable_gpu:
                             spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum + trace_sum
                             spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
+
+                    cache.clear()
+                    cache2.clear()
+                    cache3.clear()
+                    cache4.clear()
+                    cache5.clear()
             if enable_gpu:
                 spec_data = af.algorithm.sum(rho_prim_sum, dim=2).to_ndarray()
                 spec_data += af.algorithm.sum(af.algorithm.sum(second_term_mat + third_term_mat, dim=3), dim=2).to_ndarray()

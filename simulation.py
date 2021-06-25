@@ -860,7 +860,7 @@ class System(Spectrum):
             gpu_zero_mat = to_gpu(np.zeros_like(self.eigvecs)) # Generate the zero array only ones
             gpu_zero_arr = to_gpu(np.zeros_like(self.eigvecs[0]))
             s_k = small_s(self.rho_steady, self.A_prim, self.eigvals, self.eigvecs, self.eigvecs_inv, reshape_ind,
-                          enable_gpu, zero_ind, gpu_zero_arr=gpu_zero_mat)
+                          enable_gpu, zero_ind, gpu_zero_mat)
             print('Done')
             self.s_k = s_k
 

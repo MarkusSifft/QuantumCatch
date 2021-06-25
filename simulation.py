@@ -71,8 +71,8 @@ def conditional_decorator(dec, condition):
 
 # ------ setup caches for a speed up when summing over all permutations -------
 #cache = LRUCache(maxsize=int(200))
-#cache2 = LFUCache(maxsize=int(10e1))
-#cache3 = LFUCache(maxsize=int(10e1))
+cache2 = LFUCache(maxsize=int(10e1))
+cache3 = LFUCache(maxsize=int(10e1))
 #cache4 = LRUCache(maxsize=int(40))
 #cache5 = LRUCache(maxsize=int(40))
 
@@ -117,7 +117,7 @@ def calc_super_A(op):
 
 # @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-@cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
+# @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
@@ -332,7 +332,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
 
 #  @njit(fastmath=True)
-@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+#@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
@@ -348,7 +348,6 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
         Eigenvalues of the Liouvillian
 
     """
-    out = 0
     nu1 = omega1 + omega2 + omega3
     nu2 = omega2 + omega3
     nu3 = omega3
@@ -374,6 +373,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
         out = af.algorithm.sum(af.algorithm.sum(af.data.moddims(out, d0=eigvals.shape[0], d1=eigvals.shape[0], d2=1, d3=1), dim=0), dim=1)
 
     else:
+        out = 0
         iterator = np.array(list(range(len(s_k))))
         iterator = iterator[np.abs(s_k) > 1e-10 * np.max(np.abs(s_k))]
 
@@ -386,7 +386,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
 
 
 #  @njit(fastmath=True)
-@cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+#@cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.

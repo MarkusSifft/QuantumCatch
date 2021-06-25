@@ -897,6 +897,8 @@ class System(Spectrum):
 
                                 rho_prim_sum[ind_1, ind_2 + ind_1, :] += af.data.moddims(rho_prim[reshape_ind], d0=1, d1=1,
                                                                                         d2=reshape_ind.shape[0])
+                                print(second_term_mat)
+                                print(second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu, gpu_zero_arr))
                                 second_term_mat[ind_1, ind_2 + ind_1] += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu, gpu_zero_arr)
                                 third_term_mat[ind_1, ind_2 + ind_1] += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
                             else:

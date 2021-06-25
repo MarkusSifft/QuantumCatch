@@ -702,6 +702,7 @@ class System(Spectrum):
         all_c_ops = {**self.c_ops, **self.sc_ops}
         measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
         c_ops_m = np.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
+        H = self.H.full()
 
         # L_q = liouvillian(self.H / self.hbar, c_ops=c_ops_m)
 
@@ -733,7 +734,7 @@ class System(Spectrum):
                 op_super[:, j] = rho_dot
             return op_super
 
-        L = calc_super_liou(self.H.full(), c_ops_m)
+        L = calc_super_liou(H, c_ops_m)
 
         self.L = L
 
@@ -746,7 +747,7 @@ class System(Spectrum):
         self.eigvecs_inv = inv(self.eigvecs)
         self.zero_ind = np.argmax(np.real(self.eigvals))
 
-        s = self.H.shape[0]  # For reshaping
+        s = H.shape[0]  # For reshaping
         reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
 
         if order == 2:

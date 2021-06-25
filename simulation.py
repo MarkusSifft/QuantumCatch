@@ -375,6 +375,8 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu, gpu_zero_arr):
         #out_sum = af.algorithm.sum(af.algorithm.sum(out, dim=0), dim=1)
         #out_sum = af.algorithm.sum(out)
         print('out:', out.dims())
+        print('gpu_zero_arr:', gpu_zero_arr.dims())
+        print('gpu_zero_arr inhalt:', gpu_zero_arr.to_ndarray())
         out_sum = matmulTN(gpu_zero_arr, matmul(out, gpu_zero_arr))
         print('out_sum:', out_sum.dims())
 

@@ -55,6 +55,7 @@ from IPython.display import clear_output
 
 import arrayfire as af
 from arrayfire.interop import from_ndarray as to_gpu
+from arrayfire.blas import matmul, matmulNT, matmulTN
 
 from QuantumPolyspectra.analysis import Spectrum
 from pympler import asizeof
@@ -333,7 +334,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
 #  @njit(fastmath=True)
 #@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
-def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
+def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu, gpu_zero_arr):
     """
     Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
 
@@ -373,6 +374,8 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
         out_sum = af.algorithm.sum(af.algorithm.sum(af.data.moddims(out, d0=eigvals.shape[0], d1=eigvals.shape[0], d2=1, d3=1), dim=0), dim=1)
         #out_sum = af.algorithm.sum(af.algorithm.sum(out, dim=0), dim=1)
         #out_sum = af.algorithm.sum(out)
+
+        out_sum = matmulTN(gpu_zero_arr, matmul(out, gpu_zero_arr))
 
     else:
         out_sum = 0
@@ -894,7 +897,7 @@ class System(Spectrum):
 
                                 rho_prim_sum[ind_1, ind_2 + ind_1, :] += af.data.moddims(rho_prim[reshape_ind], d0=1, d1=1,
                                                                                         d2=reshape_ind.shape[0])
-                                second_term_mat[ind_1, ind_2 + ind_1] += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
+                                second_term_mat[ind_1, ind_2 + ind_1] += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu, gpu_zero_arr)
                                 third_term_mat[ind_1, ind_2 + ind_1] += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
                             else:
 

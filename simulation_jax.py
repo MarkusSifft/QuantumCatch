@@ -33,7 +33,7 @@
 ###############################################################################
 
 # import numpy as np
-# from numpy.linalg import inv, eig
+from numpy.linalg import eig as eig_np
 # from scipy.linalg import eig
 from scipy import signal
 from qutip import *
@@ -62,6 +62,7 @@ import jax.numpy as np
 from jax.numpy.linalg import inv, eig
 from jax import jit, partial
 from jax.ops import index, index_add, index_update
+from jax import device_put
 from pympler import asizeof
 
 
@@ -744,7 +745,9 @@ class System(Spectrum):
         L = calc_super_liou(H, c_ops_m)
 
         print('Diagonalizing L')
-        eigvals, eigvecs = eig(L)
+        eigvals, eigvecs = eig_np(L.to_py())
+        eigvals = device_put(eigvals)
+        eigvecs = device_put(eigvecs)
         print('L has been diagonalized')
 
         eigvecs_inv = inv(eigvecs)

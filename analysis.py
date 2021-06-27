@@ -45,8 +45,7 @@ try:
     from arrayfire.statistics import mean
 except:
     pass
-from labellines import labelLines
-from lmfit import Parameters, minimize
+
 from matplotlib.colors import LinearSegmentedColormap
 from numba import njit
 from scipy.fft import rfftfreq

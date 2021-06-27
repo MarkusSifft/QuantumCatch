@@ -576,16 +576,14 @@ def _calc_s4(spec_data, s_k, rho, A_prim, eigvecs, eigvals, eigvecs_inv,
         # rho_prim = self.first_matrix_step(rho, omega[1] + omega[2] + omega[3])
         # rho_prim = self.second_matrix_step(rho_prim, omega[2] + omega[3],
         #                                   omega[1] + omega[2] + omega[3])
-        print(1)
+
         trace_sum, second_term_sum, third_term_sum = inner_calc_s4(rho, omega, A_prim, eigvecs, eigvals, eigvecs_inv,
                                                                    zero_ind, reshape_ind, s_k, trace_sum,
                                                                    second_term_sum, third_term_sum)
-    print(2)
+
     spec_data_ind = index_update(spec_data, index[ind_1, ind_2 + ind_1], second_term_sum + third_term_sum + trace_sum)
-    print(3)
     spec_data_ind_2 = index_update(spec_data_ind, index[ind_2 + ind_1, ind_1],
                                    second_term_sum + third_term_sum + trace_sum)
-    print(4)
     return spec_data_ind_2
 
 
@@ -593,18 +591,12 @@ def _calc_s4(spec_data, s_k, rho, A_prim, eigvecs, eigvals, eigvecs_inv,
 def inner_calc_s4(rho, omega, A_prim, eigvecs, eigvals, eigvecs_inv, zero_ind, reshape_ind, s_k, trace_sum,
                   second_term_sum, third_term_sum):
     rho_prim = _matrix_step(rho, omega[1] + omega[2] + omega[3], A_prim, eigvecs, eigvals, eigvecs_inv, zero_ind)
-    print('a')
     rho_prim = _matrix_step(rho_prim, omega[2] + omega[3], A_prim, eigvecs, eigvals, eigvecs_inv, zero_ind)
-    print('b')
     rho_prim = _matrix_step(rho_prim, omega[3], A_prim, eigvecs, eigvals, eigvecs_inv, zero_ind)
-    print('c')
 
     trace_sum += rho_prim[reshape_ind].sum()
-    print('d')
     second_term_sum += second_term(omega[1], omega[2], omega[3], s_k, eigvals)
-    print('e')
     third_term_sum += third_term(omega[1], omega[2], omega[3], s_k, eigvals)
-    print('f')
     return trace_sum, second_term_sum, third_term_sum
 
 

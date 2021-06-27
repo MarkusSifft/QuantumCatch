@@ -37,11 +37,14 @@ import h5py
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
-from arrayfire.arith import conjg as conj
-from arrayfire.arith import sqrt
-from arrayfire.interop import from_ndarray as to_gpu
-from arrayfire.signal import fft_r2c
-from arrayfire.statistics import mean
+try:
+    from arrayfire.arith import conjg as conj
+    from arrayfire.arith import sqrt
+    from arrayfire.interop import from_ndarray as to_gpu
+    from arrayfire.signal import fft_r2c
+    from arrayfire.statistics import mean
+except:
+    pass
 from labellines import labelLines
 from lmfit import Parameters, minimize
 from matplotlib.colors import LinearSegmentedColormap

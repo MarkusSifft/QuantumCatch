@@ -59,7 +59,6 @@ from jax.numpy.linalg import inv, eig
 from jax import jit, partial
 from jax.ops import index, index_add, index_update
 from jax import device_put
-from pympler import asizeof
 
 
 def conditional_decorator(dec, condition):

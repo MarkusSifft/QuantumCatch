@@ -53,10 +53,6 @@ from cachetools.keys import hashkey
 from tqdm import tqdm_notebook
 from IPython.display import clear_output
 
-import arrayfire as af
-from arrayfire.interop import from_ndarray as to_gpu
-from arrayfire.blas import matmul, matmulNT, matmulTN
-
 from QuantumPolyspectra.analysis import Spectrum
 import jax.numpy as np
 from jax.numpy.linalg import inv, eig

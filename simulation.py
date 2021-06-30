@@ -951,8 +951,8 @@ class System(Spectrum):
                                 third_term_sum += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
 
                         if not enable_gpu:
-                            spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum + trace_sum
-                            spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
+                            spec_data[ind_1, ind_2] = second_term_sum + third_term_sum + trace_sum
+                            spec_data[ind_2, ind_1] = second_term_sum + third_term_sum + trace_sum
 
                 #cache_fourier_g_prim.clear()
                 #cache_first_matrix_step.clear()

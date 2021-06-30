@@ -71,7 +71,7 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-cache_fourier_g_prim = LRUCache(maxsize=int(200))
+cache_fourier_g_prim = LRUCache(maxsize=int(200e3))
 cache_first_matrix_step = LRUCache(maxsize=int(10e3))
 cache_second_matrix_step = LRUCache(maxsize=int(10e3))
 cache_third_matrix_step = LRUCache(maxsize=int(10e3))

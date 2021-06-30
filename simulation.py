@@ -905,7 +905,8 @@ class System(Spectrum):
 
             for ind_1, omega_1 in counter:
 
-                for ind_2, omega_2 in enumerate(omegas[ind_1:]):
+                #for ind_2, omega_2 in enumerate(omegas[ind_1:]):
+                for ind_2, omega_2 in enumerate(omegas[:ind_1+1]):
 
                     # Calculate all permutation for the trace_sum
                     var = np.array([omega_1, -omega_1, omega_2, -omega_2])

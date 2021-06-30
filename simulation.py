@@ -216,7 +216,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
 
 
 # ------ can be cached for large systems --------
-@cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, gpu_0: hashkey(omega,omega2))
+@cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega,omega2))
 def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used

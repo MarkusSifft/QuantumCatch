@@ -71,7 +71,7 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-cache_fourier_g_prim = LRUCache(maxsize=int(200e3))
+cache_fourier_g_prim = LRUCache(maxsize=int(200))
 cache_first_matrix_step = LRUCache(maxsize=int(10e3))
 cache_second_matrix_step = LRUCache(maxsize=int(10e3))
 cache_third_matrix_step = LRUCache(maxsize=int(10e3))
@@ -905,8 +905,8 @@ class System(Spectrum):
 
             for ind_1, omega_1 in counter:
 
-                #for ind_2, omega_2 in enumerate(omegas[ind_1:]):
-                for ind_2, omega_2 in enumerate(omegas[:ind_1+1]):
+                for ind_2, omega_2 in enumerate(omegas[ind_1:]):
+                #for ind_2, omega_2 in enumerate(omegas[:ind_1+1]):
 
                     # Calculate all permutation for the trace_sum
                     var = np.array([omega_1, -omega_1, omega_2, -omega_2])
@@ -951,8 +951,8 @@ class System(Spectrum):
                                 third_term_sum += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
 
                         if not enable_gpu:
-                            spec_data[ind_1, ind_2] = second_term_sum + third_term_sum + trace_sum
-                            spec_data[ind_2, ind_1] = second_term_sum + third_term_sum + trace_sum
+                            spec_data[ind_1, ind_2+ ind_1] = second_term_sum + third_term_sum + trace_sum
+                            spec_data[ind_2+ ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
 
                 #cache_fourier_g_prim.clear()
                 #cache_first_matrix_step.clear()

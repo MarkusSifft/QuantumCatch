@@ -387,7 +387,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     return out_sum
 
 
-#  @njit(fastmath=True)
+# @njit(fastmath=True)
 @cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """

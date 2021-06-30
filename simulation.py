@@ -720,6 +720,11 @@ class System(Spectrum):
 
         self.enable_gpu = enable_gpu
         af.device_gc()
+        cache_fourier_g_prim.clear()
+        cache_first_matrix_step.clear()
+        cache_second_matrix_step.clear()
+        cache_second_term.clear()
+        cache_third_term.clear()
 
         if mathcal_a is None:
             mathcal_a = calc_super_A(self.sc_ops[measure_op].full()).T
@@ -948,11 +953,11 @@ class System(Spectrum):
                             spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum + trace_sum
                             spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
 
-                cache_fourier_g_prim.clear()
-                cache_first_matrix_step.clear()
-                cache_second_matrix_step.clear()
-                cache_second_term.clear()
-                cache_third_term.clear()
+                #cache_fourier_g_prim.clear()
+                #cache_first_matrix_step.clear()
+                #cache_second_matrix_step.clear()
+                #cache_second_term.clear()
+                #cache_third_term.clear()
             if enable_gpu:
                 spec_data = af.algorithm.sum(rho_prim_sum, dim=2).to_ndarray()
                 spec_data += af.algorithm.sum(af.algorithm.sum(second_term_mat + third_term_mat, dim=3), dim=2).to_ndarray()

@@ -71,17 +71,18 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-cache = LRUCache(maxsize=int(200))
-cache2 = LRUCache(maxsize=int(10e1))
-cache3 = LRUCache(maxsize=int(10e1))
-cache4 = LRUCache(maxsize=int(20e5))
-cache5 = LRUCache(maxsize=int(20e5))
+cache_fourier_g_prim = LRUCache(maxsize=int(200))
+cache_first_matrix_step = LRUCache(maxsize=int(10e3))
+cache_second_matrix_step = LRUCache(maxsize=int(10e3))
+cache_third_matrix_step = LRUCache(maxsize=int(10e3))
+cache_second_term = LRUCache(maxsize=int(20e5))
+cache_third_term = LRUCache(maxsize=int(20e5))
 
-# ------ new cache implementation -------
+# ------ new cache_fourier_g_prim implementation -------
 #GB = 1024**3
-#cache = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
-#cache4 = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
-#cache5 = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
+#cache_fourier_g_prim = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
+#cache_second_term = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
+#cache_third_term = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
 
 def calc_super_A(op):
     """
@@ -116,9 +117,9 @@ def calc_super_A(op):
     return op_super
 
 
-# @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
+# @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-@cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
+@cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
@@ -184,7 +185,7 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     return G_prim
 
 
-@cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
+@cached(cache=cache_first_matrix_step, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates first matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143. Used
@@ -216,7 +217,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
 
 
 # ------ can be cached for large systems --------
-@cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega,omega2))
+@cached(cache=cache_second_matrix_step, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega, omega2))
 def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used
@@ -240,6 +241,41 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
 
     """
     _ = omega2
+    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
+    if enable_gpu:
+        rho_prim = af.matmul(G_prim, rho)
+        out = af.matmul(a_prim, rho_prim)
+    else:
+        rho_prim = G_prim @ rho
+        out = a_prim @ rho_prim
+    return out
+
+
+@cached(cache=cache_third_matrix_step, key=lambda rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega, omega2))
+def _third_matrix_step(rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
+    """
+    Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used
+    for the calculation of bispectrum.
+    Parameters
+    ----------
+    rho : array
+        A @ Steadystate desity matrix of the system
+    omega : float
+        Desired frequency
+    omega2 : float
+        Frequency used in :func:_first_matrix_step
+    a_prim : array
+        Super operator A' as defined in 10.1103/PhysRevB.98.205143
+    eigvecs : array
+        Eigenvectors of the Liouvillian
+    eigvals : array
+        Eigenvalues of the Liouvillian
+    eigvecs_inv : array
+        The inverse eigenvectors of the Liouvillian
+
+    """
+    _ = omega2
+    _ = omega3
     G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
     if enable_gpu:
         rho_prim = af.matmul(G_prim, rho)
@@ -333,7 +369,7 @@ def small_s(rho_steady, a_prim, eigvals, eigvecs, eigvec_inv, reshape_ind, enabl
 
 
 #  @njit(fastmath=True)
-@cached(cache=cache4, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache_second_term, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
@@ -388,7 +424,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
 
 
 # @njit(fastmath=True)
-@cached(cache=cache5, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache_third_term, key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
@@ -909,11 +945,11 @@ class System(Spectrum):
                             spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum + trace_sum
                             spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
 
-                cache.clear()
-                cache2.clear()
-                cache3.clear()
-                cache4.clear()
-                cache5.clear()
+                cache_fourier_g_prim.clear()
+                cache_first_matrix_step.clear()
+                cache_second_matrix_step.clear()
+                cache_second_term.clear()
+                cache_third_term.clear()
             if enable_gpu:
                 spec_data = af.algorithm.sum(rho_prim_sum, dim=2).to_ndarray()
                 spec_data += af.algorithm.sum(af.algorithm.sum(second_term_mat + third_term_mat, dim=3), dim=2).to_ndarray()
@@ -924,12 +960,12 @@ class System(Spectrum):
                 print('Trispectrum might have an imaginary part')
             self.S[order] = np.real(_full_trispec(spec_data)) * beta ** 8
 
-        # Delete cache
-        cache.clear()
-        cache2.clear()
-        cache3.clear()
-        cache4.clear()
-        cache5.clear()
+        # Delete cache_fourier_g_prim
+        cache_fourier_g_prim.clear()
+        cache_first_matrix_step.clear()
+        cache_second_matrix_step.clear()
+        cache_second_term.clear()
+        cache_third_term.clear()
         return self.S[order]
 
     def plot_spectrum(self, order, title=None, log=False, x_range=False):

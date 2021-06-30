@@ -72,17 +72,17 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-# cache = LRUCache(maxsize=int(200))
-# cache2 = LRUCache(maxsize=int(10e1))
-# cache3 = LRUCache(maxsize=int(10e1))
-# cache4 = LRUCache(maxsize=int(20e5))
-# cache5 = LRUCache(maxsize=int(20e5))
+# cache_fourier_g_prim = LRUCache(maxsize=int(200))
+# cache_first_matrix_step = LRUCache(maxsize=int(10e1))
+# cache_second_matrix_step = LRUCache(maxsize=int(10e1))
+# cache_second_term = LRUCache(maxsize=int(20e5))
+# cache_third_term = LRUCache(maxsize=int(20e5))
 
-# ------ new cache implementation -------
+# ------ new cache_fourier_g_prim implementation -------
 # GB = 1024**3
-# cache = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
-# cache4 = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
-# cache5 = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
+# cache_fourier_g_prim = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
+# cache_second_term = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
+# cache_third_term = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
 
 def calc_super_A(op):
     """
@@ -118,9 +118,9 @@ def calc_super_A(op):
     return op_super
 
 
-# @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
+# @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-# @cached(cache=cache, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
+# @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
 @jit
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
@@ -177,7 +177,7 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     return G_prim
 
 
-# @cached(cache=cache2, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
+# @cached(cache_fourier_g_prim=cache_first_matrix_step, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
 @jit
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
@@ -206,7 +206,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_i
 
 
 # ------ can be cached for large systems --------
-# @cached(cache=cache3, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, gpu_0: hashkey(omega,omega2))
+# @cached(cache_fourier_g_prim=cache_second_matrix_step, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, gpu_0: hashkey(omega,omega2))
 @jit
 def _second_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
@@ -831,12 +831,12 @@ class System(Spectrum):
                 print('Trispectrum might have an imaginary part')
             self.S[order] = np.real(_full_trispec(spec_data)) * beta ** 8
 
-        # Delete cache
-        # cache.clear()
-        # cache2.clear()
-        # cache3.clear()
-        # cache4.clear()
-        # cache5.clear()
+        # Delete cache_fourier_g_prim
+        # cache_fourier_g_prim.clear()
+        # cache_first_matrix_step.clear()
+        # cache_second_matrix_step.clear()
+        # cache_second_term.clear()
+        # cache_third_term.clear()
         return self.S[order]
 
     def plot_spectrum(self, order, title=None, log=False, x_range=False):

@@ -716,7 +716,7 @@ class System(Spectrum):
                             self.enable_gpu, self.zero_ind, self.gpu_0)
 
     def calc_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True, beta=None,
-                      correction_only=False, beta_offset=True, enable_gpu=False):
+                      correction_only=False, beta_offset=True, enable_gpu=False, cache_trispec=True):
 
         self.enable_gpu = enable_gpu
         af.device_gc()
@@ -921,12 +921,15 @@ class System(Spectrum):
                     else:
 
                         for omega in perms:
-                            # rho_prim = self.first_matrix_step(rho, omega[1] + omega[2] + omega[3])
-                            # rho_prim = self.second_matrix_step(rho_prim, omega[2] + omega[3],
-                            #                                   omega[1] + omega[2] + omega[3])
 
-                            rho_prim = self.matrix_step(rho, omega[1] + omega[2] + omega[3])
-                            rho_prim = self.matrix_step(rho_prim, omega[2] + omega[3])
+                            if cache_trispec:
+                                rho_prim = self.first_matrix_step(rho, omega[1] + omega[2] + omega[3])
+                                rho_prim = self.second_matrix_step(rho_prim, omega[2] + omega[3],
+                                                                   omega[1] + omega[2] + omega[3])
+                            else:
+                                rho_prim = self.matrix_step(rho, omega[1] + omega[2] + omega[3])
+                                rho_prim = self.matrix_step(rho_prim, omega[2] + omega[3])
+
                             rho_prim = self.matrix_step(rho_prim, omega[3])
 
                             if enable_gpu:

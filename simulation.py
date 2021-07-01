@@ -52,6 +52,7 @@ from cachetools import LFUCache, LRUCache
 from cachetools.keys import hashkey
 from tqdm import tqdm_notebook
 from IPython.display import clear_output
+import pickle
 
 import arrayfire as af
 from arrayfire.interop import from_ndarray as to_gpu
@@ -664,6 +665,12 @@ def calc_super_liou(h_, c_ops):
     return op_super
 
 
+def pickle_save(path, obj):
+    f = open(path, mode='wb')
+    pickle.dump(obj, f)
+    f.close()
+
+
 class System(Spectrum):
     """
     Class that will represent the system of interest. It contain the parameters of the system and the
@@ -726,6 +733,15 @@ class System(Spectrum):
         # ------- Enable GPU for large systems -------
         self.enable_gpu = False
         self.gpu_0 = to_gpu(np.array([0. * 1j]))
+
+    def save_spec(self, path):
+        class SaveObj():
+            def __init__(self, S, freq):
+                self.S = S
+                self.freq = freq
+
+        save_obj = SaveObj(self.S, self.freq)
+        pickle_save(path, save_obj)
 
     def fourier_g_prim(self, omega):
         return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)
@@ -894,7 +910,10 @@ class System(Spectrum):
                 counter = enumerate(omegas)
 
             print('Calculating small s')
-            gpu_zero_mat = to_gpu(np.zeros_like(self.eigvecs)) # Generate the zero array only ones
+            if enable_gpu:
+                gpu_zero_mat = to_gpu(np.zeros_like(self.eigvecs)) # Generate the zero array only ones
+            else:
+                gpu_zero_mat = 0
             #  gpu_ones_arr = to_gpu(0*1j + np.ones(len(self.eigvecs[0])))
             s_k = small_s(self.rho_steady, self.A_prim, self.eigvals, self.eigvecs, self.eigvecs_inv, reshape_ind,
                           enable_gpu, zero_ind, gpu_zero_mat)

@@ -733,14 +733,16 @@ class System(Spectrum):
         # ------- Enable GPU for large systems -------
         self.enable_gpu = False
 
-    #def save_spec(self, path):
-    #    class SaveObj():
-    #        def __init__(self, S, freq):
-    #            self.S = S
-    #            self.freq = freq
+    def save_spec(self, path):
+        self.gpu_0 = 0
+        self.eigvals = np.array([])
+        self.eigvecs = np.array([])
+        self.eigvecs_inv = np.array([])
+        self.A_prim = np.array([])
+        self.rho_steady = 0
+        self.s_k = 0
 
-    #    save_obj = SaveObj(self.S, self.freq)
-    #    pickle_save(path, save_obj)
+        pickle_save(path, self)
 
     def fourier_g_prim(self, omega):
         return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)

@@ -634,6 +634,36 @@ def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=N
     return fig
 
 
+# -----with own functions-------
+@njit(cache=True)
+def calc_liou(rho_, h, c_ops_):
+    def cmtr(a, b):
+        return a @ b - b @ a
+
+    liou = 1j * cmtr(rho_, h)  # / self.hbar
+    for c_op in c_ops_:
+        # liou += -1 / 2 * cmtr(c_op.full(), cmtr(c_op.full(), rho))
+        # liou += c_op.full() @ rho_ @ c_op.dag().full() - \
+        #         1 / 2 * (c_op.dag().full() @ c_op.full() @ rho_ + rho_ @ c_op.dag().full() @ c_op.full())
+        liou += c_op @ rho_ @ c_op.conj().T - \
+                1 / 2 * (c_op.conj().T @ c_op @ rho_ + rho_ @ c_op.conj().T @ c_op)
+    return liou
+
+
+@njit(cache=True)
+def calc_super_liou(h_, c_ops):
+    m, n = h_.shape
+    op_super = 1j * np.ones((n ** 2, n ** 2))
+    for j in range(n ** 2):
+        rho_vec = 1j * np.zeros(n ** 2)
+        rho_vec[j] = 1
+        rho_mat = rho_vec.reshape((m, n))
+        rho_dot = calc_liou(rho_mat, h_, c_ops)
+        rho_dot = rho_dot.reshape((n ** 2))
+        op_super[:, j] = rho_dot
+    return op_super
+
+
 class System(Spectrum):
     """
     Class that will represent the system of interest. It contain the parameters of the system and the
@@ -746,34 +776,6 @@ class System(Spectrum):
         H = self.H.full()
 
         # L_q = liouvillian(self.H / self.hbar, c_ops=c_ops_m)
-
-        # -----with own functions-------
-        @njit(cache=True)
-        def calc_liou(rho_, h, c_ops_):
-            def cmtr(a, b):
-                return a @ b - b @ a
-
-            liou = 1j * cmtr(rho_, h)  # / self.hbar
-            for c_op in c_ops_:
-                # liou += -1 / 2 * cmtr(c_op.full(), cmtr(c_op.full(), rho))
-                # liou += c_op.full() @ rho_ @ c_op.dag().full() - \
-                #         1 / 2 * (c_op.dag().full() @ c_op.full() @ rho_ + rho_ @ c_op.dag().full() @ c_op.full())
-                liou += c_op @ rho_ @ c_op.conj().T - \
-                        1 / 2 * (c_op.conj().T @ c_op @ rho_ + rho_ @ c_op.conj().T @ c_op)
-            return liou
-
-        @njit(cache=True)
-        def calc_super_liou(h_, c_ops):
-            m, n = h_.shape
-            op_super = 1j * np.ones((n ** 2, n ** 2))
-            for j in range(n ** 2):
-                rho_vec = 1j * np.zeros(n ** 2)
-                rho_vec[j] = 1
-                rho_mat = rho_vec.reshape((m, n))
-                rho_dot = calc_liou(rho_mat, h_, c_ops)
-                rho_dot = rho_dot.reshape((n ** 2))
-                op_super[:, j] = rho_dot
-            return op_super
 
         L = calc_super_liou(H, c_ops_m)
 

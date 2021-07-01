@@ -845,6 +845,8 @@ class System(Spectrum):
             reshape_ind = to_gpu(reshape_ind)
             self.rho_steady = to_gpu(self.rho_steady)
             self.gpu_0 = to_gpu(np.array([0. * 1j]))
+        else:
+            self.gpu_0 = 0
 
         if order == 2:
             if bar:

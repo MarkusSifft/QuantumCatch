@@ -732,16 +732,15 @@ class System(Spectrum):
 
         # ------- Enable GPU for large systems -------
         self.enable_gpu = False
-        self.gpu_0 = to_gpu(np.array([0. * 1j]))
 
-    def save_spec(self, path):
-        class SaveObj():
-            def __init__(self, S, freq):
-                self.S = S
-                self.freq = freq
+    #def save_spec(self, path):
+    #    class SaveObj():
+    #        def __init__(self, S, freq):
+    #            self.S = S
+    #            self.freq = freq
 
-        save_obj = SaveObj(self.S, self.freq)
-        pickle_save(path, save_obj)
+    #    save_obj = SaveObj(self.S, self.freq)
+    #    pickle_save(path, save_obj)
 
     def fourier_g_prim(self, omega):
         return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)
@@ -845,6 +844,7 @@ class System(Spectrum):
 
             reshape_ind = to_gpu(reshape_ind)
             self.rho_steady = to_gpu(self.rho_steady)
+            self.gpu_0 = to_gpu(np.array([0. * 1j]))
 
         if order == 2:
             if bar:

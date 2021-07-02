@@ -657,7 +657,7 @@ class System(Spectrum):
         # ------- Store inputs --------
         super().__init__(None, None, None)
         self.H = h
-        self.L = 0
+        self.L = False
         self.psi_0 = psi_0
         self.c_ops = c_ops
         self.sc_ops = sc_ops
@@ -730,7 +730,7 @@ class System(Spectrum):
         c_ops_m = np.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
         H = self.H.full()
 
-        if self.L == 0:
+        if not self.L:
             self.L = calc_super_liou(H, c_ops_m)
 
             print('Diagonalizing L')

@@ -404,15 +404,15 @@ def _full_bispec(r_in):
     r_padded = np.vstack((r, np.zeros((s - 1, s))))
     r_rolled = np.empty_like(r_padded)
     for i in range(s):
-        r_rolled[:, i] = np.roll(r_padded[:, i], -i)
-    r_left = r_rolled[:s, :]
+        r_rolled_ind = index_update(r_rolled, index[:, i], np.roll(r_padded[:, i], -i))
+    r_left = r_rolled_ind[:s, :]
     r_mirrored = r_left + np.flipud((np.flipud(r_left)).T) - np.fliplr(np.diag(np.diagonal(np.fliplr(r_left))))
     r_top_left = np.fliplr(r_mirrored)
-    m[:s, :s] = r_top_left
-    m[:s, s - 1:] = r
-    m_full = np.fliplr(np.flipud(m)) + m
-    m_full[s - 1, :] -= m[s - 1, :]
-    return np.fliplr(m_full)
+    m_ind = index_update(m, index[:s, :s], r_top_left)
+    m_ind_2 = index_update(m_ind, index[:s, s - 1:], r)
+    m_full = np.fliplr(np.flipud(m_ind_2)) + m_ind_2
+    m_full_ind = index_update(m_full, index[s - 1, :], -m_ind_2[s - 1, :])
+    return np.fliplr(m_full_ind)
 
 
 def _full_trispec(r_in):
@@ -431,10 +431,10 @@ def _full_trispec(r_in):
     r = np.flipud(r_in)
     s, t = r.shape
     m = 1j * np.zeros((2 * s - 1, 2 * s - 1))
-    m[:s, s - 1:] = r
-    m[:s, :s - 1] = np.fliplr(r)[:, :-1]
-    m[s:, :] = np.flipud(m[:s - 1, :])
-    return m
+    m_ind = index_update(m, index[:s, s - 1:], r)
+    m_ind_2 = index_update(m_ind, index[:s, :s - 1], np.fliplr(r)[:, :-1])
+    m_ind_3 = index_update(m_ind_2, index[s:, :], np.flipud(m_ind_2[:s - 1, :]))
+    return m_ind_3
 
 
 def time_series_setup(sc_ops, e_ops):

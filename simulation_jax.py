@@ -743,7 +743,7 @@ class System(Spectrum):
         reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
 
         if order == 2:
-            spec_data = np.ones_like(omegas)
+            spec_data = 1j * np.zeros_like(omegas)
         else:
             spec_data = 1j * np.zeros((len(omegas), len(omegas)))
 
@@ -822,13 +822,13 @@ class System(Spectrum):
                 self.S[order] += beta ** 2 / 4
 
         elif order == 3:
-            if np.max(np.abs(np.imag(np.real_if_close(_full_bispec(spec_data))))) > 0:
-                print('Bispectrum might have an imaginary part')
+            #if np.max(np.abs(np.imag(np.real_if_close(_full_bispec(spec_data))))) > 0:
+            #    print('Bispectrum might have an imaginary part')
             self.S[order] = np.real(_full_bispec(spec_data)) * beta ** 6
 
         elif order == 4:
-            if np.max(np.abs(np.imag(np.real_if_close(_full_trispec(spec_data))))) > 0:
-                print('Trispectrum might have an imaginary part')
+            #if np.max(np.abs(np.imag(np.real_if_close(_full_trispec(spec_data))))) > 0:
+            #    print('Trispectrum might have an imaginary part')
             self.S[order] = np.real(_full_trispec(spec_data)) * beta ** 8
 
         # Delete cache_fourier_g_prim

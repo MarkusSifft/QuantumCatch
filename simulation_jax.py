@@ -60,6 +60,8 @@ from jax import jit, partial
 from jax.ops import index, index_add, index_update
 from jax import device_put
 
+import pickle
+
 
 def conditional_decorator(dec, condition):
     def decorator(func):
@@ -629,6 +631,10 @@ def calc_super_liou(h_, c_ops):
         op_super = op_super_ind
     return op_super
 
+def pickle_save(path, obj):
+    f = open(path, mode='wb')
+    pickle.dump(obj, f)
+    f.close()
 
 class System(Spectrum):
     """
@@ -707,6 +713,18 @@ class System(Spectrum):
     # def matrix_step(self, rho, omega):
     #     return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
     #                          self.zero_ind)
+
+    def save_spec(self, path):
+        self.gpu_0 = 0
+        self.eigvals = np.array([])
+        self.eigvecs = np.array([])
+        self.eigvecs_inv = np.array([])
+        self.A_prim = np.array([])
+        self.rho_steady = 0
+        self.s_k = 0
+
+        pickle_save(path, self)
+
 
     def calc_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True, beta=None,
                       correction_only=False, beta_offset=True):

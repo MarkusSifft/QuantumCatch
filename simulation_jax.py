@@ -730,7 +730,7 @@ class System(Spectrum):
         c_ops_m = np.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
         H = self.H.full()
 
-        if not self.L:
+        if not any(self.L):
             self.L = calc_super_liou(H, c_ops_m)
 
             print('Diagonalizing L')

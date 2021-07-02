@@ -120,7 +120,7 @@ def calc_super_A(op):
 
 # @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-@cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(nu))  # eigvecs change with magnetic field
+@cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(nu.to_py()))  # eigvecs change with magnetic field
 @jit
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """

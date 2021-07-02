@@ -715,6 +715,7 @@ class System(Spectrum):
         # ------- Store inputs --------
         super().__init__(None, None, None)
         self.H = h
+        self.L = None
         self.psi_0 = psi_0
         self.c_ops = c_ops
         self.sc_ops = sc_ops
@@ -813,16 +814,17 @@ class System(Spectrum):
         c_ops_m = np.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
         H = self.H.full()
 
-        L = calc_super_liou(H, c_ops_m)
+        if self.L is None:
+            L = calc_super_liou(H, c_ops_m)
+            self.L = L
+            print('Diagonalizing L')
+            self.eigvals, self.eigvecs = eig(L)
+            print('L has been diagonalized')
 
-        print('Diagonalizing L')
-        self.eigvals, self.eigvecs = eig(L)
-        print('L has been diagonalized')
-
-        # self.eigvals, self.eigvecs = eig(L.full())
-        # self.eigvals -= np.max(self.eigvals)
-        self.eigvecs_inv = inv(self.eigvecs)
-        self.zero_ind = np.argmax(np.real(self.eigvals))
+            # self.eigvals, self.eigvecs = eig(L.full())
+            # self.eigvals -= np.max(self.eigvals)
+            self.eigvecs_inv = inv(self.eigvecs)
+            self.zero_ind = np.argmax(np.real(self.eigvals))
 
         s = H.shape[0]  # For reshaping
         reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace

@@ -72,7 +72,7 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-# cache_fourier_g_prim = LRUCache(maxsize=int(200))
+cache_fourier_g_prim = LRUCache(maxsize=int(200e3))
 # cache_first_matrix_step = LRUCache(maxsize=int(10e1))
 # cache_second_matrix_step = LRUCache(maxsize=int(10e1))
 # cache_second_term = LRUCache(maxsize=int(20e5))
@@ -120,7 +120,7 @@ def calc_super_A(op):
 
 # @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-# @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(nu))  # eigvecs change with magnetic field
+@cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(nu))  # eigvecs change with magnetic field
 @jit
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """

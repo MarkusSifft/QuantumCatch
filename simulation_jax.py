@@ -657,6 +657,7 @@ class System(Spectrum):
         # ------- Store inputs --------
         super().__init__(None, None, None)
         self.H = h
+        self.L = 0
         self.psi_0 = psi_0
         self.c_ops = c_ops
         self.sc_ops = sc_ops
@@ -729,15 +730,16 @@ class System(Spectrum):
         c_ops_m = np.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
         H = self.H.full()
 
-        L = calc_super_liou(H, c_ops_m)
+        if self.L == 0:
+            self.L = calc_super_liou(H, c_ops_m)
 
-        print('Diagonalizing L')
-        eigvals, eigvecs = eig_np(L.to_py())
-        eigvals = device_put(eigvals)
-        eigvecs = device_put(eigvecs)
-        print('L has been diagonalized')
+            print('Diagonalizing L')
+            eigvals, eigvecs = eig_np(self.L.to_py())
+            self.eigvals = device_put(eigvals)
+            self.eigvecs = device_put(eigvecs)
+            print('L has been diagonalized')
 
-        eigvecs_inv = inv(eigvecs)
+            self.eigvecs_inv = inv(self.eigvecs)
 
         s = H.shape[0]  # For reshaping
         reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
@@ -747,8 +749,8 @@ class System(Spectrum):
         else:
             spec_data = 1j * np.zeros((len(omegas), len(omegas)))
 
-        zero_ind = np.argmax(np.real(eigvals))
-        rho_steady = eigvecs[:, zero_ind]
+        zero_ind = np.argmax(np.real(self.eigvals))
+        rho_steady = self.eigvecs[:, zero_ind]
         rho_steady = rho_steady / np.trace(rho_steady.reshape((s, s)))  # , order='F'))
 
         A_prim = mathcal_a - np.eye(s ** 2) * np.trace((mathcal_a @ rho_steady).reshape((s, s)))  # , order='F'))
@@ -782,7 +784,7 @@ class System(Spectrum):
         if order == 2:
 
             for (i, omega) in counter:
-                spec_data = _calc_s2(spec_data, rho, omega, A_prim, eigvecs, eigvals, eigvecs_inv, zero_ind,
+                spec_data = _calc_s2(spec_data, rho, omega, A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv, zero_ind,
                                      reshape_ind, i)
 
         if order == 3:
@@ -794,12 +796,12 @@ class System(Spectrum):
                     perms = np.array(list(permutations(var.to_py())))
 
                     trace_sum = 0
-                    spec_data = _calc_s3(spec_data, rho, A_prim, eigvecs, eigvals, eigvecs_inv,
+                    spec_data = _calc_s3(spec_data, rho, A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
                                          zero_ind, reshape_ind, ind_1, ind_2, perms, trace_sum)
 
         if order == 4:
             print('Calculating small s')
-            s_k = small_s(rho_steady, A_prim, eigvecs, eigvecs_inv, reshape_ind, zero_ind)
+            s_k = small_s(rho_steady, A_prim, self.eigvecs, self.eigvecs_inv, reshape_ind, zero_ind)
             print('Done')
 
             for ind_1, omega_1 in counter:
@@ -811,7 +813,7 @@ class System(Spectrum):
                     trace_sum = 0
                     second_term_sum = 0
                     third_term_sum = 0
-                    spec_data = _calc_s4(spec_data, s_k, rho, A_prim, eigvecs, eigvals, eigvecs_inv,
+                    spec_data = _calc_s4(spec_data, s_k, rho, A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
                                          zero_ind, reshape_ind, ind_1, ind_2, perms, trace_sum,
                                          second_term_sum, third_term_sum)
 

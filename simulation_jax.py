@@ -75,8 +75,8 @@ def conditional_decorator(dec, condition):
 
 # ------ setup caches for a speed up when summing over all permutations -------
 cache_fourier_g_prim = LRUCache(maxsize=int(200e3))
-# cache_first_matrix_step = LRUCache(maxsize=int(10e1))
-# cache_second_matrix_step = LRUCache(maxsize=int(10e1))
+cache_first_matrix_step = LRUCache(maxsize=int(10e5))
+cache_second_matrix_step = LRUCache(maxsize=int(10e5))
 # cache_second_term = LRUCache(maxsize=int(20e5))
 # cache_third_term = LRUCache(maxsize=int(20e5))
 
@@ -122,7 +122,7 @@ def calc_super_A(op):
 
 # @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-@cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(nu))  # eigvecs change with magnetic field
+#@cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(nu))  # eigvecs change with magnetic field
 @jit
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
@@ -179,7 +179,7 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     return G_prim
 
 
-# @cached(cache_fourier_g_prim=cache_first_matrix_step, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
+@cached(cache=cache_first_matrix_step, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
 @jit
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
@@ -208,7 +208,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_i
 
 
 # ------ can be cached for large systems --------
-# @cached(cache_fourier_g_prim=cache_second_matrix_step, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, gpu_0: hashkey(omega,omega2))
+@cached(cache=cache_second_matrix_step, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, gpu_0: hashkey(omega,omega2))
 @jit
 def _second_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
@@ -544,7 +544,7 @@ def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=N
     return fig
 
 
-@jit
+#@jit
 def _calc_s2(spec_data, rho, omega, A_prim, eigvecs, eigvals, eigvecs_inv, zero_ind, reshape_ind, i):
     rho_prim = _first_matrix_step(rho, omega, A_prim, eigvecs, eigvals, eigvecs_inv,
                                   zero_ind)  # mathcal_a' * G'
@@ -556,7 +556,7 @@ def _calc_s2(spec_data, rho, omega, A_prim, eigvecs, eigvals, eigvecs_inv, zero_
     return spec_data
 
 
-@jit
+#@jit
 def _calc_s3(spec_data, rho, A_prim, eigvecs, eigvals, eigvecs_inv, zero_ind, reshape_ind, ind_1, ind_2, perms,
              trace_sum):
     for omega in perms:

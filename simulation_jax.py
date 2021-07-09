@@ -32,7 +32,7 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# import numpy as np
+import numpy
 from numpy.linalg import eig as eig_np
 # from scipy.linalg import eig
 from scipy import signal
@@ -752,7 +752,7 @@ class System(Spectrum):
             self.L = calc_super_liou(H, c_ops_m)
 
             print('Diagonalizing L')
-            eigvals, eigvecs = eig_np(self.L.to_py())
+            eigvals, eigvecs = eig_np(self.L.to_py().astype(numpy.complex128))
             self.eigvals = device_put(eigvals)
             self.eigvecs = device_put(eigvecs)
             print('L has been diagonalized')

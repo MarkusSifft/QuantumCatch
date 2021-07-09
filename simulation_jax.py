@@ -819,7 +819,7 @@ class System(Spectrum):
             self.eigvecs = device_put(eigvecs)
             print('L has been diagonalized')
 
-            self.eigvecs_inv = inv(self.eigvecs)
+            self.eigvecs_inv = numpy.linalg.inv(eigvecs)
 
         s = H.shape[0]  # For reshaping
         reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace

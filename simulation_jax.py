@@ -774,7 +774,7 @@ class System(Spectrum):
 
         all_c_ops = {**self.c_ops, **self.sc_ops}
         measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
-        c_ops_m = np.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
+        c_ops_m = numpy.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
         H = self.H.full()
 
         if self.L is None:

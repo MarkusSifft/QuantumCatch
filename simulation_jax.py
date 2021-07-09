@@ -815,8 +815,8 @@ class System(Spectrum):
             print('Diagonalizing L')
             #eigvals, eigvecs = eig_np(self.L.to_py().astype(numpy.complex128))
             eigvals, eigvecs = eig_np(self.L.astype(numpy.complex128))
-            self.eigvals = device_put(eigvals)
-            self.eigvecs = device_put(eigvecs)
+            self.eigvals = eigvals
+            self.eigvecs = eigvecs
             print('L has been diagonalized')
 
             self.eigvecs_inv = numpy.linalg.inv(eigvecs)

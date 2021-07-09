@@ -763,9 +763,9 @@ class System(Spectrum):
         reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
 
         if order == 2:
-            spec_data = 1j * np.zeros_like(omegas)
+            spec_data = 1j * np.zeros_like(omegas).astype(np.complex64)
         else:
-            spec_data = 1j * np.zeros((len(omegas), len(omegas)))
+            spec_data = 1j * np.zeros((len(omegas), len(omegas))).astype(np.complex64)
 
         zero_ind = np.argmax(np.real(self.eigvals))
         rho_steady = self.eigvecs[:, zero_ind]

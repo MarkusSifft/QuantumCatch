@@ -122,7 +122,7 @@ def calc_super_A(op):
 
 # @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-#@cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(nu))  # eigvecs change with magnetic field
+@cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(nu))  # eigvecs change with magnetic field
 @jit
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
@@ -180,7 +180,6 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
 
 
 @cached(cache=cache_first_matrix_step, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(omega))
-@jit
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
     Calculates first matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143. Used
@@ -209,7 +208,6 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_i
 
 # ------ can be cached for large systems --------
 @cached(cache=cache_second_matrix_step, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(omega,omega2))
-@jit
 def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
     Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used

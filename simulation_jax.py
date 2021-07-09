@@ -119,6 +119,38 @@ def calc_super_A(op):
         op_super = op_super_ind
     return op_super
 
+def calc_super_A_np(op):
+    """
+    Calculates the super operator of A as defined in 10.1103/PhysRevB.98.205143
+
+    Parameters
+    ----------
+    op : array
+        Operator a for the calculation of A[a]
+
+    Returns
+    -------
+    op_super : array
+        super operator A
+    """
+
+    def calc_A(rho, _op):
+        """
+        Calculates A[_op] as defined in 10.1103/PhysRevB.98.205143
+        """
+        return (_op @ rho + rho @ np.conj(_op).T) / 2
+
+    m, n = op.shape
+    op_super = 1j * numpy.ones((n ** 2, n ** 2))
+    for j in range(n ** 2):
+        rho_vec = numpy.zeros(n ** 2)
+        rho_vec[j] = 1
+        rho_mat = rho_vec.reshape((m, n))
+        rho_dot = calc_A(rho_mat, op)
+        rho_dot = rho_dot.reshape((n ** 2))
+        op_super[:, j] = rho_dot
+    return op_super
+
 
 # @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
@@ -759,7 +791,7 @@ class System(Spectrum):
                       correction_only=False, beta_offset=True):
 
         if mathcal_a is None:
-            mathcal_a = calc_super_A(self.sc_ops[measure_op].full()).T
+            mathcal_a = calc_super_A_np(self.sc_ops[measure_op].full().astype(numpy.complex128)).T
 
         if f_data.min() < 0:
             print('Only positive freqencies allowed')
@@ -774,15 +806,15 @@ class System(Spectrum):
 
         all_c_ops = {**self.c_ops, **self.sc_ops}
         measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
-        c_ops_m = numpy.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
-        H = self.H.full()
+        c_ops_m = numpy.array([measure_strength[op] * all_c_ops[op].full().astype(numpy.complex128) for op in all_c_ops])
+        H = self.H.full().astype(numpy.complex128)
 
         if self.L is None:
             self.L = calc_super_liou_np(H, c_ops_m)
 
             print('Diagonalizing L')
             #eigvals, eigvecs = eig_np(self.L.to_py().astype(numpy.complex128))
-            eigvals, eigvecs = eig_np(self.L)
+            eigvals, eigvecs = eig_np(self.L.astype(numpy.complex128))
             self.eigvals = device_put(eigvals)
             self.eigvecs = device_put(eigvecs)
             print('L has been diagonalized')

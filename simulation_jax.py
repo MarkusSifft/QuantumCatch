@@ -781,7 +781,8 @@ class System(Spectrum):
             self.L = calc_super_liou_np(H, c_ops_m)
 
             print('Diagonalizing L')
-            eigvals, eigvecs = eig_np(self.L.to_py().astype(numpy.complex128))
+            #eigvals, eigvecs = eig_np(self.L.to_py().astype(numpy.complex128))
+            eigvals, eigvecs = eig_np(self.L)
             self.eigvals = device_put(eigvals)
             self.eigvecs = device_put(eigvecs)
             print('L has been diagonalized')

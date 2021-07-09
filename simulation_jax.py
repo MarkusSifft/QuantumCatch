@@ -179,7 +179,7 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     return G_prim
 
 
-@cached(cache=cache_first_matrix_step, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
+@cached(cache=cache_first_matrix_step, key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(omega))
 @jit
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
@@ -208,9 +208,9 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_i
 
 
 # ------ can be cached for large systems --------
-@cached(cache=cache_second_matrix_step, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, gpu_0: hashkey(omega,omega2))
+@cached(cache=cache_second_matrix_step, key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind: hashkey(omega,omega2))
 @jit
-def _second_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind):
+def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, zero_ind):
     """
     Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used
     for the calculation of bispectrum.
@@ -562,7 +562,7 @@ def _calc_s3(spec_data, rho, A_prim, eigvecs, eigvals, eigvecs_inv, zero_ind, re
     for omega in perms:
         rho_prim = _first_matrix_step(rho, omega[2] + omega[1], A_prim, eigvecs, eigvals, eigvecs_inv,
                                       zero_ind)
-        rho_prim = _second_matrix_step(rho_prim, omega[1], A_prim, eigvecs, eigvals, eigvecs_inv,
+        rho_prim = _second_matrix_step(rho_prim, omega[1], omega[2] + omega[1], A_prim, eigvecs, eigvals, eigvecs_inv,
                                        zero_ind)
 
         trace_sum += rho_prim[reshape_ind].sum()

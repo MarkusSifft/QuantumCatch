@@ -631,6 +631,35 @@ def calc_super_liou(h_, c_ops):
         op_super = op_super_ind
     return op_super
 
+
+#@njit(cache=True)
+def calc_liou_np(rho_, h, c_ops_):
+    def cmtr(a, b):
+        return a @ b - b @ a
+
+    liou = 1j * cmtr(rho_, h)  # / self.hbar
+    for c_op in c_ops_:
+        # liou += -1 / 2 * cmtr(c_op.full(), cmtr(c_op.full(), rho))
+        # liou += c_op.full() @ rho_ @ c_op.dag().full() - \
+        #         1 / 2 * (c_op.dag().full() @ c_op.full() @ rho_ + rho_ @ c_op.dag().full() @ c_op.full())
+        liou += c_op @ rho_ @ c_op.conj().T - \
+                1 / 2 * (c_op.conj().T @ c_op @ rho_ + rho_ @ c_op.conj().T @ c_op)
+    return liou
+
+
+#@njit(cache=True)
+def calc_super_liou_np(h_, c_ops):
+    m, n = h_.shape
+    op_super = 1j * numpy.ones((n ** 2, n ** 2))
+    for j in range(n ** 2):
+        rho_vec = 1j * numpy.zeros(n ** 2)
+        rho_vec[j] = 1
+        rho_mat = rho_vec.reshape((m, n))
+        rho_dot = calc_liou_np(rho_mat, h_, c_ops)
+        rho_dot = rho_dot.reshape((n ** 2))
+        op_super[:, j] = rho_dot
+    return op_super
+
 def pickle_save(path, obj):
     f = open(path, mode='wb')
     pickle.dump(obj, f)
@@ -749,7 +778,7 @@ class System(Spectrum):
         H = self.H.full()
 
         if self.L is None:
-            self.L = calc_super_liou(H, c_ops_m)
+            self.L = calc_super_liou_np(H, c_ops_m)
 
             print('Diagonalizing L')
             eigvals, eigvecs = eig_np(self.L.to_py().astype(numpy.complex128))

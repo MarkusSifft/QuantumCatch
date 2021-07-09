@@ -753,19 +753,19 @@ class System(Spectrum):
 
             print('Diagonalizing L')
             eigvals, eigvecs = eig_np(self.L.to_py())
-            self.eigvals = device_put(eigvals).astype(np.complex64)
-            self.eigvecs = device_put(eigvecs).astype(np.complex64)
+            self.eigvals = device_put(eigvals)
+            self.eigvecs = device_put(eigvecs)
             print('L has been diagonalized')
 
-            self.eigvecs_inv = inv(eigvecs).astype(np.complex64)
+            self.eigvecs_inv = inv(self.eigvecs)
 
         s = H.shape[0]  # For reshaping
         reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
 
         if order == 2:
-            spec_data = 1j * np.zeros_like(omegas).astype(np.complex64)
+            spec_data = 1j * np.zeros_like(omegas)
         else:
-            spec_data = 1j * np.zeros((len(omegas), len(omegas))).astype(np.complex64)
+            spec_data = 1j * np.zeros((len(omegas), len(omegas)))
 
         zero_ind = np.argmax(np.real(self.eigvals))
         rho_steady = self.eigvecs[:, zero_ind]

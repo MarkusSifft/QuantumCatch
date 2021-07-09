@@ -32,7 +32,7 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-import numpy
+# import numpy as np
 from numpy.linalg import eig as eig_np
 # from scipy.linalg import eig
 from scipy import signal
@@ -117,38 +117,6 @@ def calc_super_A(op):
         rho_dot = rho_dot.reshape((n ** 2))
         op_super_ind = index_update(op_super, index[:, j], rho_dot)
         op_super = op_super_ind
-    return op_super
-
-def calc_super_A_np(op):
-    """
-    Calculates the super operator of A as defined in 10.1103/PhysRevB.98.205143
-
-    Parameters
-    ----------
-    op : array
-        Operator a for the calculation of A[a]
-
-    Returns
-    -------
-    op_super : array
-        super operator A
-    """
-
-    def calc_A(rho, _op):
-        """
-        Calculates A[_op] as defined in 10.1103/PhysRevB.98.205143
-        """
-        return (_op @ rho + rho @ np.conj(_op).T) / 2
-
-    m, n = op.shape
-    op_super = 1j * numpy.ones((n ** 2, n ** 2))
-    for j in range(n ** 2):
-        rho_vec = numpy.zeros(n ** 2)
-        rho_vec[j] = 1
-        rho_mat = rho_vec.reshape((m, n))
-        rho_dot = calc_A(rho_mat, op)
-        rho_dot = rho_dot.reshape((n ** 2))
-        op_super[:, j] = rho_dot
     return op_super
 
 
@@ -663,35 +631,6 @@ def calc_super_liou(h_, c_ops):
         op_super = op_super_ind
     return op_super
 
-
-#@njit(cache=True)
-def calc_liou_np(rho_, h, c_ops_):
-    def cmtr(a, b):
-        return a @ b - b @ a
-
-    liou = 1j * cmtr(rho_, h)  # / self.hbar
-    for c_op in c_ops_:
-        # liou += -1 / 2 * cmtr(c_op.full(), cmtr(c_op.full(), rho))
-        # liou += c_op.full() @ rho_ @ c_op.dag().full() - \
-        #         1 / 2 * (c_op.dag().full() @ c_op.full() @ rho_ + rho_ @ c_op.dag().full() @ c_op.full())
-        liou += c_op @ rho_ @ c_op.conj().T - \
-                1 / 2 * (c_op.conj().T @ c_op @ rho_ + rho_ @ c_op.conj().T @ c_op)
-    return liou
-
-
-#@njit(cache=True)
-def calc_super_liou_np(h_, c_ops):
-    m, n = h_.shape
-    op_super = 1j * numpy.ones((n ** 2, n ** 2))
-    for j in range(n ** 2):
-        rho_vec = 1j * numpy.zeros(n ** 2)
-        rho_vec[j] = 1
-        rho_mat = rho_vec.reshape((m, n))
-        rho_dot = calc_liou_np(rho_mat, h_, c_ops)
-        rho_dot = rho_dot.reshape((n ** 2))
-        op_super[:, j] = rho_dot
-    return op_super
-
 def pickle_save(path, obj):
     f = open(path, mode='wb')
     pickle.dump(obj, f)
@@ -791,7 +730,7 @@ class System(Spectrum):
                       correction_only=False, beta_offset=True):
 
         if mathcal_a is None:
-            mathcal_a = calc_super_A_np(self.sc_ops[measure_op].full().astype(numpy.complex128)).T
+            mathcal_a = calc_super_A(self.sc_ops[measure_op].full()).T
 
         if f_data.min() < 0:
             print('Only positive freqencies allowed')
@@ -806,20 +745,19 @@ class System(Spectrum):
 
         all_c_ops = {**self.c_ops, **self.sc_ops}
         measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
-        c_ops_m = numpy.array([measure_strength[op] * all_c_ops[op].full().astype(numpy.complex128) for op in all_c_ops])
-        H = self.H.full().astype(numpy.complex128)
+        c_ops_m = np.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
+        H = self.H.full()
 
         if self.L is None:
-            self.L = calc_super_liou_np(H, c_ops_m)
+            self.L = calc_super_liou(H, c_ops_m)
 
             print('Diagonalizing L')
-            #eigvals, eigvecs = eig_np(self.L.to_py().astype(numpy.complex128))
-            eigvals, eigvecs = eig_np(self.L.astype(numpy.complex128))
-            self.eigvals = eigvals
-            self.eigvecs = eigvecs
+            eigvals, eigvecs = eig_np(self.L.to_py())
+            self.eigvals = device_put(eigvals)
+            self.eigvecs = device_put(eigvecs)
             print('L has been diagonalized')
 
-            self.eigvecs_inv = numpy.linalg.inv(eigvecs)
+            self.eigvecs_inv = inv(self.eigvecs)
 
         s = H.shape[0]  # For reshaping
         reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace

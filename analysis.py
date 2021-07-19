@@ -318,12 +318,12 @@ class Spectrum:
     def calc_overlap(self, unit, imag=False, scale_t=1):
         plt.figure(figsize=(28, 13))
 
-        overlap_s2 = [np.sum(self.S_sigmas[2][:, i] * self.S[2]) for i in range(self.S_sigmas[2][1, :].shape[0])]
+        overlap_s2 = [np.var(self.S_sigmas[2][:, i] * self.S[2]) for i in range(self.S_sigmas[2][1, :].shape[0])]
 
-        overlap_s3 = [np.sum(self.S_sigmas[3][:, :, i] * self.S[3]) for i in
+        overlap_s3 = [np.var(self.S_sigmas[3][:, :, i] * self.S[3]) for i in
                       range(self.S_sigmas[3][1, 1, :].shape[0])]
 
-        overlap_s4 = [np.sum(self.S_sigmas[4][:, :, i] * self.S[4]) for i in
+        overlap_s4 = [np.var(self.S_sigmas[4][:, :, i] * self.S[4]) for i in
                       range(self.S_sigmas[4][1, 1, :].shape[0])]
 
         t = np.linspace(0, self.dt * self.main_data.shape[0], self.S_sigmas[4][1, 1, :].shape[0]) / scale_t
@@ -347,7 +347,7 @@ class Spectrum:
         else:
             plt.title('imaginalry part')
         plt.show()
-        return t, overlap_s2, overlap_s3, overlap_s4
+        return t, t_main, overlap_s2, overlap_s3, overlap_s4
 
     def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, verbose=True, coherent=False, corr_default=None,

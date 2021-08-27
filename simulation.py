@@ -840,8 +840,6 @@ class System(Spectrum):
         else:
             spec_data = 1j * np.zeros((len(omegas), len(omegas)))
 
-
-
         # self.A_prim = mathcal_a.full() - np.trace((mathcal_a.full() @ rho_steady).reshape((s, s), order='F'))
 
         self.A_prim = mathcal_a - np.eye(s ** 2) * np.trace((mathcal_a @ self.rho_steady).reshape((s, s)))  # , order='F'))

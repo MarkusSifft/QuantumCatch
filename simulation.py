@@ -834,6 +834,7 @@ class System(Spectrum):
             rho_steady = rho_steady / np.trace(rho_steady.reshape((s, s)))  # , order='F'))
 
             self.rho_steady = rho_steady
+            self.rho_steady_cpu = rho_steady
 
         if order == 2:
             spec_data = np.ones_like(omegas)
@@ -842,15 +843,15 @@ class System(Spectrum):
 
         # self.A_prim = mathcal_a.full() - np.trace((mathcal_a.full() @ rho_steady).reshape((s, s), order='F'))
 
-        self.A_prim = mathcal_a - np.eye(s ** 2) * np.trace((mathcal_a @ self.rho_steady).reshape((s, s)))  # , order='F'))
+        self.A_prim = mathcal_a - np.eye(s ** 2) * np.trace((mathcal_a @ self.rho_steady_cpu).reshape((s, s)))  # , order='F'))
 
         if g_prim:
             S_1 = mathcal_a - np.eye(s ** 2) * np.trace(
-                (mathcal_a @ rho_steady).reshape((s, s), order='F'))
+                (mathcal_a @ self.rho_steady_cpu).reshape((s, s), order='F'))
             G_0 = self.g_prim(0)
             self.A_prim = S_1 @ G_0 @ S_1
 
-        rho = self.A_prim @ rho_steady
+        rho = self.A_prim @ self.rho_steady_cpu
 
         if self.enable_gpu:
             self.eigvals, self.eigvecs, self.eigvecs_inv = to_gpu(self.eigvals), to_gpu(self.eigvecs), to_gpu(

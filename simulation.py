@@ -826,23 +826,25 @@ class System(Spectrum):
             self.eigvecs_inv = inv(self.eigvecs)
             self.zero_ind = np.argmax(np.real(self.eigvals))
 
-        s = H.shape[0]  # For reshaping
-        reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
+            s = H.shape[0]  # For reshaping
+            reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
+
+            zero_ind = np.argmax(np.real(self.eigvals))
+            rho_steady = self.eigvecs[:, zero_ind]
+            rho_steady = rho_steady / np.trace(rho_steady.reshape((s, s)))  # , order='F'))
+
+            self.rho_steady = rho_steady
 
         if order == 2:
             spec_data = np.ones_like(omegas)
         else:
             spec_data = 1j * np.zeros((len(omegas), len(omegas)))
 
-        zero_ind = np.argmax(np.real(self.eigvals))
-        rho_steady = self.eigvecs[:, zero_ind]
-        rho_steady = rho_steady / np.trace(rho_steady.reshape((s, s)))  # , order='F'))
 
-        self.rho_steady = rho_steady
 
         # self.A_prim = mathcal_a.full() - np.trace((mathcal_a.full() @ rho_steady).reshape((s, s), order='F'))
 
-        self.A_prim = mathcal_a - np.eye(s ** 2) * np.trace((mathcal_a @ rho_steady).reshape((s, s)))  # , order='F'))
+        self.A_prim = mathcal_a - np.eye(s ** 2) * np.trace((mathcal_a @ self.rho_steady).reshape((s, s)))  # , order='F'))
 
         if g_prim:
             S_1 = mathcal_a - np.eye(s ** 2) * np.trace(

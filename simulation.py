@@ -854,10 +854,14 @@ class System(Spectrum):
         rho = self.A_prim @ self.rho_steady_cpu
 
         if self.enable_gpu:
-            self.eigvals, self.eigvecs, self.eigvecs_inv = to_gpu(self.eigvals), to_gpu(self.eigvecs), to_gpu(
-                self.eigvecs_inv)
-            rho = to_gpu(rho)
-            self.A_prim = to_gpu(self.A_prim)
+            if type(self.eigvals) != af.array.Array:
+                self.eigvals, self.eigvecs, self.eigvecs_inv = to_gpu(self.eigvals), to_gpu(self.eigvecs), to_gpu(
+                    self.eigvecs_inv)
+                rho = to_gpu(rho)
+                self.A_prim = to_gpu(self.A_prim)
+                reshape_ind = to_gpu(reshape_ind)
+                self.rho_steady = to_gpu(self.rho_steady)
+                self.gpu_0 = to_gpu(np.array([0. * 1j]))
 
             if order == 2:
                 rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(reshape_ind))))
@@ -868,9 +872,6 @@ class System(Spectrum):
                 second_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas))))
                 third_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas))))
 
-            reshape_ind = to_gpu(reshape_ind)
-            self.rho_steady = to_gpu(self.rho_steady)
-            self.gpu_0 = to_gpu(np.array([0. * 1j]))
         else:
             self.gpu_0 = 0
 

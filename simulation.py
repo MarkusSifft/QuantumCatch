@@ -813,6 +813,7 @@ class System(Spectrum):
         measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
         c_ops_m = np.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
         H = self.H.full()
+        s = H.shape[0]  # For reshaping
 
         if self.L is None:
             L = calc_super_liou(H, c_ops_m)
@@ -826,7 +827,6 @@ class System(Spectrum):
             self.eigvecs_inv = inv(self.eigvecs)
             self.zero_ind = np.argmax(np.real(self.eigvals))
 
-            s = H.shape[0]  # For reshaping
             reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
 
             zero_ind = np.argmax(np.real(self.eigvals))

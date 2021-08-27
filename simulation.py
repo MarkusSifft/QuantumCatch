@@ -754,6 +754,7 @@ class System(Spectrum):
         # ------- Enable GPU for large systems -------
         self.enable_gpu = False
         self.gpu_0 = 0
+        self.reshape_ind = 0
 
     def save_spec(self, path):
         self.gpu_0 = 0
@@ -827,7 +828,7 @@ class System(Spectrum):
             self.eigvecs_inv = inv(self.eigvecs)
             self.zero_ind = np.argmax(np.real(self.eigvals))
 
-            reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
+            self.reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
 
             zero_ind = np.argmax(np.real(self.eigvals))
             rho_steady = self.eigvecs[:, zero_ind]
@@ -859,16 +860,16 @@ class System(Spectrum):
                     self.eigvecs_inv)
                 rho = to_gpu(rho)
                 self.A_prim = to_gpu(self.A_prim)
-                reshape_ind = to_gpu(reshape_ind)
+                reshape_ind = to_gpu(self.reshape_ind)
                 self.rho_steady = to_gpu(self.rho_steady)
                 self.gpu_0 = to_gpu(np.array([0. * 1j]))
 
             if order == 2:
-                rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(reshape_ind))))
+                rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(self.reshape_ind))))
             elif order == 3:
-                rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(reshape_ind))))
+                rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(self.reshape_ind))))
             else:
-                rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(reshape_ind))))
+                rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(self.reshape_ind))))
                 second_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas))))
                 third_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas))))
 

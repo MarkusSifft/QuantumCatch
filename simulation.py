@@ -858,11 +858,12 @@ class System(Spectrum):
             if type(self.eigvals) != af.array.Array:
                 self.eigvals, self.eigvecs, self.eigvecs_inv = to_gpu(self.eigvals), to_gpu(self.eigvecs), to_gpu(
                     self.eigvecs_inv)
-                self.A_prim = to_gpu(self.A_prim)
+
                 reshape_ind = to_gpu(self.reshape_ind)
                 self.rho_steady = to_gpu(self.rho_steady)
                 self.gpu_0 = to_gpu(np.array([0. * 1j]))
 
+            self.A_prim = to_gpu(self.A_prim)
             rho = to_gpu(rho)
 
             if order == 2:

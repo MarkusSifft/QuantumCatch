@@ -829,6 +829,7 @@ class System(Spectrum):
             self.zero_ind = np.argmax(np.real(self.eigvals))
 
             self.reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
+            reshape_ind = self.reshape_ind
 
             zero_ind = np.argmax(np.real(self.eigvals))
             rho_steady = self.eigvecs[:, zero_ind]

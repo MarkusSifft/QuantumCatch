@@ -831,8 +831,8 @@ class System(Spectrum):
             self.zero_ind = np.argmax(np.real(self.eigvals))
 
 
-            zero_ind = np.argmax(np.real(self.eigvals))
-            rho_steady = self.eigvecs[:, zero_ind]
+            self.zero_ind = np.argmax(np.real(self.eigvals))
+            rho_steady = self.eigvecs[:, self.zero_ind]
             rho_steady = rho_steady / np.trace(rho_steady.reshape((s, s)))  # , order='F'))
 
             self.rho_steady = rho_steady
@@ -949,7 +949,7 @@ class System(Spectrum):
                 gpu_zero_mat = 0
             #  gpu_ones_arr = to_gpu(0*1j + np.ones(len(self.eigvecs[0])))
             s_k = small_s(self.rho_steady, self.A_prim, self.eigvecs, self.eigvecs_inv, reshape_ind,
-                          enable_gpu, zero_ind, gpu_zero_mat)
+                          enable_gpu, self.zero_ind, gpu_zero_mat)
             print('Done')
             self.s_k = s_k
 

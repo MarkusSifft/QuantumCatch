@@ -815,6 +815,8 @@ class System(Spectrum):
         c_ops_m = np.array([measure_strength[op] * all_c_ops[op].full() for op in all_c_ops])
         H = self.H.full()
         s = H.shape[0]  # For reshaping
+        self.reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
+        reshape_ind = self.reshape_ind
 
         if self.L is None:
             L = calc_super_liou(H, c_ops_m)
@@ -828,8 +830,6 @@ class System(Spectrum):
             self.eigvecs_inv = inv(self.eigvecs)
             self.zero_ind = np.argmax(np.real(self.eigvals))
 
-            self.reshape_ind = np.arange(0, (s + 1) * (s - 1) + 1, s + 1)  # gives the trace
-            reshape_ind = self.reshape_ind
 
             zero_ind = np.argmax(np.real(self.eigvals))
             rho_steady = self.eigvecs[:, zero_ind]
@@ -892,7 +892,7 @@ class System(Spectrum):
                 if enable_gpu:
                     rho_prim_sum[i, :] = rho_prim[reshape_ind] + rho_prim_neg[reshape_ind]
                 else:
-                    spec_data[i] = rho_prim[reshape_ind].sum() + rho_prim_neg[reshape_ind].sum()
+                    spec_data[i] = rho_prim[self.reshape_ind].sum() + rho_prim_neg[self.reshape_ind].sum()
                 # S[i] = 2 * np.real(rho_prim[reshape_ind].sum())
 
             if enable_gpu:
@@ -921,7 +921,7 @@ class System(Spectrum):
                             rho_prim_sum[ind_1, ind_2 + ind_1, :] += af.data.moddims(rho_prim[reshape_ind], d0=1, d1=1,
                                                                                      d2=reshape_ind.shape[0])
                         else:
-                            trace_sum += rho_prim[reshape_ind].sum()
+                            trace_sum += rho_prim[self.reshape_ind].sum()
 
                     if not enable_gpu:
                         spec_data[ind_1, ind_2 + ind_1] = trace_sum  # np.real(trace_sum)

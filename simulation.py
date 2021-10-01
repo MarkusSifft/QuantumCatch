@@ -1137,7 +1137,8 @@ class System(Spectrum):
             out = list(result.expect.values())[0]
         return out
 
-    def calc_transient(self, t, seed=None, _solver=None, progress_bar=None, _nsubsteps=1, _normalize=None):
+    def calc_transient(self, t, seed=None, _solver=None, progress_bar=None, _nsubsteps=1, _normalize=None,
+                       options=None, return_result=False):
         self.time_series_data = self.time_series_data_empty.copy()  # [kHz]
         self.time_series_data.t = t  # [kHz]
         c_ops_m = [self.c_measure_strength[op] * self.c_ops[op] for op in self.c_ops]
@@ -1146,7 +1147,7 @@ class System(Spectrum):
         result = smesolve(self.H, self.psi_0, t,
                           c_ops=c_ops_m, sc_ops=sc_ops_m, e_ops=self.e_ops, noise=seed,
                           solver=_solver, progress_bar=progress_bar, nsubsteps=_nsubsteps,
-                          normalize=_normalize)
+                          normalize=_normalize, options=options)
 
         self.time_series_data.update(result.expect)
         noise = result.noise[0, :, 0, :]
@@ -1164,6 +1165,9 @@ class System(Spectrum):
         if bool(self.sc_ops):
             self.expect_with_noise = {op + '_noise': real_view(op) for op in self.sc_ops.keys()}
         self.time_series_data.update(self.expect_with_noise)
+
+        if return_result:
+            return self.time_series_data.convert_dtypes(), result
 
         return self.time_series_data.convert_dtypes()
 

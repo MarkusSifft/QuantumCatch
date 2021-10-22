@@ -866,7 +866,7 @@ class System(Spectrum):
             x_axis_label = 'f [kHz]'
             y_axis_label = 'S<sup>(2)</sup>(f)'
             fs = self.freq[order]
-            values = self.S[order]
+            values = np.real(self.S[order])
             if log:
                 values = np.log(values)
             fig = plotly(order=2, x=fs, y=values, title=title, domain='freq',

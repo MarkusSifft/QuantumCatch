@@ -1050,7 +1050,7 @@ class System(Spectrum):
             fig.update_layout(autosize=False, width=880, height=550)
             if x_range:
                 fig.update_xaxes(range=x_range)
-            fig.show()
+            fig.show() # ---
 
         elif order > 2:
             spec = self.S[order]

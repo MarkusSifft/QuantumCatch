@@ -350,7 +350,7 @@ class Spectrum:
         return t, t_main, overlap_s2, overlap_s3, overlap_s4
 
     def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
-                  corr_shift=0, verbose=True, coherent=False, corr_default=None,
+                  corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
                   break_after=1e6, m=10, window_shift=1, random_phase=False, dt=None, data=None):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
         if dt is not None:
@@ -456,6 +456,11 @@ class Spectrum:
             if order == 2:
                 a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
 
+                if filter_func:
+                    pre_filter = filter_func(self.freq[2])
+                    filter_mat = to_gpu(np.array(m * [1/pre_filter]).flatten().reshape((a_w_all.shape[0], 1, m), order='F'))
+                    a_w_all = filter_mat * a_w_all
+
                 if random_phase:
                     a_w_all = self.add_random_phase(a_w_all, order, window_size, delta_t, m)
 
@@ -473,6 +478,12 @@ class Spectrum:
 
             elif order > 2:
                 a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
+
+                if filter_func:
+                    pre_filter = filter_func(self.freq[2])
+                    filter_mat = to_gpu(np.array(m * [1/pre_filter]).flatten().reshape((a_w_all.shape[0], 1, m), order='F'))
+                    a_w_all = filter_mat * a_w_all
+
                 if random_phase:
                     a_w_all = self.add_random_phase(a_w_all, order, window_size, delta_t, m)
 

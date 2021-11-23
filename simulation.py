@@ -898,7 +898,7 @@ class System(Spectrum):
             if enable_gpu:
                 spec_data = af.algorithm.sum(rho_prim_sum, dim=1).to_ndarray()
 
-            self.S[order] = np.hstack((np.flip(spec_data)[:-1], spec_data))
+            # self.S[order] = np.hstack((np.flip(spec_data)[:-1], spec_data))
             self.S[order] = beta ** 4 * self.S[order]
             if beta_offset:
                 self.S[order] += beta ** 2 / 4

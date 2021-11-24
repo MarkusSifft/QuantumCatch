@@ -938,7 +938,9 @@ class System(Spectrum):
 
             if np.max(np.abs(np.imag(np.real_if_close(_full_bispec(spec_data))))) > 0:
                 print('Bispectrum might have an imaginary part')
-            self.S[order] = np.real(_full_bispec(spec_data)) * beta ** 6
+            # self.S[order] = np.real(_full_bispec(spec_data)) * beta ** 6
+            self.S[order] = _full_bispec(spec_data) * beta ** 6
+
         if order == 4:
             if bar:
                 print('Calculating correlation spectrum')
@@ -1027,7 +1029,8 @@ class System(Spectrum):
 
             if np.max(np.abs(np.imag(np.real_if_close(_full_trispec(spec_data))))) > 0:
                 print('Trispectrum might have an imaginary part')
-            self.S[order] = np.real(_full_trispec(spec_data)) * beta ** 8
+            # self.S[order] = np.real(_full_trispec(spec_data)) * beta ** 8
+            self.S[order] = _full_trispec(spec_data) * beta ** 8
 
         # Delete cache_fourier_g_prim
         cache_fourier_g_prim.clear()

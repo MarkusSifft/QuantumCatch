@@ -1,7 +1,7 @@
 # This file is part of QuantumPolyspectra: a Python Package for the
 # Analysis and Simulation of Quantum Measurements
 #
-#    Copyright (c) 2011 and later, Paul D. Nation and Robert J. Johansson.
+#    Copyright (c) 2020 and later, Markus Sifft and Daniel Hägele.
 #    All rights reserved.
 #
 #    Redistribution and use in source and binary forms, with or without

@@ -807,7 +807,10 @@ class System(Spectrum):
             beta = self.sc_measure_strength[measure_op]
 
         omegas = 2 * np.pi * f_data  # [kHz]
-        f_full = np.hstack((np.flip(-f_data)[:-1], f_data))
+        if order == 2:
+            f_full = f_data
+        else:
+            f_full = np.hstack((np.flip(-f_data)[:-1], f_data))
         self.freq[order] = f_full
 
         all_c_ops = {**self.c_ops, **self.sc_ops}

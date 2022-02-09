@@ -541,7 +541,7 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def calc_spec_poisson(self, order, window_width, f_list, backend='opencl', m=10, data=None):
+    def calc_spec_poisson(self, order, window_width, f_max, backend='opencl', m=5, data=None):
         """
 
         Parameters
@@ -568,6 +568,7 @@ class Spectrum:
 
         af.set_backend(backend)
         window_width = int(window_width)
+        self.fs = f_max
         self.window_width = window_width
         self.m = m
         self.freq[order] = None
@@ -584,13 +585,21 @@ class Spectrum:
             main_data = self.data
         self.main_data = main_data
 
+        f_min = 1 / window_width
+        f_list = np.arange(f_min, f_max, f_min)
+
         start_index = 0
         sigma_counter = 0
         enough_data = True
         n_chunks = 0
         f_max_ind = len(f_list)
         w_list = 2 * np.pi * f_list
-        n_windows = self.main_data.max() // window_width
+        n_windows = int(self.main_data.max() // (window_width * m))
+
+        if order == 3:
+            self.freq[order] = f_list[:int(f_max_ind // 2)]
+        else:
+            self.freq[order] = f_list
 
         if order == 2:
             self.S_sigmas[2] = 1j * np.empty((f_max_ind, n_windows))
@@ -599,11 +608,11 @@ class Spectrum:
         elif order == 4:
             self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
 
-        for _ in tqdm_notebook(range(n_windows)):
+        for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
             for i in range(m):
 
-                end_index = self.find_end_index(start_index, window_width)
+                end_index = self.find_end_index(start_index, window_width, m, frame_number, i)
                 if end_index == -1:
                     enough_data = False
                     break
@@ -617,11 +626,12 @@ class Spectrum:
 
             a_w_all = np.empty((w_list.shape[0], m))
             for i, t_clicks in enumerate(windows):
-                t_clicks_windowed = self.apply_window(t_clicks)
+                t_clicks_windowed = self.apply_window(t_clicks - i * window_width - m * window_width * frame_number)
+                # subtract window start time to make window start at t=0
                 a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_windowed)), axis=1)
                 a_w_all[:, i] = a_w
 
-            a_w_all = to_gpu(a_w_all)
+            a_w_all = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))
 
             if order == 2:
                 a_w = a_w_all
@@ -642,10 +652,10 @@ class Spectrum:
                 sigma_counter = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
 
         assert n_windows == n_chunks, 'n_windows not equal to n_chunks'
-        
-        dt = 1/f_list.max()
+
+        dt = 1 / (2 * f_list.max())
         single_window = self.cgw(len(f_list), ones=False)
-        
+
         self.S_gpu[order] /= dt * (single_window ** order).sum() * n_chunks
         self.S[order] = self.S_gpu[order].to_ndarray()
 
@@ -679,12 +689,12 @@ class Spectrum:
         t_clicks_windowed = g(t_clicks) - (g(-0.5 * dt) * (g(t_clicks + L) + g(t_clicks - L))) / (
                 g(-0.5 * dt + L) + g(-0.5 * dt - L))
 
-        t_clicks_windowed /= np.sqrt(np.sum(t_clicks_windowed ** 2) / self.window_width)
-        return t_clicks_windowed
+        t_clicks_windowed_normalized = t_clicks_windowed / np.sqrt(np.sum(t_clicks_windowed ** 2) / self.window_width)
+        return t_clicks_windowed_normalized
 
-    def find_end_index(self, start_index, window_width):
+    def find_end_index(self, start_index, window_width, m, frame_number, i):
         end_not_found = True
-        end_time = self.main_data[start_index] + window_width
+        end_time = window_width * (m * frame_number + (i + 1))
         i = 1
         while end_not_found:
             if start_index + i > self.main_data.shape[0]:

@@ -566,21 +566,16 @@ class Spectrum:
         if data is not None:
             self.data = data
 
-        n_chunks = 0
         af.set_backend(backend)
         window_width = int(window_width)
         self.window_width = window_width
         self.m = m
-        window = None
         self.freq[order] = None
         self.S[order] = None
         self.S_gpu[order] = None
         self.S_sigma_gpu = None
         self.S_sigma[order] = None
         self.S_sigmas[order] = []
-
-        single_window = None
-        sigma_counter = 0
 
         # -------data setup---------
         if self.data is None:
@@ -590,6 +585,7 @@ class Spectrum:
         self.main_data = main_data
 
         start_index = 0
+        sigma_counter = 0
         enough_data = True
         n_chunks = 0
         f_max_ind = len(f_list)

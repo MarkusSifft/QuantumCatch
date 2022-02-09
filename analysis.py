@@ -537,6 +537,160 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
+    def calc_spec_poisson(self, order, window_width, f_list, backend='opencl', m=10, data=None):
+        """
+
+        Parameters
+        ----------
+        order: int
+            order of the calculated spectrum
+        window_width: int
+            spectra for m windows of window_size is calculated
+        f_list: array
+            frequencies of the spectra to be calculated
+        backend: str
+            backend for arrayfire
+        m: int
+            spectra for m windows of window_size is calculated
+        data: array
+            timestamps of clicks
+        Returns
+        -------
+
+        """
+
+        if data is not None:
+            self.data = data
+
+        n_chunks = 0
+        af.set_backend(backend)
+        window_width = int(window_width)
+        self.window_width = window_width
+        self.m = m
+        window = None
+        self.freq[order] = None
+        self.S[order] = None
+        self.S_gpu[order] = None
+        self.S_sigma_gpu = None
+        self.S_sigma[order] = None
+        self.S_sigmas[order] = []
+
+        single_window = None
+        sigma_counter = 0
+
+        # -------data setup---------
+        if self.data is None:
+            main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
+        else:
+            main_data = self.data
+
+        self.main_data = main_data
+
+        start_index = 0
+        enough_data = True
+        n_chunks = 0
+        while enough_data:
+            windows = []
+            for i in range(m):
+
+                end_index = self.find_end_index(start_index, window_width)
+                if end_index == -1:
+                    enough_data = False
+                    break
+                else:
+                    windows.append(self.main_data[start_index:end_index])
+                    start_index = end_index
+            if not enough_data:
+                break
+
+            n_chunks += 1
+            w_list = 2 * np.pi * f_list
+
+            a_w_all = np.empty((w_list.shape[0], m))
+            for t_clicks in windows:
+                a_w = np.empty_like(w_list)
+                t_clicks_windowed = self.apply_window(t_clicks)
+                a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_windowed)), axis=1)
+                a_w *= dt #???
+
+                a_w_all = to_gpu(a_w_all)
+
+                if order == 2:
+                    self.S_sigmas[2] = 1j * np.empty((f_max_ind, n_windows))
+                elif order == 3:
+                    self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, n_windows))
+                elif order == 4:
+                    self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
+
+                if order == 2:
+                    a_w = a_w_all
+                    single_spectrum = c2(a_w, a_w, m, coherent=coherent)
+                    sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+
+                elif order == 3:
+                    f_max_ind = len(w_list)
+                    a_w1 = af.lookup(a_w_all, af.Array(list(range(f_max_ind // 2))), dim=0)
+                    a_w2 = a_w1
+                    a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
+                    single_spectrum = c3(a_w1, a_w2, a_w3, m)
+                    sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+
+                elif order == 4:
+                    a_w = a_w_all
+                    a_w_corr = a_w
+                    single_spectrum = c4(a_w, a_w_corr, m)
+                    sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+
+            self.S_gpu[order] /= dt * (single_window ** order).sum() * n_chunks
+            self.S[order] = self.S_gpu[order].to_ndarray()
+
+            self.S_sigmas[order] /= (dt * (single_window ** order).sum() * np.sqrt(n_chunks))
+
+            if n_chunks > 1:
+                if order == 2:
+
+                    self.S_sigma_gpu = np.sqrt(
+                        n_chunks / (n_chunks - 1) * (
+                                    np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
+                                    np.mean(self.S_sigmas[order], axis=1) * np.conj(
+                                np.mean(self.S_sigmas[order], axis=1))))
+
+                else:
+
+                    self.S_sigma_gpu = np.sqrt(n_chunks / (n_chunks - 1) * (
+                            np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
+                            np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
+
+                self.S_sigma[order] = self.S_sigma_gpu
+
+            return self.freq[order], self.S[order], self.S_sigma[order]
+
+    def cgw_of_time(self, t_clicks):
+        sigma_t = 0.14
+        g = lambda t: np.exp(-((t-self.window_width/2)/(2*sigma_t*(self.window_width - dt)))**2)
+
+        L = self.window_width - dt
+        t_clicks_windowed = g(t_clicks) - (g(-0.5*dt) * (g(t_clicks + L) + g(t_clicks - L))) / (g(-0.5 + L) + g(-0.5 - L))
+
+        t_clicks_windowed /= np.sqrt(np.sum(t_clicks_windowed ** 2))
+
+    def apply_window(self, t_clicks):
+
+        return t_clicks_windowed
+
+    def find_end_index(self, start_index, window_width):
+        end_not_found = True
+        end_time = self.main_data[start_index] + window_width
+        i = 1
+        while end_not_found:
+            if start_index + i > self.main_data.shape[0]:
+                return -1
+            elif self.main_data[start_index + i] > end_time:
+                return start_index + i
+            else:
+                i += 1
+
+
     def poly_plot(self, f_max, f_min=0, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
                   s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, plot_error=True):

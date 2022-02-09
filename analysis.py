@@ -599,7 +599,7 @@ class Spectrum:
         elif order == 4:
             self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
 
-        for _ in range(n_windows):
+        for _ in tqdm_notebook(range(n_windows)):
             windows = []
             for i in range(m):
 

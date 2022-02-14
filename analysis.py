@@ -541,7 +541,7 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def calc_spec_poisson(self, order, window_width, f_max, backend='opencl', m=5, data=None, sigma_t=0.14):
+    def calc_spec_poisson(self, order, window_width, f_max, backend='opencl', m=5, data=None, sigma_t=0.14, rect_win = False):
         """
 
         Parameters
@@ -619,28 +619,23 @@ class Spectrum:
                     break
                 else:
                     windows.append(self.main_data[start_index:end_index])
-                    #print('self.main_data[start_index:end_index]', self.main_data[start_index:end_index])
                     start_index = end_index
             if not enough_data:
                 break
 
             n_chunks += 1
 
-            a_w_all = np.empty((w_list.shape[0], m))
+            a_w_all = 1j * np.empty((w_list.shape[0], m))
             for i, t_clicks in enumerate(windows):
                 t_clicks_minus_start = t_clicks - i * window_width - m * window_width * frame_number
-                t_clicks_windowed = self.apply_window(t_clicks_minus_start, sigma_t=sigma_t)
+                if rect_win:
+                    t_clicks_windowed = np.ones_like(t_clicks_minus_start)
+                else:
+                    t_clicks_windowed = self.apply_window(t_clicks_minus_start, sigma_t=sigma_t)
                 # subtract window start time to make window start at t=0
                 a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed, axis=1)
-
-                a_w_sum = np.sum(a_w)
-                a_w_has_nan = np.isnan(a_w_sum)
-                # if True: # a_w_has_nan:
-                #     print('t_clicks', t_clicks)
-                #     print('t_clicks shifted', t_clicks - i * window_width - m * window_width * frame_number)
-                #     print('t_clicks_windowed', t_clicks_windowed)
-                #     print('------------')
-
+                if rect_win:
+                    a_w[0] /= np.sqrt(2)
                 a_w_all[:, i] = a_w
 
             a_w_all = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))

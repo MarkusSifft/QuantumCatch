@@ -541,17 +541,19 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def calc_spec_poisson(self, order, window_width, f_max, backend='opencl', m=5, data=None):
+    def calc_spec_poisson(self, order, window_width, f_max, backend='opencl', m=5, data=None, sigma_t=0.14):
         """
 
         Parameters
         ----------
+        sigma_t: float
+            width of approximate confined gaussian windows
         order: int
             order of the calculated spectrum
         window_width: int
             spectra for m windows of window_size is calculated
-        f_list: array
-            frequencies of the spectra to be calculated
+        f_max: float
+            maximum frequency of the spectra to be calculated
         backend: str
             backend for arrayfire
         m: int
@@ -567,7 +569,7 @@ class Spectrum:
             self.data = data
 
         af.set_backend(backend)
-        window_width = int(window_width)
+        #window_width = int(window_width)
         self.fs = f_max
         self.window_width = window_width
         self.m = m
@@ -586,7 +588,7 @@ class Spectrum:
         self.main_data = main_data
 
         f_min = 1 / window_width
-        f_list = np.arange(f_min, f_max, f_min)
+        f_list = np.arange(0, f_max+f_min, f_min)
 
         start_index = 0
         sigma_counter = 0
@@ -611,13 +613,13 @@ class Spectrum:
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
             for i in range(m):
-
                 end_index = self.find_end_index(start_index, window_width, m, frame_number, i)
                 if end_index == -1:
                     enough_data = False
                     break
                 else:
                     windows.append(self.main_data[start_index:end_index])
+                    #print('self.main_data[start_index:end_index]', self.main_data[start_index:end_index])
                     start_index = end_index
             if not enough_data:
                 break
@@ -626,9 +628,19 @@ class Spectrum:
 
             a_w_all = np.empty((w_list.shape[0], m))
             for i, t_clicks in enumerate(windows):
-                t_clicks_windowed = self.apply_window(t_clicks - i * window_width - m * window_width * frame_number)
+                t_clicks_minus_start = t_clicks - i * window_width - m * window_width * frame_number
+                t_clicks_windowed = self.apply_window(t_clicks_minus_start, sigma_t=sigma_t)
                 # subtract window start time to make window start at t=0
-                a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_windowed)), axis=1)
+                a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed, axis=1)
+
+                a_w_sum = np.sum(a_w)
+                a_w_has_nan = np.isnan(a_w_sum)
+                # if True: # a_w_has_nan:
+                #     print('t_clicks', t_clicks)
+                #     print('t_clicks shifted', t_clicks - i * window_width - m * window_width * frame_number)
+                #     print('t_clicks_windowed', t_clicks_windowed)
+                #     print('------------')
+
                 a_w_all[:, i] = a_w
 
             a_w_all = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))
@@ -678,8 +690,7 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def apply_window(self, t_clicks):
-        sigma_t = 0.14
+    def apply_window(self, t_clicks, sigma_t=0.14):
         dt = 0
 
         def g(t):
@@ -693,13 +704,18 @@ class Spectrum:
         return t_clicks_windowed_normalized
 
     def find_end_index(self, start_index, window_width, m, frame_number, i):
-        end_not_found = True
+        #print('start_index', start_index)
         end_time = window_width * (m * frame_number + (i + 1))
+        #print('end_time', end_time)
         i = 1
-        while end_not_found:
+        while True:
             if start_index + i > self.main_data.shape[0]:
                 return -1
+            elif self.main_data[start_index] > end_time:
+                return start_index
             elif self.main_data[start_index + i] > end_time:
+                #print('self.main_data[start_index + i]', self.main_data[start_index + i])
+                #print('start_index + i', start_index + i)
                 return start_index + i
             else:
                 i += 1

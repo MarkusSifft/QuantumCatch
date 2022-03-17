@@ -1074,7 +1074,7 @@ class System(Spectrum):
                 # --------Plot the diagonal of the Bispectrum---------
                 # title = 'Bispectrum Cross Sections'
                 fs = self.freq[order]
-                values = self.S[order]
+                values = spec
                 lines = [values[int(len(fs) / 2), :], values.diagonal(), values[-1, :]]
 
                 fig = make_subplots(rows=1, cols=2)
@@ -1101,7 +1101,7 @@ class System(Spectrum):
                 # title = 'Correlation Spectrum, Max. value: {0:5.3e}'.format(np.max(spec))
                 # spec = np.arcsinh(spec / np.max(spec) * 5)
                 fs = self.freq[order]
-                values = np.real(self.S[order])
+                values = spec
                 lines = [values[int(len(fs) / 2), :], values.diagonal(), values[-1, :]]
 
                 fig = make_subplots(rows=1, cols=2)

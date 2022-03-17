@@ -634,8 +634,6 @@ class Spectrum:
                     t_clicks_windowed = self.apply_window(t_clicks_minus_start, sigma_t=sigma_t)
                 # subtract window start time to make window start at t=0
                 a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed, axis=1)
-                if rect_win:
-                    a_w[0] /= np.sqrt(2)
                 a_w_all[:, i] = a_w
 
             a_w_all = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))

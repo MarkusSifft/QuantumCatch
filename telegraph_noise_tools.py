@@ -123,11 +123,15 @@ class FitTelegraph(Spectrum):
 
         return beta, gamma_in, gamma_in_err, gamma_out, gamma_out_err
 
-    def fit_telegraph(self, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, plot=False, with_s4=True):
+    def fit_telegraph(self, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, err=None,
+                      plot=False, with_s4=True):
 
         data = np.array([np.real(s2_data), np.real(s3_data), np.real(s4_data)])
-        err = np.concatenate([np.real(self.S_sigma[2]).flatten(), np.real(self.S_sigma[3]).flatten(),
-                              np.real(self.S_sigma[4]).flatten()])
+
+        if err is None:
+            err = np.concatenate([np.real(self.S_sigma[2]).flatten(), np.real(self.S_sigma[3]).flatten(),
+                                  np.real(self.S_sigma[4]).flatten()])
+
         omega_list = [s2_f, s3_f, s4_f]
 
         def s2(a, c, gIn, gOut, omegas):
@@ -146,7 +150,7 @@ class FitTelegraph(Spectrum):
                    (gIn ** 2 + 2 * gIn * gOut + gOut ** 2 + w2 ** 2) *
                    (gIn ** 2 + 2 * gIn * gOut + gOut ** 2 + (w1 + w2) ** 2))
 
-            return a ** 6 * s3_
+            return a ** 6 * s3_ + c
 
         def s4(a, c, gIn, gOut, omega1, omega2):
             w1 = np.outer(np.ones_like(omega1), omega1)  # varies horizontally
@@ -194,7 +198,7 @@ class FitTelegraph(Spectrum):
                    (gIn ** 2 + 2 * gIn * gOut + gOut ** 2 + w2 ** 2) ** 2 *
                    (gIn ** 2 + 2 * gIn * gOut + gOut ** 2 + (w1 + w2) ** 2))
 
-            return a ** 8 * s4_
+            return a ** 8 * s4_ + c
 
         def calc_spec(params, order, omega1):
             a = params['beta_%i' % (order - 1)]
@@ -221,7 +225,7 @@ class FitTelegraph(Spectrum):
 
             for i, order in enumerate(range(2, max_order)):
                 #  resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max())
-                resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max())
+                resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max() / (i+1))
 
             resid = np.concatenate(resid)
             weighted = np.sqrt(resid ** 2 / err ** 2)
@@ -238,7 +242,7 @@ class FitTelegraph(Spectrum):
             fit_params['gIn_%i' % iy].expr = 'gIn_1'
             fit_params['gOut_%i' % iy].expr = 'gOut_1'
             fit_params['beta_%i' % iy].expr = 'beta_1'
-            fit_params['beta_off_%i' % iy].expr = 'beta_off_1'
+            #fit_params['beta_off_%i' % iy].expr = 'beta_off_1'
 
         out = minimize(objective, fit_params, args=(omega_list, data))
 

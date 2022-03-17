@@ -1040,7 +1040,7 @@ class System(Spectrum):
         cache_third_term.clear()
         return self.S[order]
 
-    def plot_spectrum(self, order, title=None, log=False, x_range=False):
+    def plot_spectrum(self, order, title=None, log=False, x_range=False, imag_plot=False):
         fig = None
 
         if order == 2:
@@ -1060,7 +1060,10 @@ class System(Spectrum):
             fig.show() # ---
 
         elif order > 2:
-            spec = self.S[order]
+            if imag_plot:
+                spec = np.imag(self.S[order])
+            else:
+                spec = np.real(self.S[order])
             if order == 3:
                 # spec = np.arcsinh(spec / spec.max() * 5)
                 # if np.abs(spec.min()) >= spec.max():

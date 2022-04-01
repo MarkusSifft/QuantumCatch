@@ -811,11 +811,7 @@ class System(Spectrum):
             beta = self.sc_measure_strength[measure_op]
 
         omegas = 2 * np.pi * f_data  # [kHz]
-        if order == 2:
-            f_full = f_data
-        else:
-            f_full = np.hstack((np.flip(-f_data)[:-1], f_data))
-        self.freq[order] = f_full
+        self.freq[order] = f_data
 
         all_c_ops = {**self.c_ops, **self.sc_ops}
         measure_strength = {**self.c_measure_strength, **self.sc_measure_strength}
@@ -1043,6 +1039,10 @@ class System(Spectrum):
         cache_second_term.clear()
         cache_third_term.clear()
         return self.S[order]
+
+    def plot_all(self, f_max=None):
+        if f_max is None:
+            f_max =
 
     def plot_spectrum(self, order, title=None, log=False, x_range=False, imag_plot=False):
         fig = None

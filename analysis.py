@@ -723,7 +723,7 @@ class Spectrum:
         plt.rcParams["axes.axisbelow"] = False
 
         # -------- S2 ---------
-        if self.S[2] is not None and not self.S[2].shape[0] == 0:
+        if True: # self.S[2] is not None and not self.S[2].shape[0] == 0:
             if imag_plot:
                 s2_data = np.imag(self.S[2]) if s2_data is None else np.imag(s2_data)
                 s2_sigma = np.imag(self.S_sigma[2]) if s2_sigma is None else np.imag(s2_sigma)
@@ -790,7 +790,7 @@ class Spectrum:
                 x_, y_ = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
                 return np.ma.masked_array(np.interp(value, x_, y_), np.isnan(value))
 
-        if self.S[3] is not None and not self.S[3].shape[0] == 0:
+        if True: #self.S[3] is not None and not self.S[3].shape[0] == 0:
 
             if imag_plot:
                 s3_data = np.imag(self.S[3]).copy() if s3_data is None else np.imag(s3_data).copy()
@@ -842,7 +842,7 @@ class Spectrum:
             cbar = fig.colorbar(c, ax=(ax[1]))
 
         # -------- S4 ---------
-        if self.S[4] is not None and not self.S[4].shape[0] == 0:
+        if True: # self.S[4] is not None and not self.S[4].shape[0] == 0:
             if imag_plot:
                 s4_data = np.imag(self.S[4]).copy() if s4_data is None else np.imag(s4_data).copy()
                 s4_sigma = np.imag(self.S_sigma[4]).copy() if s4_sigma is None else np.imag(s4_sigma).copy()

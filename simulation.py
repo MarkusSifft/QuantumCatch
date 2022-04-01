@@ -516,10 +516,10 @@ def _full_bispec(r_in, one_quadrant=True):
     for i in range(s):
         r_rolled[:, i] = np.roll(r_padded[:, i], -i)
     r_left = r_rolled[:s, :]
-    if one_quadrant:
-        return r_left
     r_mirrored = r_left + np.flipud((np.flipud(r_left)).T) - np.fliplr(np.diag(np.diagonal(np.fliplr(r_left))))
     r_top_left = np.fliplr(r_mirrored)
+    if one_quadrant:
+        return np.flipud(r)
     m[:s, :s] = r_top_left
     m[:s, s - 1:] = r
     m_full = np.fliplr(np.flipud(m)) + m
@@ -542,7 +542,7 @@ def _full_trispec(r_in, one_quadrand=True):
     """
     r = np.flipud(r_in)
     if one_quadrand:
-        return r
+        return r_in
     s, t = r.shape
     m = 1j * np.zeros((2 * s - 1, 2 * s - 1))
     m[:s, s - 1:] = r

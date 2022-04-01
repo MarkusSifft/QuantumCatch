@@ -495,7 +495,7 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
 # ------- Hepler functions ----------
 
 
-def _full_bispec(r_in):
+def _full_bispec(r_in, one_quadrant=True):
     """
     Turns the partial bispectrum (only the half of quadrant) into a full plain.
 
@@ -516,6 +516,8 @@ def _full_bispec(r_in):
     for i in range(s):
         r_rolled[:, i] = np.roll(r_padded[:, i], -i)
     r_left = r_rolled[:s, :]
+    if one_quadrant:
+        return r_left
     r_mirrored = r_left + np.flipud((np.flipud(r_left)).T) - np.fliplr(np.diag(np.diagonal(np.fliplr(r_left))))
     r_top_left = np.fliplr(r_mirrored)
     m[:s, :s] = r_top_left
@@ -525,7 +527,7 @@ def _full_bispec(r_in):
     return np.fliplr(m_full)
 
 
-def _full_trispec(r_in):
+def _full_trispec(r_in, one_quadrand=True):
     """
     Turns the partial trispectrum (only the half of quadrant) into a full plain.
 
@@ -539,6 +541,8 @@ def _full_trispec(r_in):
         Full plain of spectrum
     """
     r = np.flipud(r_in)
+    if one_quadrand:
+        return r
     s, t = r.shape
     m = 1j * np.zeros((2 * s - 1, 2 * s - 1))
     m[:s, s - 1:] = r

@@ -1042,7 +1042,9 @@ class System(Spectrum):
 
     def plot_all(self, f_max=None):
         if f_max is None:
-            f_max =
+            f_max = self.freq[2].max()
+        fig = self.poly_plot(f_max, s2_data=self.S[2], s3_data=self.S[3], s4_data=self.S[4], s2_f=self.freq[2], s3_f=self.freq[3], s4_f=self.freq[4])
+        return fig
 
     def plot_spectrum(self, order, title=None, log=False, x_range=False, imag_plot=False):
         fig = None

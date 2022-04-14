@@ -36,6 +36,7 @@ import h5py
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 
 try:
     import arrayfire as af
@@ -184,6 +185,10 @@ def c4(a_w, a_w_corr, m):
 
     return s4
 
+def pickle_save(path, obj):
+    f = open(path, mode='wb')
+    pickle.dump(obj, f)
+    f.close()
 
 class Spectrum:
 
@@ -213,6 +218,11 @@ class Spectrum:
         self.corr_dataset = corr_dataset
         self.dt = dt
         self.main_data = None
+
+    def save_spec(self, path):
+        self.S_gpu = None
+        self.S_sigma_gpu = None
+        pickle_save(path, self)
 
     def stationarity_plot(self, contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,
                           normalize='area'):

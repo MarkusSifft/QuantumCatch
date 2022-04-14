@@ -222,6 +222,9 @@ class Spectrum:
     def save_spec(self, path):
         self.S_gpu = None
         self.S_sigma_gpu = None
+        self.main_data = None
+        self.corr_data = None
+        self.data = None
         pickle_save(path, self)
 
     def stationarity_plot(self, contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,

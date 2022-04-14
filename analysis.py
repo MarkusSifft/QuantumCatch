@@ -225,6 +225,7 @@ class Spectrum:
         self.main_data = None
         self.corr_data = None
         self.data = None
+        self.S_sigmas = None
         pickle_save(path, self)
 
     def stationarity_plot(self, contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,

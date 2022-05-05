@@ -367,7 +367,7 @@ class Spectrum:
 
     def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
-                  break_after=1e6, m=10, window_shift=1, random_phase=False, dt=None, data=None):
+                  break_after=1e6, m=10, window_shift=1, random_phase=False, dt=None, data=None, rect_win=False):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
         if dt is not None:
             self.dt = dt
@@ -413,7 +413,7 @@ class Spectrum:
         n_data_points = main_data.shape[0]
         n_windows = int(np.floor(n_data_points / (m * window_size)))
         n_windows = int(
-            np.floor(n_windows - corr_shift / (m * window_size)))  # number of windows is reduce if corr shifted
+            np.floor(n_windows - corr_shift / (m * window_size)))  # number of windows is reduced if corr shifted
 
         for i in tqdm_notebook(np.arange(0, n_windows - 1 + window_shift, window_shift), leave=False):
             chunk = scaling_factor * main_data[int(i * (window_size * m)): int((i + 1) * (window_size * m))]
@@ -470,7 +470,10 @@ class Spectrum:
                     self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
 
             if order == 2:
-                a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
+                if rect_win:
+                    a_w_all = fft_r2c(chunk_gpu, dim0=0, scale=delta_t)
+                else:
+                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
 
                 if filter_func:
                     pre_filter = filter_func(self.freq[2])

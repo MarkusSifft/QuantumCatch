@@ -121,7 +121,7 @@ def calc_super_A(op):
 # @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
 @cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
-    nu))  # eigvecs change with magnetic field
+    nu))
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
@@ -136,6 +136,12 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
         Eigenvalues of the Liouvillian
     eigvecs_inv : array
         The inverse eigenvectors of the Liouvillian
+    enable_gpu : bool
+        Set if calculations should be performed on GPU
+    zero_ind : int
+        Index of steady state in \mathcal{G}
+    gpu_0 : int
+        Pointer to presaved zero on GPU. Avoids unnecessary transfers of zeros from CPU to GPU
 
     Returns
     -------
@@ -207,8 +213,19 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
         Eigenvalues of the Liouvillian
     eigvecs_inv : array
         The inverse eigenvectors of the Liouvillian
+    enable_gpu : bool
+        Set if calculations should be performed on GPU
+    zero_ind : int
+        Index of steady state in \mathcal{G}
+    gpu_0 : int
+        Pointer to presaved zero on GPU. Avoids unnecessary transfers of zeros from CPU to GPU
 
+    Returns
+    -------
+    out : array
+        first matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
     """
+
     G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
     if enable_gpu:
         rho_prim = af.matmul(G_prim, rho)
@@ -243,8 +260,19 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
         Eigenvalues of the Liouvillian
     eigvecs_inv : array
         The inverse eigenvectors of the Liouvillian
+    enable_gpu : bool
+        Set if calculations should be performed on GPU
+    zero_ind : int
+        Index of steady state in \mathcal{G}
+    gpu_0 : int
+        Pointer to presaved zero on GPU. Avoids unnecessary transfers of zeros from CPU to GPU
 
+    Returns
+    -------
+    out : array
+        second matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
     """
+
     _ = omega2
     G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
     if enable_gpu:
@@ -279,7 +307,17 @@ def _third_matrix_step(rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eig
         Eigenvalues of the Liouvillian
     eigvecs_inv : array
         The inverse eigenvectors of the Liouvillian
+    enable_gpu : bool
+        Set if calculations should be performed on GPU
+    zero_ind : int
+        Index of steady state in \mathcal{G}
+    gpu_0 : int
+        Pointer to presaved zero on GPU. Avoids unnecessary transfers of zeros from CPU to GPU
 
+    Returns
+    -------
+    out : array
+        third matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
     """
     _ = omega2
     _ = omega3
@@ -311,7 +349,17 @@ def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, 
         Eigenvalues of the Liouvillian
     eigvecs_inv : array
         The inverse eigenvectors of the Liouvillian
+    enable_gpu : bool
+        Set if calculations should be performed on GPU
+    zero_ind : int
+        Index of steady state in \mathcal{G}
+    gpu_0 : int
+        Pointer to presaved zero on GPU. Avoids unnecessary transfers of zeros from CPU to GPU
 
+    Returns
+    -------
+    out : array
+        output of one matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
     """
     G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
     if enable_gpu:
@@ -328,6 +376,7 @@ def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, 
 #  @njit(parallel=True, fastmath=True)
 def small_s(rho_steady, a_prim, eigvecs, eigvec_inv, reshape_ind, enable_gpu, zero_ind, gpu_zero_mat):
     """
+    For the calculation of the erratum correction terms of the S4.
     Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901
 
     Parameters
@@ -349,6 +398,10 @@ def small_s(rho_steady, a_prim, eigvecs, eigvec_inv, reshape_ind, enable_gpu, ze
     reshape_ind : array
         Indices that give the trace of a flattened matrix.
 
+    Returns
+    -------
+    s_k : array
+        small s (Eq. 7) from 10.1103/PhysRevB.102.119901
     """
 
     if enable_gpu:
@@ -384,6 +437,7 @@ def small_s(rho_steady, a_prim, eigvecs, eigvec_inv, reshape_ind, enable_gpu, ze
         key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
+    For the calculation of the erratum correction terms of the S4.
     Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
 
     Parameters
@@ -391,14 +445,22 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     enable_gpu : bool
         Specify if GPU should be used
     omega1 : float
+        frequency of interest
     omega2 : float
+        frequency of interest
     omega3 : float
+        frequency of interest
     s_k : array
         Array calculated with :func:small_s
     eigvals : array
         Eigenvalues of the Liouvillian
 
+    Returns
+    -------
+    out_sum : array
+        second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
     """
+
     nu1 = omega1 + omega2 + omega3
     nu2 = omega2 + omega3
     nu3 = omega3
@@ -442,6 +504,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
         key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
+    For the calculation of the erratum correction terms of the S4.
     Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
 
     Parameters
@@ -449,14 +512,22 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     enable_gpu : bool
         Specify if GPU should be used
     omega1 : float
+        frequency of interest
     omega2 : float
+        frequency of interest
     omega3 : float
+        frequency of interest
     s_k : array
         Array calculated with :func:small_s
     eigvals : array
         Eigenvalues of the Liouvillian
 
+    Returns
+    -------
+    out_sum : array
+        third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
     """
+
     out = 0
     nu1 = omega1 + omega2 + omega3
     nu2 = omega2 + omega3
@@ -502,7 +573,8 @@ def _full_bispec(r_in, one_quadrant=True):
     Parameters
     ----------
     r_in : array
-        Partial spectrum
+        Partial spectrum (one twelfth of the full plane)
+
     Returns
     -------
     m_full : array
@@ -618,6 +690,7 @@ def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=N
         List of trace names for the legend.
     filter_window : int
         For noisy data the spectra can be convoluted with a gaussian of length filter_window
+
     Returns
     -------
     Returns the figure.
@@ -659,14 +732,40 @@ def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=N
 # -----with own functions-------
 @njit(cache=True)
 def calc_liou(rho_, h, c_ops_):
+    """
+    Calculates the outcome of applying the Liouvillain to the density matrix. Use to calculated the
+    superoperator form of the Liouvillian.
+
+    Parameters
+    ----------
+    rho_ : array
+        Test states ([1,0,0,......]) as inputs
+    h : array
+        Hamilton operator
+    c_ops_ : array
+        collaps operators for the Lindblad dampers
+
+    Returns
+    -------
+    liou : array
+        \mathcal{L} @ rho_
+    """
     def cmtr(a, b):
+        """
+        Helper function for calculation of the commutator.
+        Parameters
+        ----------
+        a : array
+        b : array
+
+        Returns
+        -------
+        Commutator [a,b]
+        """
         return a @ b - b @ a
 
-    liou = 1j * cmtr(rho_, h)  # / self.hbar
+    liou = 1j * cmtr(rho_, h)
     for c_op in c_ops_:
-        # liou += -1 / 2 * cmtr(c_op.full(), cmtr(c_op.full(), rho))
-        # liou += c_op.full() @ rho_ @ c_op.dag().full() - \
-        #         1 / 2 * (c_op.dag().full() @ c_op.full() @ rho_ + rho_ @ c_op.dag().full() @ c_op.full())
         liou += c_op @ rho_ @ c_op.conj().T - \
                 1 / 2 * (c_op.conj().T @ c_op @ rho_ + rho_ @ c_op.conj().T @ c_op)
     return liou

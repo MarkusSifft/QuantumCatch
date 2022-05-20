@@ -36,8 +36,8 @@
 <dl class="py class">
 <dt id="simulation.System">
 <em class="property">class </em><code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">System</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">h</span></em>, <em class="sig-param"><span class="n">psi_0</span></em>, <em class="sig-param"><span class="n">c_ops</span></em>, <em class="sig-param"><span class="n">sc_ops</span></em>, <em class="sig-param"><span class="n">e_ops</span></em>, <em class="sig-param"><span class="n">c_measure_strength</span></em>, <em class="sig-param"><span class="n">sc_measure_strength</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.System" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class that will represent the system of interest. It contain the parameters of the system and the
-methods for calculating and storing the poly spectra.</p>
+<dd><p>Class that will represent the system of interest. It contains the parameters of the system and the
+methods for calculating and storing the polyspectra.</p>
 <dl class="simple">
 <dt>h<span class="classifier">Qobj</span></dt><dd><p>Hamiltonian of the system.</p>
 </dd>
@@ -49,6 +49,174 @@ methods for calculating and storing the poly spectra.</p>
 </dd>
 <dt>e_ops<span class="classifier">dict</span></dt><dd><p>Dictionary containing the operators (as Qobj) used for the calculation of the
 expectation values with arbitrary str as keys.</p>
+</dd>
+<dt>c_measure_strength<span class="classifier">dict</span></dt><dd><p>Dictionary containing the prefactor (float) of the collaps operators. Should have the same
+keys as the corresponding collaps operators in c_ops.</p>
+</dd>
+<dt>sc_measure_strength<span class="classifier">dict</span></dt><dd><p>Dictionary containing the prefactor (float) of the stochastic collaps operators. Should have the same
+keys as the corresponding collaps operators in sc_ops.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>H<span class="classifier">array</span></dt><dd><p>Hamiltonian of the system</p>
+</dd>
+<dt>L<span class="classifier">array</span></dt><dd><p>Liouvillian of the system</p>
+</dd>
+<dt>psi_0: array</dt><dd><p>Start state for the integration of the stochastic master equation</p>
+</dd>
+<dt>c_ops<span class="classifier">dict</span></dt><dd><p>Dictionary containing the collaps operators (as Qobj) with arbitrary str as keys.</p>
+</dd>
+<dt>sc_ops<span class="classifier">dict</span></dt><dd><p>Dictionary containing the stochastic collaps operators (as Qobj) with arbitrary str as keys.</p>
+</dd>
+<dt>e_ops<span class="classifier">dict</span></dt><dd><p>Dictionary containing the operators (as Qobj) used for the calculation of the
+expectation values with arbitrary str as keys.</p>
+</dd>
+<dt>c_measure_strength<span class="classifier">dict</span></dt><dd><p>Dictionary containing the prefactor (float) of the collaps operators. Should have the same
+keys as the corresponding collaps operators in c_ops.</p>
+</dd>
+<dt>sc_measure_strength<span class="classifier">dict</span></dt><dd><p>Dictionary containing the prefactor (float) of the stochastic collaps operators. Should have the same
+keys as the corresponding collaps operators in sc_ops.</p>
+</dd>
+<dt>time_series_data_empty<span class="classifier">dataframe</span></dt><dd><p>empty version of the simulation results dataframe to reset any results.</p>
+</dd>
+<dt>time_series_data<span class="classifier">dataframe</span></dt><dd><p>stores expectation values after the integration of the SME</p>
+</dd>
+<dt>freq<span class="classifier">dict</span></dt><dd><p>stores the frequencies from the analytic spectra, order 2 to 4</p>
+</dd>
+<dt>S<span class="classifier">dict</span></dt><dd><p>stores the analytic spectra, order 2 to 4</p>
+</dd>
+<dt>numeric_f_data<span class="classifier">dict</span></dt><dd><p>stores the frequencies from the numeric spectra, order 2 to 4</p>
+</dd>
+<dt>numeric_spec_data<span class="classifier">dict</span></dt><dd><p>stores the numeric spectra, order 2 to 4</p>
+</dd>
+<dt>eigvals<span class="classifier">array</span></dt><dd><p>stores eigenvalues of Liouvillian</p>
+</dd>
+<dt>eigvecs<span class="classifier">array</span></dt><dd><p>stores eigenvectors of Liouvillian</p>
+</dd>
+<dt>eigvecs_inv<span class="classifier">array</span></dt><dd><p>stores the matrix inversion of the eigenvector matrix</p>
+</dd>
+<dt>zero_ind<span class="classifier">int</span></dt><dd><p>contains the index of the steady state in the eigvalues</p>
+</dd>
+<dt>A_prim<span class="classifier">array</span></dt><dd><p>stores the measurement superoperator mathcal{A} as defined in 10.1103/PhysRevB.98.205143</p>
+</dd>
+<dt>rho_steady<span class="classifier">array</span></dt><dd><p>steady state of the Liouvillian</p>
+</dd>
+<dt>s_k<span class="classifier">array</span></dt><dd><p>stores small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
+</dd>
+<dt>expect_data<span class="classifier">dict</span></dt><dd><p>stores expectation values calculated during the integration of the SME (daemon view), keys as in e_ops</p>
+</dd>
+<dt>expect_with_noise<span class="classifier">dict</span></dt><dd><p>stores expectation + detector noise values calculated during the integration of the SME, keys as in e_ops</p>
+</dd>
+<dt>N<span class="classifier">int</span></dt><dd><p>Number of points in time series in window for the calculation of numerical spectra</p>
+</dd>
+<dt>fs<span class="classifier">float</span></dt><dd><p>sampling rate of the simulated signal for numerical spectra</p>
+</dd>
+<dt>a_w<span class="classifier">array</span></dt><dd><p>Fourier coefficients of simulated signal for numerical spectra</p>
+</dd>
+<dt>a_w_cut<span class="classifier">array</span></dt><dd><p>Contains only the frequencies of interest from a_w (to speed up calculations)</p>
+</dd>
+<dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>set if GPU should be used for analytic spectra calculation</p>
+</dd>
+<dt>gpu_0<span class="classifier">int</span></dt><dd><p>stores pointer to zero an the GPU</p>
+</dd>
+<dt>reshape_ind: array</dt><dd><p>extracts the trace from a flatted matrix (to avoid reshaping)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="simulation.System.calc_spectrum">
+<code class="sig-name descname">calc_spectrum</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f_data</span></em>, <em class="sig-param"><span class="n">order</span></em>, <em class="sig-param"><span class="n">measure_op</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mathcal_a</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">g_prim</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bar</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">beta</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">correction_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">beta_offset</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">enable_gpu</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cache_trispec</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.System.calc_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates analytic polyspectra (order 2 to 4) as described in 10.1103/PhysRevB.98.205143
+and 10.1103/PhysRevB.102.119901</p>
+<dl class="simple">
+<dt>f_data<span class="classifier">array</span></dt><dd><p>frequencies at which the spectra are calculated</p>
+</dd>
+<dt>order<span class="classifier">int {2,3,4}</span></dt><dd><p>order of the polyspectra to be calculated</p>
+</dd>
+<dt>measure_op<span class="classifier">str</span></dt><dd><p>key of the operator in sc_ops to be used as measurement operator</p>
+</dd>
+<dt>mathcal_a<span class="classifier">array</span></dt><dd><p>stores the measurement superoperator mathcal{A} as defined in 10.1103/PhysRevB.98.205143</p>
+</dd>
+<dt>g_prim<span class="classifier">bool</span></dt><dd><p>set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
+But unnecessary for standard polyspectra</p>
+</dd>
+<dt>bar<span class="classifier">bool</span></dt><dd><p>set if progress bars should be shown during calculation</p>
+</dd>
+<dt>beta<span class="classifier">float</span></dt><dd><p>measurement strength used for the calculation. If not set beta is the prefactor
+in sc_measure_strength[measure_op]</p>
+</dd>
+<dt>correction_only<span class="classifier">bool</span></dt><dd><p>set if only the correction terms of the S4 from erratum 10.1103/PhysRevB.102.119901 should be
+calculated</p>
+</dd>
+<dt>beta_offset<span class="classifier">bool</span></dt><dd><p>set if constant offset due to deetector noise should be added to the power spectrum</p>
+</dd>
+<dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>set if GPU should be used for calculation</p>
+</dd>
+<dt>cache_trispec<span class="classifier">bool</span></dt><dd><p>set if Matrix multiplication in the calculation of the trispectrum should be cached</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>S[order]<span class="classifier">array</span></dt><dd><p>Returns spectral value at specified frequencies</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="simulation.System.first_matrix_step">
+<code class="sig-name descname">first_matrix_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">omega</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.System.first_matrix_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method to move function out of the class. njit is not working within classes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="simulation.System.fourier_g_prim">
+<code class="sig-name descname">fourier_g_prim</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.System.fourier_g_prim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method to move function out of the class. njit is not working within classes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="simulation.System.g_prim">
+<code class="sig-name descname">g_prim</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.System.g_prim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method to move function out of the class. njit is not working within classes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="simulation.System.matrix_step">
+<code class="sig-name descname">matrix_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">omega</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.System.matrix_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method to move function out of the class. njit is not working within classes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="simulation.System.save_spec">
+<code class="sig-name descname">save_spec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.System.save_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save System class with spectral data</p>
+<dl class="simple">
+<dt>path<span class="classifier">str</span></dt><dd><p>location of file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="simulation.System.second_matrix_step">
+<code class="sig-name descname">second_matrix_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">omega</span></em>, <em class="sig-param"><span class="n">omega2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.System.second_matrix_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method to move function out of the class. njit is not working within classes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="simulation.calc_liou">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">calc_liou</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho_</span></em>, <em class="sig-param"><span class="n">h</span></em>, <em class="sig-param"><span class="n">c_ops_</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.calc_liou" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the outcome of applying the Liouvillain to the density matrix. Use to calculated the
+superoperator form of the Liouvillian.</p>
+<dl class="simple">
+<dt><a href="#id1"><span class="problematic" id="id2">rho_</span></a><span class="classifier">array</span></dt><dd><p>Test states ([1,0,0,……]) as inputs</p>
+</dd>
+<dt>h<span class="classifier">array</span></dt><dd><p>Hamilton operator</p>
+</dd>
+<dt><a href="#id3"><span class="problematic" id="id4">c_ops_</span></a><span class="classifier">array</span></dt><dd><p>collapse operators for the Lindblad dampers</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>liou<span class="classifier">array</span></dt><dd><p>mathcal{L} &#64; <a href="#id5"><span class="problematic" id="id6">rho_</span></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -68,6 +236,23 @@ expectation values with arbitrary str as keys.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt id="simulation.calc_super_liou">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">calc_super_liou</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">h_</span></em>, <em class="sig-param"><span class="n">c_ops</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.calc_super_liou" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculated the superoperator form of the Liouvillian, by checking one basis state of the desity matrix
+after the other: [1,0,0…], [0,1,0,0,….], …</p>
+<dl class="simple">
+<dt><a href="#id7"><span class="problematic" id="id8">h_</span></a><span class="classifier">array</span></dt><dd><p>Hamilton operator</p>
+</dd>
+<dt>c_ops<span class="classifier">array</span></dt><dd><p>collapse operators for the Lindblad dampers</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>op_super<span class="classifier">array</span></dt><dd><p>superoperator form of the Liouvillian</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="simulation.cgw">
 <code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">cgw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">len_y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.cgw" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an array corresponding to the approx. confined gaussian window function</p>
@@ -76,6 +261,17 @@ expectation values with arbitrary str as keys.</p>
 </dd>
 </dl>
 <p>window : array</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="simulation.pickle_save">
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">pickle_save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">obj</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.pickle_save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to pickle system objects</p>
+<dl class="simple">
+<dt>path<span class="classifier">str</span></dt><dd><p>location of saved data</p>
+</dd>
+</dl>
+<p>obj : System obj</p>
 </dd></dl>
 
 <dl class="py function">
@@ -99,7 +295,7 @@ title : str</p>
 </dd>
 <dt>legend<span class="classifier">list</span></dt><dd><p>List of trace names for the legend.</p>
 </dd>
-<dt>filter_window<span class="classifier">float</span></dt><dd><p>For noisy data the spectra can be convoluted with a gaussian of width filter_window</p>
+<dt>filter_window<span class="classifier">int</span></dt><dd><p>For noisy data the spectra can be convoluted with a gaussian of length filter_window</p>
 </dd>
 </dl>
 <p>Returns the figure.</p>
@@ -107,54 +303,79 @@ title : str</p>
 
 <dl class="py function">
 <dt id="simulation.second_term">
-<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">second_term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega1</span></em>, <em class="sig-param"><span class="n">omega2</span></em>, <em class="sig-param"><span class="n">omega3</span></em>, <em class="sig-param"><span class="n">s_k</span></em>, <em class="sig-param"><span class="n">eigvals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.second_term" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
-<p>omega1 : float
-omega2 : float
-omega3 : float
-s_k : array</p>
-<blockquote>
-<div><p>Array calculated with :func:small_s</p>
-</div></blockquote>
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">second_term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega1</span></em>, <em class="sig-param"><span class="n">omega2</span></em>, <em class="sig-param"><span class="n">omega3</span></em>, <em class="sig-param"><span class="n">s_k</span></em>, <em class="sig-param"><span class="n">eigvals</span></em>, <em class="sig-param"><span class="n">enable_gpu</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.second_term" title="Permalink to this definition">¶</a></dt>
+<dd><p>For the calculation of the erratum correction terms of the S4.
+Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
 <dl class="simple">
+<dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>Specify if GPU should be used</p>
+</dd>
+<dt>omega1<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+</dd>
+<dt>omega2<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+</dd>
+<dt>omega3<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+</dd>
+<dt>s_k<span class="classifier">array</span></dt><dd><p>Array calculated with :func:small_s</p>
+</dd>
 <dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>out_sum<span class="classifier">array</span></dt><dd><p>second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt id="simulation.small_s">
-<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">small_s</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho_steady</span></em>, <em class="sig-param"><span class="n">a_prim</span></em>, <em class="sig-param"><span class="n">eigvals</span></em>, <em class="sig-param"><span class="n">eigvecs</span></em>, <em class="sig-param"><span class="n">eigvec_inv</span></em>, <em class="sig-param"><span class="n">reshape_ind</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.small_s" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">small_s</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho_steady</span></em>, <em class="sig-param"><span class="n">a_prim</span></em>, <em class="sig-param"><span class="n">eigvecs</span></em>, <em class="sig-param"><span class="n">eigvec_inv</span></em>, <em class="sig-param"><span class="n">reshape_ind</span></em>, <em class="sig-param"><span class="n">enable_gpu</span></em>, <em class="sig-param"><span class="n">zero_ind</span></em>, <em class="sig-param"><span class="n">gpu_zero_mat</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.small_s" title="Permalink to this definition">¶</a></dt>
+<dd><p>For the calculation of the erratum correction terms of the S4.
+Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
 <dl class="simple">
-<dt>rho_steady<span class="classifier">array</span></dt><dd><p>A &#64; Steadystate desity matrix of the system</p>
+<dt>zero_ind<span class="classifier">int</span></dt><dd><p>Index of the steadystate eigenvector</p>
+</dd>
+<dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>Specify if GPU should be used</p>
+</dd>
+<dt>gpu_zero_mat<span class="classifier">af array</span></dt><dd><p>Zero array stored on the GPU</p>
+</dd>
+<dt>rho_steady<span class="classifier">array</span></dt><dd><p>A &#64; Steadystate density matrix of the system</p>
 </dd>
 <dt>a_prim<span class="classifier">array</span></dt><dd><p>Super operator A’ as defined in 10.1103/PhysRevB.98.205143</p>
 </dd>
 <dt>eigvecs<span class="classifier">array</span></dt><dd><p>Eigenvectors of the Liouvillian</p>
-</dd>
-<dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
 </dd>
 <dt>eigvec_inv<span class="classifier">array</span></dt><dd><p>The inverse eigenvectors of the Liouvillian</p>
 </dd>
 <dt>reshape_ind<span class="classifier">array</span></dt><dd><p>Indices that give the trace of a flattened matrix.</p>
 </dd>
 </dl>
+<dl class="simple">
+<dt>s_k<span class="classifier">array</span></dt><dd><p>small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt id="simulation.third_term">
-<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">third_term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega1</span></em>, <em class="sig-param"><span class="n">omega2</span></em>, <em class="sig-param"><span class="n">omega3</span></em>, <em class="sig-param"><span class="n">s_k</span></em>, <em class="sig-param"><span class="n">eigvals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.third_term" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
-<p>omega1 : float
-omega2 : float
-omega3 : float
-s_k : array</p>
-<blockquote>
-<div><p>Array calculated with :func:small_s</p>
-</div></blockquote>
+<code class="sig-prename descclassname">simulation.</code><code class="sig-name descname">third_term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega1</span></em>, <em class="sig-param"><span class="n">omega2</span></em>, <em class="sig-param"><span class="n">omega3</span></em>, <em class="sig-param"><span class="n">s_k</span></em>, <em class="sig-param"><span class="n">eigvals</span></em>, <em class="sig-param"><span class="n">enable_gpu</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simulation.third_term" title="Permalink to this definition">¶</a></dt>
+<dd><p>For the calculation of the erratum correction terms of the S4.
+Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
 <dl class="simple">
+<dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>Specify if GPU should be used</p>
+</dd>
+<dt>omega1<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+</dd>
+<dt>omega2<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+</dd>
+<dt>omega3<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+</dd>
+<dt>s_k<span class="classifier">array</span></dt><dd><p>Array calculated with :func:small_s</p>
+</dd>
 <dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>out_sum<span class="classifier">array</span></dt><dd><p>third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
 </dd>
 </dl>
 </dd></dl>

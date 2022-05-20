@@ -1294,6 +1294,18 @@ class System(Spectrum):
         return self.S[order]
 
     def plot_all(self, f_max=None):
+        """
+        Method for quick plotting of polyspectra
+
+        Parameters
+        ----------
+        f_max : float
+            Maximum frequencies upto which the spectra should be plotted
+
+        Returns
+        -------
+        Returns matplotlib figure
+        """
         if f_max is None:
             f_max = self.freq[2].max()
         fig = self.poly_plot(f_max, s2_data=self.S[2], s3_data=self.S[3], s4_data=self.S[4], s2_f=self.freq[2],
@@ -1301,6 +1313,27 @@ class System(Spectrum):
         return fig
 
     def plot_spectrum(self, order, title=None, log=False, x_range=False, imag_plot=False):
+        """
+        Method for the visualization of single spectra with an interactive plot
+
+        Parameters
+        ----------
+        order : int {2,3,4}
+            Order of polyspectrum to be plotted
+        title : str
+            Titel of the plot
+        log : bool
+            Set if log scales should be used
+        x_range : array
+            Sets limits of x axis
+        imag_plot : bool
+            Set if imaginary of the spectrum should be shown
+
+        Returns
+        -------
+        Returns plotly figure
+        """
+
         fig = None
 
         if order == 2:
@@ -1388,6 +1421,33 @@ class System(Spectrum):
 
     def parallel_tranisent(self, seed, measure_op, t=None, _solver=None, with_noise=False, _nsubsteps=1,
                            _normalize=None):  # , progress_bar='hide'):
+        """
+        Method for the quick integration of the SME (avoids saving the results into dataframes). Is used for
+        parallelization of the integration.
+
+        Parameters
+        ----------
+        seed : int
+            seed for the generation of random numbers for the Wiener process
+        measure_op : str
+            key of the measurement operator in sc_ops
+        t : array
+            times at which the integration takes place
+        _solver : str
+            Name of the solver used for the intergration of the SME (see the qutip docs for more information)
+        with_noise : bool
+            Set if detector noise should be added to the trace
+        _nsubsteps : int
+            Number of substeps between to point in t. Reduces numerical errors.
+        _normalize : bool
+            Set if density matrix should be normalized after each integration step
+
+        Returns
+        -------
+        out : array
+            Simulated detector output
+
+        """
         c_ops_m = [self.c_measure_strength[op] * self.c_ops[op] for op in self.c_ops]
         sc_ops_m = [self.sc_measure_strength[op] * self.sc_ops[op] for op in self.sc_ops]
 

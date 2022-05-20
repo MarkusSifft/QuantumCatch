@@ -929,6 +929,7 @@ class System(Spectrum):
         self.expect_with_noise = {}
 
         self.N = None  # Number of points in time series
+        self.fs = None
         self.a_w = None
         self.a_w_cut = None
 
@@ -1389,6 +1390,7 @@ class System(Spectrum):
                      plot_after=12,
                      title_in=None, with_noise=False, _normalize=None,
                      roll=False, plot_simulation=False, backend='opencl'):
+        self.fs = None
         self.a_w = None
         self.N = 0
         n_chunks = 0

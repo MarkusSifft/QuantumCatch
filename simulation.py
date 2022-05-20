@@ -57,6 +57,8 @@ import arrayfire as af
 from arrayfire.interop import from_ndarray as to_gpu
 
 from QuantumPolyspectra.analysis import Spectrum
+
+
 #  from pympler import asizeof
 
 
@@ -750,6 +752,7 @@ def calc_liou(rho_, h, c_ops_):
     liou : array
         \mathcal{L} @ rho_
     """
+
     def cmtr(a, b):
         """
         Helper function for calculation of the commutator.
@@ -951,6 +954,14 @@ class System(Spectrum):
         self.reshape_ind = 0
 
     def save_spec(self, path):
+        """
+        Save System class with spectral data
+
+        Parameters
+        ----------
+        path : str
+            location of file
+        """
         self.gpu_0 = 0
         self.eigvals = np.array([])
         self.eigvecs = np.array([])
@@ -962,20 +973,35 @@ class System(Spectrum):
         pickle_save(path, self)
 
     def fourier_g_prim(self, omega):
+        """
+        Helper method to move function out of the class. njit is not working within classes
+        """
         return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)
 
     def g_prim(self, t):
+        """
+        Helper method to move function out of the class. njit is not working within classes
+        """
         return _g_prim(t, self.eigvecs, self.eigvals, self.eigvecs_inv)
 
     def first_matrix_step(self, rho, omega):
+        """
+        Helper method to move function out of the class. njit is not working within classes
+        """
         return _first_matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
                                   self.enable_gpu, self.zero_ind, self.gpu_0)
 
     def second_matrix_step(self, rho, omega, omega2):
+        """
+        Helper method to move function out of the class. njit is not working within classes
+        """
         return _second_matrix_step(rho, omega, omega2, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
                                    self.enable_gpu, self.zero_ind, self.gpu_0)
 
     def matrix_step(self, rho, omega):
+        """
+        Helper method to move function out of the class. njit is not working within classes
+        """
         return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
                             self.enable_gpu, self.zero_ind, self.gpu_0)
 
@@ -994,7 +1020,7 @@ class System(Spectrum):
             mathcal_a = calc_super_A(self.sc_ops[measure_op].full()).T
 
         if f_data.min() < 0:
-            print('Only positive freqencies allowed')
+            print('Only positive frequencies allowed')
             return None
 
         if beta is None:
@@ -1023,13 +1049,11 @@ class System(Spectrum):
             self.eigvecs_inv = inv(self.eigvecs)
             self.zero_ind = np.argmax(np.real(self.eigvals))
 
-
             self.zero_ind = np.argmax(np.real(self.eigvals))
             rho_steady = self.eigvecs[:, self.zero_ind]
             rho_steady = rho_steady / np.trace(rho_steady.reshape((s, s)))  # , order='F'))
 
             self.rho_steady = rho_steady
-            self.rho_steady_cpu = rho_steady
 
         if order == 2:
             spec_data = np.ones_like(omegas)
@@ -1038,15 +1062,16 @@ class System(Spectrum):
 
         # self.A_prim = mathcal_a.full() - np.trace((mathcal_a.full() @ rho_steady).reshape((s, s), order='F'))
 
-        self.A_prim = mathcal_a - np.eye(s ** 2) * np.trace((mathcal_a @ self.rho_steady_cpu).reshape((s, s)))  # , order='F'))
+        self.A_prim = mathcal_a - np.eye(s ** 2) * np.trace(
+            (mathcal_a @ self.rho_steady).reshape((s, s)))  # , order='F'))
 
         if g_prim:
             S_1 = mathcal_a - np.eye(s ** 2) * np.trace(
-                (mathcal_a @ self.rho_steady_cpu).reshape((s, s), order='F'))
+                (mathcal_a @ self.rho_steady).reshape((s, s), order='F'))
             G_0 = self.g_prim(0)
             self.A_prim = S_1 @ G_0 @ S_1
 
-        rho = self.A_prim @ self.rho_steady_cpu
+        rho = self.A_prim @ self.rho_steady
 
         if self.enable_gpu:
             if type(self.eigvals) != af.array.Array:
@@ -1233,7 +1258,8 @@ class System(Spectrum):
     def plot_all(self, f_max=None):
         if f_max is None:
             f_max = self.freq[2].max()
-        fig = self.poly_plot(f_max, s2_data=self.S[2], s3_data=self.S[3], s4_data=self.S[4], s2_f=self.freq[2], s3_f=self.freq[3], s4_f=self.freq[4])
+        fig = self.poly_plot(f_max, s2_data=self.S[2], s3_data=self.S[3], s4_data=self.S[4], s2_f=self.freq[2],
+                             s3_f=self.freq[3], s4_f=self.freq[4])
         return fig
 
     def plot_spectrum(self, order, title=None, log=False, x_range=False, imag_plot=False):
@@ -1253,7 +1279,7 @@ class System(Spectrum):
             fig.update_layout(autosize=False, width=880, height=550)
             if x_range:
                 fig.update_xaxes(range=x_range)
-            fig.show() # ---
+            fig.show()  # ---
 
         elif order > 2:
             if imag_plot:

@@ -875,11 +875,30 @@ class System(Spectrum):
         stores the frequencies from the numeric spectra, order 2 to 4
     numeric_spec_data : dict
         stores the numeric spectra, order 2 to 4
-
+    eigvals : array
+        stores eigenvalues of Liouvillian
+    eigvecs : array
+        stores eigenvectors of Liouvillian
+    eigvecs_inv : array
+        stores the matrix inversion of the eigenvector matrix
+    zero_ind : int
+        contains the index of the steady state in the eigvalues
+    A_prim : array
+        stores the measurement superoperator \mathcal{A} as defined in 10.1103/PhysRevB.98.205143
+    rho_steady : array
+        steady state of the Liouvillian
+    s_k : array
+        stores small s (Eq. 7) from 10.1103/PhysRevB.102.119901
+    expect_data : dict
+        stores expectation values calculated during the integration of the SME (daemon view), keys as in e_ops
+    expect_with_noise : dict
+        stores expectation + detector noise values calculated during the integration of the SME, keys as in e_ops
+    N : int
+        Number of points in time series in window for the calculation of numerical spectra
     """
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):
-        # ------- Store inputs --------
+
         super().__init__(None, None, None)
         self.H = h
         self.L = None
@@ -890,7 +909,6 @@ class System(Spectrum):
         self.c_measure_strength = c_measure_strength
         self.sc_measure_strength = sc_measure_strength
 
-        # ------ Space for future caluclations ------
         self.time_series_data_empty = time_series_setup(sc_ops, e_ops)
         self.time_series_data = None
         self.freq = {2: np.array([]), 3: np.array([]), 4: np.array([])}
@@ -911,12 +929,8 @@ class System(Spectrum):
         self.expect_with_noise = {}
 
         self.N = None  # Number of points in time series
-        self.fs = None
         self.a_w = None
         self.a_w_cut = None
-
-        # ------- Constants -----------
-        #  self.hbar = 1  # 6.582e-4  # eV kHz
 
         # ------- Enable GPU for large systems -------
         self.enable_gpu = False
@@ -1375,7 +1389,6 @@ class System(Spectrum):
                      plot_after=12,
                      title_in=None, with_noise=False, _normalize=None,
                      roll=False, plot_simulation=False, backend='opencl'):
-        self.fs = None
         self.a_w = None
         self.N = 0
         n_chunks = 0

@@ -743,7 +743,7 @@ def calc_liou(rho_, h, c_ops_):
     h : array
         Hamilton operator
     c_ops_ : array
-        collaps operators for the Lindblad dampers
+        collapse operators for the Lindblad dampers
 
     Returns
     -------
@@ -773,6 +773,22 @@ def calc_liou(rho_, h, c_ops_):
 
 @njit(cache=True)
 def calc_super_liou(h_, c_ops):
+    """
+    Calculated the superoperator form of the Liouvillian, by checking one basis state of the desity matrix
+    after the other: [1,0,0...], [0,1,0,0,....], ...
+
+    Parameters
+    ----------
+    h_ : array
+        Hamilton operator
+    c_ops : array
+        collapse operators for the Lindblad dampers
+
+    Returns
+    -------
+    op_super : array
+        superoperator form of the Liouvillian
+    """
     m, n = h_.shape
     op_super = 1j * np.ones((n ** 2, n ** 2))
     for j in range(n ** 2):
@@ -786,6 +802,16 @@ def calc_super_liou(h_, c_ops):
 
 
 def pickle_save(path, obj):
+    """
+    Helper function to pickle system objects
+
+    Parameters
+    ----------
+    path : str
+        location of saved data
+    obj : System obj
+
+    """
     f = open(path, mode='wb')
     pickle.dump(obj, f)
     f.close()
@@ -793,8 +819,8 @@ def pickle_save(path, obj):
 
 class System(Spectrum):
     """
-    Class that will represent the system of interest. It contain the parameters of the system and the
-    methods for calculating and storing the poly spectra.
+    Class that will represent the system of interest. It contains the parameters of the system and the
+    methods for calculating and storing the polyspectra.
 
     Parameters
     ----------
@@ -809,9 +835,47 @@ class System(Spectrum):
     e_ops : dict
         Dictionary containing the operators (as Qobj) used for the calculation of the
         expectation values with arbitrary str as keys.
+    c_measure_strength : dict
+        Dictionary containing the prefactor (float) of the collaps operators. Should have the same
+        keys as the corresponding collaps operators in c_ops.
+    sc_measure_strength : dict
+        Dictionary containing the prefactor (float) of the stochastic collaps operators. Should have the same
+        keys as the corresponding collaps operators in sc_ops.
 
     Attributes
     ----------
+    H : array
+        Hamiltonian of the system
+    L : array
+        Liouvillian of the system
+    psi_0: array
+        Start state for the integration of the stochastic master equation
+    c_ops : dict
+        Dictionary containing the collaps operators (as Qobj) with arbitrary str as keys.
+    sc_ops : dict
+        Dictionary containing the stochastic collaps operators (as Qobj) with arbitrary str as keys.
+    e_ops : dict
+        Dictionary containing the operators (as Qobj) used for the calculation of the
+        expectation values with arbitrary str as keys.
+    c_measure_strength : dict
+        Dictionary containing the prefactor (float) of the collaps operators. Should have the same
+        keys as the corresponding collaps operators in c_ops.
+    sc_measure_strength : dict
+        Dictionary containing the prefactor (float) of the stochastic collaps operators. Should have the same
+        keys as the corresponding collaps operators in sc_ops.
+    time_series_data_empty : dataframe
+        empty version of the simulation results dataframe to reset any results.
+    time_series_data : dataframe
+        stores expectation values after the integration of the SME
+    freq : dict
+        stores the frequencies from the analytic spectra, order 2 to 4
+    S : dict
+        stores the analytic spectra, order 2 to 4
+    numeric_f_data : dict
+        stores the frequencies from the numeric spectra, order 2 to 4
+    numeric_spec_data : dict
+        stores the numeric spectra, order 2 to 4
+
     """
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):

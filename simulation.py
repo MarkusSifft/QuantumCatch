@@ -895,6 +895,18 @@ class System(Spectrum):
         stores expectation + detector noise values calculated during the integration of the SME, keys as in e_ops
     N : int
         Number of points in time series in window for the calculation of numerical spectra
+    fs : float
+        sampling rate of the simulated signal for numerical spectra
+    a_w : array
+        Fourier coefficients of simulated signal for numerical spectra
+    a_w_cut : array
+        Contains only the frequencies of interest from a_w (to speed up calculations)
+    enable_gpu : bool
+        set if GPU should be used for analytic spectra calculation
+    gpu_0 : int
+        stores pointer to zero an the GPU
+    reshape_ind: array
+        extracts the trace from a flatted matrix (to avoid reshaping)
     """
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):

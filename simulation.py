@@ -1007,6 +1007,44 @@ class System(Spectrum):
 
     def calc_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True, beta=None,
                       correction_only=False, beta_offset=True, enable_gpu=False, cache_trispec=True):
+        """
+        Calculates analytic polyspectra (order 2 to 4) as described in 10.1103/PhysRevB.98.205143
+        and 10.1103/PhysRevB.102.119901
+
+        Parameters
+        ----------
+        f_data : array
+            frequencies at which the spectra are calculated
+        order : int {2,3,4}
+            order of the polyspectra to be calculated
+        measure_op : str
+            key of the operator in sc_ops to be used as measurement operator
+        mathcal_a : array
+            stores the measurement superoperator \mathcal{A} as defined in 10.1103/PhysRevB.98.205143
+        g_prim : bool
+            set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
+            But unnecessary for standard polyspectra
+        bar : bool
+            set if progress bars should be shown during calculation
+        beta : float
+            measurement strength used for the calculation. If not set beta is the prefactor
+            in sc_measure_strength[measure_op]
+        correction_only : bool
+            set if only the correction terms of the S4 from erratum 10.1103/PhysRevB.102.119901 should be
+            calculated
+        beta_offset : bool
+            set if constant offset due to deetector noise should be added to the power spectrum
+        enable_gpu : bool
+            set if GPU should be used for calculation
+        cache_trispec : bool
+            set if Matrix multiplication in the calculation of the trispectrum should be cached
+
+        Returns
+        -------
+        S[order] : array
+            Returns spectral value at specified frequencies
+
+        """
 
         self.enable_gpu = enable_gpu
         af.device_gc()

@@ -55,6 +55,22 @@ from scipy.ndimage.filters import gaussian_filter
 from tqdm import tqdm_notebook
 
 
+def pickle_save(path, obj):
+    """
+    Helper function to pickle system objects
+
+    Parameters
+    ----------
+    path : str
+        Location of saved data
+    obj : System obj
+
+    """
+    f = open(path, mode='wb')
+    pickle.dump(obj, f)
+    f.close()
+
+
 def to_hdf(dt, data, path, group_name, dataset_name):
     """
     Helper function to generated h5 file from numpy array.
@@ -104,6 +120,7 @@ def import_data(path, group_key, dataset):
     delta_t = main_data.attrs['dt']
     return main_data, delta_t
 
+
 @njit(parallel=False)
 def calc_a_w3(a_w_all, f_max_ind, m):
     """
@@ -147,7 +164,8 @@ def c2(a_w, a_w_corr, m, coherent):
 
 
 def c3(a_w1, a_w2, a_w3, m):
-    """calculation of c3 for bispectrum"""
+    """
+    Calculation of c3 for bispectrum (see arXiv:1904.12154)
     # C_3 = m^2 / (m - 1)(m - 2) * (< a_w1 * a_w2 * a_w3 >
     #                                      sum_123
     #       - < a_w1 >< a_w2 * a_w3 > - < a_w1 * a_w2 >< a_w3 > - < a_w1 * a_w3 >< a_w2 >
@@ -155,6 +173,23 @@ def c3(a_w1, a_w2, a_w3, m):
     #       + 2 < a_w1 >< a_w2 >< a_w3 >)
     #             sum_1   sum_2   sum_3
     # with w3 = - w1 - w2
+
+    Parameters
+    ----------
+    a_w1 : array
+        Fourier coefficients of signal as vertical array
+    a_w2 : array
+        Fourier coefficients of signal as horizontal array
+    a_w3 : array
+        a_w1+w2 as matrix
+    m : int
+        Number of windows used for the calculation of one spectrum
+
+    Returns
+    -------
+    Returns the c3 estimator as matrix
+    """
+
     ones = to_gpu(np.ones_like(a_w1.to_ndarray()))
     d_1 = af.matmulNT(ones, a_w1)
     d_2 = af.matmulNT(a_w2, ones)
@@ -179,8 +214,25 @@ def c3(a_w1, a_w2, a_w3, m):
 
 
 def c4(a_w, a_w_corr, m):
-    """calculation of c4 for trispectrum"""
-    # C_4 = (Eq. 60)
+    """
+    calculation of c4 for trispectrum
+    # C_4 = (Eq. 60, in arXiv:1904.12154)
+
+    Parameters
+    ----------
+    a_w : array
+        Fourier coefficients of the signal
+    a_w_corr : array
+        Fourier coefficients of the signal or a second signal
+    m : int
+        Number of windows used for the calculation of one spectrum
+
+    Returns
+    -------
+    Returns the c4 estimator as matrix
+
+    """
+
     a_w_conj = conj(a_w)
     a_w_conj_corr = conj(a_w_corr)
 
@@ -235,13 +287,44 @@ def c4(a_w, a_w_corr, m):
 
     return s4
 
-def pickle_save(path, obj):
-    f = open(path, mode='wb')
-    pickle.dump(obj, f)
-    f.close()
 
 class Spectrum:
+    """
+    Spectrum class stores signal data, calculated spectra and error of spectral values.
+    Allows for the calculation of the polyspectra of the signal and their visualization
 
+    Parameters
+    ----------
+    path : str
+        Path to h5 file with stored signal
+    group_key : str
+        Group key for h5 file
+    dataset : str
+        Name of the dataset in h5 file
+    dt : float
+        Inverse sampling rate of signal. Use of signal is provided as numpy array as parameter "data"
+    data : array
+        Signal to be analyized as Numpy array
+    coor_data : array
+        Second signal used as correlation data as Numpy array
+    corr_path : str
+        Path to h5 file with stored second signal for correlation
+    corr_group_key : str
+        Group key for h5 file with correlation signal
+    corr_dataset : str
+        Name of the dataset in h5 file with correlation signal
+
+    Attributes
+    ----------
+    window_width : float
+        (Experimental) Length of window in second used for the calculation of
+        the Poisson spectra and mini binned spectra
+    path : str
+        Path to h5 file with stored signal
+    freq : array
+
+
+    """
     def __init__(self, path=None, group_key=None, dataset=None, dt=None, data=None, corr_data=None,
                  corr_path=None, corr_group_key=None, corr_dataset=None):
         self.window_width = None
@@ -611,7 +694,8 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def calc_spec_poisson(self, order, window_width, f_max, backend='opencl', m=5, data=None, sigma_t=0.14, rect_win = False):
+    def calc_spec_poisson(self, order, window_width, f_max, backend='opencl', m=5, data=None, sigma_t=0.14,
+                          rect_win=False):
         """
 
         Parameters
@@ -639,7 +723,7 @@ class Spectrum:
             self.data = data
 
         af.set_backend(backend)
-        #window_width = int(window_width)
+        # window_width = int(window_width)
         self.fs = f_max
         self.window_width = window_width
         self.m = m
@@ -658,7 +742,7 @@ class Spectrum:
         self.main_data = main_data
 
         f_min = 1 / window_width
-        f_list = np.arange(0, f_max+f_min, f_min)
+        f_list = np.arange(0, f_max + f_min, f_min)
 
         start_index = 0
         sigma_counter = 0
@@ -762,7 +846,7 @@ class Spectrum:
         return self.freq[order], self.S[order], self.S_sigma[order]
 
     def calc_spec_mini_bins(self, order, window_width, bin_width, f_max, backend='opencl', coherent=False,
-                            m=5, data=None, sigma_t=0.14, rect_win = False, verbose=False):
+                            m=5, data=None, sigma_t=0.14, rect_win=False, verbose=False):
         """
 
         Parameters
@@ -790,8 +874,8 @@ class Spectrum:
             self.data = data
 
         af.set_backend(backend)
-        #window_width = int(window_width)
-        #self.fs = f_max
+        # window_width = int(window_width)
+        # self.fs = f_max
         self.fs = None
         self.window_width = window_width
         self.m = m
@@ -810,7 +894,7 @@ class Spectrum:
         self.main_data = main_data
 
         f_min = 1 / window_width
-        f_list = np.arange(0, f_max+f_min, f_min)
+        f_list = np.arange(0, f_max + f_min, f_min)
 
         start_index = 0
         sigma_counter = 0
@@ -902,7 +986,6 @@ class Spectrum:
                 else:
                     a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
 
-
                 if order == 3:
                     a_w1 = af.lookup(a_w_all, af.Array(list(range(f_max_ind // 2))), dim=0)
                     a_w2 = a_w1
@@ -913,7 +996,6 @@ class Spectrum:
 
                 if order == 4:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
-
 
                     a_w_corr = a_w
 
@@ -961,9 +1043,9 @@ class Spectrum:
         return t_clicks_windowed_normalized
 
     def find_end_index(self, start_index, window_width, m, frame_number, i):
-        #print('start_index', start_index)
+        # print('start_index', start_index)
         end_time = window_width * (m * frame_number + (i + 1))
-        #print('end_time', end_time)
+        # print('end_time', end_time)
         i = 1
         while True:
             if start_index + i > self.main_data.shape[0]:
@@ -971,8 +1053,8 @@ class Spectrum:
             elif self.main_data[start_index] > end_time:
                 return start_index
             elif self.main_data[start_index + i] > end_time:
-                #print('self.main_data[start_index + i]', self.main_data[start_index + i])
-                #print('start_index + i', start_index + i)
+                # print('self.main_data[start_index + i]', self.main_data[start_index + i])
+                # print('start_index + i', start_index + i)
                 return start_index + i
             else:
                 i += 1
@@ -987,7 +1069,7 @@ class Spectrum:
         plt.rcParams["axes.axisbelow"] = False
 
         # -------- S2 ---------
-        if True: # self.S[2] is not None and not self.S[2].shape[0] == 0:
+        if True:  # self.S[2] is not None and not self.S[2].shape[0] == 0:
             if imag_plot:
                 s2_data = np.imag(self.S[2]) if s2_data is None else np.imag(s2_data)
                 s2_sigma = np.imag(self.S_sigma[2]) if s2_sigma is None else np.imag(s2_sigma)
@@ -1054,7 +1136,7 @@ class Spectrum:
                 x_, y_ = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
                 return np.ma.masked_array(np.interp(value, x_, y_), np.isnan(value))
 
-        if True: #self.S[3] is not None and not self.S[3].shape[0] == 0:
+        if True:  # self.S[3] is not None and not self.S[3].shape[0] == 0:
 
             if imag_plot:
                 s3_data = np.imag(self.S[3]).copy() if s3_data is None else np.imag(s3_data).copy()
@@ -1106,7 +1188,7 @@ class Spectrum:
             cbar = fig.colorbar(c, ax=(ax[1]))
 
         # -------- S4 ---------
-        if True: # self.S[4] is not None and not self.S[4].shape[0] == 0:
+        if True:  # self.S[4] is not None and not self.S[4].shape[0] == 0:
             if imag_plot:
                 s4_data = np.imag(self.S[4]).copy() if s4_data is None else np.imag(s4_data).copy()
                 s4_sigma = np.imag(self.S_sigma[4]).copy() if s4_sigma is None else np.imag(s4_sigma).copy()

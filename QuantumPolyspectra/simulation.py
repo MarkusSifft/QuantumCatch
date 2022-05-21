@@ -1562,6 +1562,19 @@ class System(Spectrum):
     # -------- Realtime numerical spectra ---------
 
     def calc_a_w3(self, a_w):
+        """
+        Preparation of a_(w1+w2) for the calculation of the bispectrum
+
+        Parameters
+        ----------
+        a_w : array
+            Fourier coefficients of signal
+
+        Returns
+        -------
+        a_w3 : array
+            Matrix corresponding to a_(w1+w2)
+        """
         mat_size = len(self.a_w_cut)
         a_w3 = 1j * np.ones((mat_size, mat_size))
         for i in range(mat_size):
@@ -1572,6 +1585,52 @@ class System(Spectrum):
                      plot_after=12,
                      title_in=None, with_noise=False, _normalize=None,
                      roll=False, plot_simulation=False, backend='opencl'):
+        """
+        Method for the automated calculation of the polyspectra from the numerical integration of the SME.
+        Can be used as an alternative to the analytic quantum polyspectra or to estimated measurement time and
+        noise levels of the spectra.
+
+        Parameters
+        ----------
+        t_window_in : array
+            Times at with the SME will be integrated
+        measure_op : str
+            Key of the operator in sc_ops that should be used as measurement operator
+        f_max : float
+            Maximum frequency of interest to speed up calculation of polyspectra
+        power : float
+            Power to which the detector output should be raised before the calculation of the spectra
+            (Was useful during the experimentation with the current operator.)
+        order : int {2,3,4}
+            Order of the polyspectra to be calculated
+        max_samples : int
+            Number of spectra with m windows to be calculated. The final result will be an average over all these
+            spectra
+        m : int
+            number of frames used from the calculation of one spectrum
+        _solver : str
+            Name of the solver used for the intergration of the SME (see the qutip docs for more information)
+        plot_after : int
+            Each number of spectra after with the current average spectrum should be displayed
+        title_in : str
+            Add a str to customize title
+        with_noise : bool
+            Set if detector output with noise should be used for the calculation of the spectra instead of
+            the daemon view
+        _normalize : bool
+            Set if density matrix should be normalized during integration of the SME
+        roll : bool
+            Set if trace should be shifted against itself during squaring
+        plot_simulation : bool
+            Set if simulation result / trace should be plot. Useful to check for numerical errors during integration
+        backend : str {cpu, opencl, cuda}
+            Backend to be used by arrayfire
+
+        Returns
+        -------
+        Return frequencies and the spectral values as arrays
+        """
+
         self.fs = None
         self.a_w = None
         self.N = 0

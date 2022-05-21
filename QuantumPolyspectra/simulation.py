@@ -1495,7 +1495,7 @@ class System(Spectrum):
         Returns
         -------
         Return a dataframe containing the daemon view and measurement with detector noise.
-        Additionally, return solver result (see return_result parameter)
+        Additionally, returns solver result (see return_result parameter)
         """
 
         self.time_series_data = self.time_series_data_empty.copy()  # [kHz]
@@ -1531,6 +1531,23 @@ class System(Spectrum):
         return self.time_series_data.convert_dtypes()
 
     def plot_transient(self, ops_with_power, title=None, shift=False):
+        """
+        Interactive plot of the integration results.
+
+        Parameters
+        ----------
+        ops_with_power : dict
+            key of the operators in e_ops as key with integer labels corresponding the exponent to with the
+            corresponding trace should be raised to. (Was useful during the experimentation with the current operator.)
+        title : str
+            Title of plot
+        shift : bool
+            Set if traces should be shifted up to avoid overlapping of multiple traces
+
+        Returns
+        -------
+        Plotly figure
+        """
         t = self.time_series_data.t  # [kHz]
         if shift:
             values = [self.time_series_data[op] ** ops_with_power[op] + (0.5 * i ** 2 - 0.5) for i, op in
@@ -1631,9 +1648,6 @@ class System(Spectrum):
                         title = 'Realtime Trispectrum of ' + measure_op + '<sup>' + str(
                             power) + '</sup>: {} Samples'.format(
                             n_chunks) + '<br>' + title_in
-
-                    f = self.numeric_f_data[order]
-                    spec = np.real(self.numeric_spec_data[order])
 
                     clear_output(wait=True)
 

@@ -1,7 +1,7 @@
 Code Documentation
 ==================
 
-.. automodule:: simulation
+.. automodule:: QuantumPolyspectra.simulation
     :members:
-.. automodule:: analysis
+.. automodule:: QuantumPolyspectra.analysis
     :members:

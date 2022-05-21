@@ -56,28 +56,78 @@ from tqdm import tqdm_notebook
 
 
 def to_hdf(dt, data, path, group_name, dataset_name):
+    """
+    Helper function to generated h5 file from numpy array.
+
+    Parameters
+    ----------
+    dt : float
+        Inverse sampling rate of the signal
+    data : array
+        E.g. simulation results
+    path : str
+        Path for the data to be saved at
+    group_name : str
+        Name of the group in the h5 file
+    dataset_name : str
+        Name of the dataset in the h5 file
+
+    """
     with h5py.File(path, "w") as f:
         grp = f.create_group(group_name)
         d = grp.create_dataset(dataset_name, data=data)
         d.attrs['dt'] = dt
 
 
-@njit(parallel=False)
-def calc_a_w3(a_w_all, f_max_ind, m):
-    """Preparation of a_(w1+w2) for the calculation of the bispectrum"""
-    a_w3 = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, m))
-    for i in range(f_max_ind // 2):
-        a_w3[i, :, :] = a_w_all[i:i + f_max_ind // 2, 0, :]
-    return a_w3.conj()
-
-
 def import_data(path, group_key, dataset):
-    """Import of .h5 data with format group_key -> data + attrs[dt]"""
+    """
+    Helper function to load data from h5 file into numpy array.
+    Import of .h5 data with format group_key -> data + attrs[dt]
+
+    Parameters
+    ----------
+    path : str
+        Path for the data to be saved at
+    group_key : str
+        Name of the group in the h5 file
+    dataset : str
+        Name of the dataset in the h5 file
+
+    Returns
+    -------
+    Returns simulation result and inversampling rate
+    """
+
     main = h5py.File(path, 'r')
     main_group = main[group_key]
     main_data = main_group[dataset]
     delta_t = main_data.attrs['dt']
     return main_data, delta_t
+
+@njit(parallel=False)
+def calc_a_w3(a_w_all, f_max_ind, m):
+    """
+    Preparation of a_(w1+w2) for the calculation of the bispectrum
+
+    Parameters
+    ----------
+    a_w_all : array
+        Fourier coefficients of the signal
+    f_max_ind : int
+        Index of the maximum frequency to be used for the calculatioin of the spectra
+    m : int
+        Number of windows per spectrum
+
+    Returns
+    -------
+    a_w3 : array
+        Matrix of Fourier coefficients
+    """
+
+    a_w3 = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, m))
+    for i in range(f_max_ind // 2):
+        a_w3[i, :, :] = a_w_all[i:i + f_max_ind // 2, 0, :]
+    return a_w3.conj()
 
 
 def c2(a_w, a_w_corr, m, coherent):

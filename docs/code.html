@@ -77,87 +77,132 @@ keys as the corresponding collaps operators in c_ops.</p>
 <dt>sc_measure_strength<span class="classifier">dict</span></dt><dd><p>Dictionary containing the prefactor (float) of the stochastic collaps operators. Should have the same
 keys as the corresponding collaps operators in sc_ops.</p>
 </dd>
-<dt>time_series_data_empty<span class="classifier">dataframe</span></dt><dd><p>empty version of the simulation results dataframe to reset any results.</p>
+<dt>time_series_data_empty<span class="classifier">dataframe</span></dt><dd><p>Empty version of the simulation results dataframe to reset any results.</p>
 </dd>
-<dt>time_series_data<span class="classifier">dataframe</span></dt><dd><p>stores expectation values after the integration of the SME</p>
+<dt>time_series_data<span class="classifier">dataframe</span></dt><dd><p>Stores expectation values after the integration of the SME</p>
 </dd>
-<dt>freq<span class="classifier">dict</span></dt><dd><p>stores the frequencies from the analytic spectra, order 2 to 4</p>
+<dt>freq<span class="classifier">dict</span></dt><dd><p>Stores the frequencies from the analytic spectra, order 2 to 4</p>
 </dd>
-<dt>S<span class="classifier">dict</span></dt><dd><p>stores the analytic spectra, order 2 to 4</p>
+<dt>S<span class="classifier">dict</span></dt><dd><p>Stores the analytic spectra, order 2 to 4</p>
 </dd>
-<dt>numeric_f_data<span class="classifier">dict</span></dt><dd><p>stores the frequencies from the numeric spectra, order 2 to 4</p>
+<dt>numeric_f_data<span class="classifier">dict</span></dt><dd><p>Stores the frequencies from the numeric spectra, order 2 to 4</p>
 </dd>
-<dt>numeric_spec_data<span class="classifier">dict</span></dt><dd><p>stores the numeric spectra, order 2 to 4</p>
+<dt>numeric_spec_data<span class="classifier">dict</span></dt><dd><p>Stores the numeric spectra, order 2 to 4</p>
 </dd>
-<dt>eigvals<span class="classifier">array</span></dt><dd><p>stores eigenvalues of Liouvillian</p>
+<dt>eigvals<span class="classifier">array</span></dt><dd><p>Stores eigenvalues of Liouvillian</p>
 </dd>
-<dt>eigvecs<span class="classifier">array</span></dt><dd><p>stores eigenvectors of Liouvillian</p>
+<dt>eigvecs<span class="classifier">array</span></dt><dd><p>Stores eigenvectors of Liouvillian</p>
 </dd>
-<dt>eigvecs_inv<span class="classifier">array</span></dt><dd><p>stores the matrix inversion of the eigenvector matrix</p>
+<dt>eigvecs_inv<span class="classifier">array</span></dt><dd><p>Stores the matrix inversion of the eigenvector matrix</p>
 </dd>
-<dt>zero_ind<span class="classifier">int</span></dt><dd><p>contains the index of the steady state in the eigvalues</p>
+<dt>zero_ind<span class="classifier">int</span></dt><dd><p>Contains the index of the steady state in the eigvalues</p>
 </dd>
-<dt>A_prim<span class="classifier">array</span></dt><dd><p>stores the measurement superoperator mathcal{A} as defined in 10.1103/PhysRevB.98.205143</p>
+<dt>A_prim<span class="classifier">array</span></dt><dd><p>Stores the measurement superoperator mathcal{A} as defined in 10.1103/PhysRevB.98.205143</p>
 </dd>
-<dt>rho_steady<span class="classifier">array</span></dt><dd><p>steady state of the Liouvillian</p>
+<dt>rho_steady<span class="classifier">array</span></dt><dd><p>Steady state of the Liouvillian</p>
 </dd>
-<dt>s_k<span class="classifier">array</span></dt><dd><p>stores small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
+<dt>s_k<span class="classifier">array</span></dt><dd><p>Stores small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
 </dd>
-<dt>expect_data<span class="classifier">dict</span></dt><dd><p>stores expectation values calculated during the integration of the SME (daemon view), keys as in e_ops</p>
+<dt>expect_data<span class="classifier">dict</span></dt><dd><p>Stores expectation values calculated during the integration of the SME (daemon view), keys as in e_ops</p>
 </dd>
-<dt>expect_with_noise<span class="classifier">dict</span></dt><dd><p>stores expectation + detector noise values calculated during the integration of the SME, keys as in e_ops</p>
+<dt>expect_with_noise<span class="classifier">dict</span></dt><dd><p>Stores expectation + detector noise values calculated during the integration of the SME, keys as in e_ops</p>
 </dd>
 <dt>N<span class="classifier">int</span></dt><dd><p>Number of points in time series in window for the calculation of numerical spectra</p>
 </dd>
-<dt>fs<span class="classifier">float</span></dt><dd><p>sampling rate of the simulated signal for numerical spectra</p>
+<dt>fs<span class="classifier">float</span></dt><dd><p>Sampling rate of the simulated signal for numerical spectra</p>
 </dd>
 <dt>a_w<span class="classifier">array</span></dt><dd><p>Fourier coefficients of simulated signal for numerical spectra</p>
 </dd>
 <dt>a_w_cut<span class="classifier">array</span></dt><dd><p>Contains only the frequencies of interest from a_w (to speed up calculations)</p>
 </dd>
-<dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>set if GPU should be used for analytic spectra calculation</p>
+<dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>Set if GPU should be used for analytic spectra calculation</p>
 </dd>
-<dt>gpu_0<span class="classifier">int</span></dt><dd><p>stores pointer to zero an the GPU</p>
+<dt>gpu_0<span class="classifier">int</span></dt><dd><p>Stores pointer to zero an the GPU</p>
 </dd>
-<dt>reshape_ind: array</dt><dd><p>extracts the trace from a flatted matrix (to avoid reshaping)</p>
+<dt>reshape_ind: array</dt><dd><p>Extracts the trace from a flatted matrix (to avoid reshaping)</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt id="QuantumPolyspectra.simulation.System.calc_a_w3">
+<code class="sig-name descname">calc_a_w3</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.calc_a_w3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preparation of a_(w1+w2) for the calculation of the bispectrum</p>
+<dl class="simple">
+<dt>a_w<span class="classifier">array</span></dt><dd><p>Fourier coefficients of signal</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>a_w3<span class="classifier">array</span></dt><dd><p>Matrix corresponding to a_(w1+w2)</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt id="QuantumPolyspectra.simulation.System.calc_spectrum">
 <code class="sig-name descname">calc_spectrum</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f_data</span></em>, <em class="sig-param"><span class="n">order</span></em>, <em class="sig-param"><span class="n">measure_op</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mathcal_a</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">g_prim</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bar</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">beta</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">correction_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">beta_offset</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">enable_gpu</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cache_trispec</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.calc_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates analytic polyspectra (order 2 to 4) as described in 10.1103/PhysRevB.98.205143
 and 10.1103/PhysRevB.102.119901</p>
 <dl class="simple">
-<dt>f_data<span class="classifier">array</span></dt><dd><p>frequencies at which the spectra are calculated</p>
+<dt>f_data<span class="classifier">array</span></dt><dd><p>Frequencies at which the spectra are calculated</p>
 </dd>
-<dt>order<span class="classifier">int {2,3,4}</span></dt><dd><p>order of the polyspectra to be calculated</p>
+<dt>order<span class="classifier">int {2,3,4}</span></dt><dd><p>Order of the polyspectra to be calculated</p>
 </dd>
-<dt>measure_op<span class="classifier">str</span></dt><dd><p>key of the operator in sc_ops to be used as measurement operator</p>
+<dt>measure_op<span class="classifier">str</span></dt><dd><p>Key of the operator in sc_ops to be used as measurement operator</p>
 </dd>
-<dt>mathcal_a<span class="classifier">array</span></dt><dd><p>stores the measurement superoperator mathcal{A} as defined in 10.1103/PhysRevB.98.205143</p>
+<dt>mathcal_a<span class="classifier">array</span></dt><dd><p>Stores the measurement superoperator mathcal{A} as defined in 10.1103/PhysRevB.98.205143</p>
 </dd>
-<dt>g_prim<span class="classifier">bool</span></dt><dd><p>set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
+<dt>g_prim<span class="classifier">bool</span></dt><dd><p>Set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
 But unnecessary for standard polyspectra</p>
 </dd>
-<dt>bar<span class="classifier">bool</span></dt><dd><p>set if progress bars should be shown during calculation</p>
+<dt>bar<span class="classifier">bool</span></dt><dd><p>Set if progress bars should be shown during calculation</p>
 </dd>
-<dt>beta<span class="classifier">float</span></dt><dd><p>measurement strength used for the calculation. If not set beta is the prefactor
+<dt>beta<span class="classifier">float</span></dt><dd><p>Measurement strength used for the calculation. If not set beta is the prefactor
 in sc_measure_strength[measure_op]</p>
 </dd>
-<dt>correction_only<span class="classifier">bool</span></dt><dd><p>set if only the correction terms of the S4 from erratum 10.1103/PhysRevB.102.119901 should be
+<dt>correction_only<span class="classifier">bool</span></dt><dd><p>Set if only the correction terms of the S4 from erratum 10.1103/PhysRevB.102.119901 should be
 calculated</p>
 </dd>
-<dt>beta_offset<span class="classifier">bool</span></dt><dd><p>set if constant offset due to deetector noise should be added to the power spectrum</p>
+<dt>beta_offset<span class="classifier">bool</span></dt><dd><p>Set if constant offset due to deetector noise should be added to the power spectrum</p>
 </dd>
-<dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>set if GPU should be used for calculation</p>
+<dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>Set if GPU should be used for calculation</p>
 </dd>
-<dt>cache_trispec<span class="classifier">bool</span></dt><dd><p>set if Matrix multiplication in the calculation of the trispectrum should be cached</p>
+<dt>cache_trispec<span class="classifier">bool</span></dt><dd><p>Set if Matrix multiplication in the calculation of the trispectrum should be cached</p>
 </dd>
 </dl>
 <dl class="simple">
 <dt>S[order]<span class="classifier">array</span></dt><dd><p>Returns spectral value at specified frequencies</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="QuantumPolyspectra.simulation.System.calc_transient">
+<code class="sig-name descname">calc_transient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">seed</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">_solver</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">progress_bar</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">_nsubsteps</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">_normalize</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">return_result</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.calc_transient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integrate the SME for the system definined by mathcal{L} and the starting state rho_0. Saves the
+results (daemon view and measurement with detector noise) in a dataframe</p>
+<dl>
+<dt>t<span class="classifier">array</span></dt><dd><p>Times at which the SME is intergrated</p>
+</dd>
+<dt>seed<span class="classifier">int</span></dt><dd><blockquote>
+<div><p>Seed for the generation of the Wiener Process</p>
+</div></blockquote>
+<dl class="simple">
+<dt>_solver<span class="classifier">str</span></dt><dd><p>Name of the solver used for the intergration of the SME (see the qutip docs for more information)</p>
+</dd>
+</dl>
+</dd>
+<dt>_nsubsteps<span class="classifier">int</span></dt><dd><p>Number of substeps between to point in t. Reduces numerical errors.</p>
+</dd>
+<dt>_normalize<span class="classifier">bool</span></dt><dd><p>Set if density matrix should be normalized after each integration step</p>
+</dd>
+<dt>progress_bar<span class="classifier">bool</span></dt><dd><p>Set if progress bar should be shown during integration</p>
+</dd>
+<dt>options<span class="classifier">dict</span></dt><dd><p>Solver options (see qutip documentation)</p>
+</dd>
+<dt>return_result<span class="classifier">bool</span></dt><dd><p>Set if solver result should be returned in addition to the dataframe</p>
+</dd>
+</dl>
+<p>Return a dataframe containing the daemon view and measurement with detector noise.
+Additionally, returns solver result (see return_result parameter)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -185,16 +230,60 @@ calculated</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="QuantumPolyspectra.simulation.System.numeric_spec">
+<code class="sig-name descname">numeric_spec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t_window_in</span></em>, <em class="sig-param"><span class="n">measure_op</span></em>, <em class="sig-param"><span class="n">f_max</span></em>, <em class="sig-param"><span class="n">power</span></em>, <em class="sig-param"><span class="n">order</span></em>, <em class="sig-param"><span class="n">max_samples</span></em>, <em class="sig-param"><span class="n">m</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">_solver</span><span class="o">=</span><span class="default_value">'milstein'</span></em>, <em class="sig-param"><span class="n">plot_after</span><span class="o">=</span><span class="default_value">12</span></em>, <em class="sig-param"><span class="n">title_in</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">with_noise</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">_normalize</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">roll</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_simulation</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">backend</span><span class="o">=</span><span class="default_value">'opencl'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.numeric_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for the automated calculation of the polyspectra from the numerical integration of the SME.
+Can be used as an alternative to the analytic quantum polyspectra or to estimated measurement time and
+noise levels of the spectra.</p>
+<dl class="simple">
+<dt>t_window_in<span class="classifier">array</span></dt><dd><p>Times at with the SME will be integrated</p>
+</dd>
+<dt>measure_op<span class="classifier">str</span></dt><dd><p>Key of the operator in sc_ops that should be used as measurement operator</p>
+</dd>
+<dt>f_max<span class="classifier">float</span></dt><dd><p>Maximum frequency of interest to speed up calculation of polyspectra</p>
+</dd>
+<dt>power<span class="classifier">float</span></dt><dd><p>Power to which the detector output should be raised before the calculation of the spectra
+(Was useful during the experimentation with the current operator.)</p>
+</dd>
+<dt>order<span class="classifier">int {2,3,4}</span></dt><dd><p>Order of the polyspectra to be calculated</p>
+</dd>
+<dt>max_samples<span class="classifier">int</span></dt><dd><p>Number of spectra with m windows to be calculated. The final result will be an average over all these
+spectra</p>
+</dd>
+<dt>m<span class="classifier">int</span></dt><dd><p>number of frames used from the calculation of one spectrum</p>
+</dd>
+<dt>_solver<span class="classifier">str</span></dt><dd><p>Name of the solver used for the intergration of the SME (see the qutip docs for more information)</p>
+</dd>
+<dt>plot_after<span class="classifier">int</span></dt><dd><p>Each number of spectra after with the current average spectrum should be displayed</p>
+</dd>
+<dt>title_in<span class="classifier">str</span></dt><dd><p>Add a str to customize title</p>
+</dd>
+<dt>with_noise<span class="classifier">bool</span></dt><dd><p>Set if detector output with noise should be used for the calculation of the spectra instead of
+the daemon view</p>
+</dd>
+<dt>_normalize<span class="classifier">bool</span></dt><dd><p>Set if density matrix should be normalized during integration of the SME</p>
+</dd>
+<dt>roll<span class="classifier">bool</span></dt><dd><p>Set if trace should be shifted against itself during squaring</p>
+</dd>
+<dt>plot_simulation<span class="classifier">bool</span></dt><dd><p>Set if simulation result / trace should be plot. Useful to check for numerical errors during integration</p>
+</dd>
+<dt>backend<span class="classifier">str {cpu, opencl, cuda}</span></dt><dd><p>Backend to be used by arrayfire</p>
+</dd>
+</dl>
+<p>Return frequencies and the spectral values as arrays</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="QuantumPolyspectra.simulation.System.parallel_tranisent">
 <code class="sig-name descname">parallel_tranisent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">seed</span></em>, <em class="sig-param"><span class="n">measure_op</span></em>, <em class="sig-param"><span class="n">t</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">_solver</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">with_noise</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">_nsubsteps</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">_normalize</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.parallel_tranisent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method for the quick integration of the SME (avoids saving the results into dataframes). Is used for
 parallelization of the integration.</p>
 <dl class="simple">
-<dt>seed<span class="classifier">int</span></dt><dd><p>seed for the generation of random numbers for the Wiener process</p>
+<dt>seed<span class="classifier">int</span></dt><dd><p>Seed for the generation of random numbers for the Wiener process</p>
 </dd>
-<dt>measure_op<span class="classifier">str</span></dt><dd><p>key of the measurement operator in sc_ops</p>
+<dt>measure_op<span class="classifier">str</span></dt><dd><p>Key of the measurement operator in sc_ops</p>
 </dd>
-<dt>t<span class="classifier">array</span></dt><dd><p>times at which the integration takes place</p>
+<dt>t<span class="classifier">array</span></dt><dd><p>Times at which the integration takes place</p>
 </dd>
 <dt>_solver<span class="classifier">str</span></dt><dd><p>Name of the solver used for the intergration of the SME (see the qutip docs for more information)</p>
 </dd>
@@ -229,7 +318,7 @@ parallelization of the integration.</p>
 <dl class="simple">
 <dt>order<span class="classifier">int {2,3,4}</span></dt><dd><p>Order of polyspectrum to be plotted</p>
 </dd>
-<dt>title<span class="classifier">str</span></dt><dd><p>Titel of the plot</p>
+<dt>title<span class="classifier">str</span></dt><dd><p>Title of the plot</p>
 </dd>
 <dt>log<span class="classifier">bool</span></dt><dd><p>Set if log scales should be used</p>
 </dd>
@@ -242,11 +331,27 @@ parallelization of the integration.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="QuantumPolyspectra.simulation.System.plot_transient">
+<code class="sig-name descname">plot_transient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ops_with_power</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">shift</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.plot_transient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interactive plot of the integration results.</p>
+<dl class="simple">
+<dt>ops_with_power<span class="classifier">dict</span></dt><dd><p>Key of the operators in e_ops as key with integer labels corresponding the exponent to with the
+corresponding trace should be raised to. (Was useful during the experimentation with the current operator.)</p>
+</dd>
+<dt>title<span class="classifier">str</span></dt><dd><p>Title of plot</p>
+</dd>
+<dt>shift<span class="classifier">bool</span></dt><dd><p>Set if traces should be shifted up to avoid overlapping of multiple traces</p>
+</dd>
+</dl>
+<p>Plotly figure</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="QuantumPolyspectra.simulation.System.save_spec">
 <code class="sig-name descname">save_spec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.save_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save System class with spectral data</p>
 <dl class="simple">
-<dt>path<span class="classifier">str</span></dt><dd><p>location of file</p>
+<dt>path<span class="classifier">str</span></dt><dd><p>Location of file</p>
 </dd>
 </dl>
 </dd></dl>
@@ -255,6 +360,47 @@ parallelization of the integration.</p>
 <dt id="QuantumPolyspectra.simulation.System.second_matrix_step">
 <code class="sig-name descname">second_matrix_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">omega</span></em>, <em class="sig-param"><span class="n">omega2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.second_matrix_step" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper method to move function out of the class. njit is not working within classes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="QuantumPolyspectra.simulation.System.single_plot">
+<code class="sig-name descname">single_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">order</span></em>, <em class="sig-param"><span class="n">f_max</span></em>, <em class="sig-param"><span class="n">f_min</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">arcsinh_plot</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">arcsinh_const</span><span class="o">=</span><span class="default_value">0.02</span></em>, <em class="sig-param"><span class="n">contours</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">s3_filter</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">s4_filter</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">s2_data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s3_data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s4_data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s2_f</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s3_f</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s4_f</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">imag_plot</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.single_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates plot of the polyspectum of order “order”</p>
+<dl class="simple">
+<dt>order<span class="classifier">int {2,3,4}</span></dt><dd><p>Order of polyspectrum to be plotted</p>
+</dd>
+<dt>f_max<span class="classifier">float</span></dt><dd><p>Maximum value of frequency axis</p>
+</dd>
+<dt>f_min<span class="classifier">float</span></dt><dd><p>Minimum value of frequency axis</p>
+</dd>
+<dt>arcsinh_plot<span class="classifier">bool</span></dt><dd><p>Set if spectral values should be scaled by an arcsinh function (improves visability of small features)</p>
+</dd>
+<dt>arcsinh_const<span class="classifier">float</span></dt><dd><p>Constant to customize the effenct of the scaling</p>
+</dd>
+<dt>contours<span class="classifier">bool</span></dt><dd><p>Set if contours should be shown in the 2D plots</p>
+</dd>
+<dt>s3_filter<span class="classifier">int</span></dt><dd><p>Width of the Gaussian filter applied to the S3</p>
+</dd>
+<dt>s4_filter<span class="classifier">int</span></dt><dd><p>Width of the Gaussian filter applied to the S4</p>
+</dd>
+<dt>s2_data<span class="classifier">array</span></dt><dd><p>Spectral data for the S2</p>
+</dd>
+<dt>s3_data<span class="classifier">array</span></dt><dd><p>Spectral data for the S3</p>
+</dd>
+<dt>s4_data<span class="classifier">array</span></dt><dd><p>Spectral data for the S4</p>
+</dd>
+<dt>s2_f<span class="classifier">array</span></dt><dd><p>Frequencies corresponding to the spectral data of the S2</p>
+</dd>
+<dt>s3_f<span class="classifier">array</span></dt><dd><p>Frequencies corresponding to the spectral data of the S3</p>
+</dd>
+<dt>s4_f<span class="classifier">array</span></dt><dd><p>Frequencies corresponding to the spectral data of the S4</p>
+</dd>
+<dt>imag_plot<span class="classifier">bool</span></dt><dd><p>Set if imaginary part of the spectrum should be plotted</p>
+</dd>
+<dt>title<span class="classifier">set</span></dt><dd><p>Title of the plot</p>
+</dd>
+</dl>
+<p>Matplotlib figure</p>
 </dd></dl>
 
 </dd></dl>
@@ -269,7 +415,7 @@ superoperator form of the Liouvillian.</p>
 </dd>
 <dt>h<span class="classifier">array</span></dt><dd><p>Hamilton operator</p>
 </dd>
-<dt><a href="#id3"><span class="problematic" id="id4">c_ops_</span></a><span class="classifier">array</span></dt><dd><p>collapse operators for the Lindblad dampers</p>
+<dt><a href="#id3"><span class="problematic" id="id4">c_ops_</span></a><span class="classifier">array</span></dt><dd><p>Collapse operators for the Lindblad dampers</p>
 </dd>
 </dl>
 <dl class="simple">
@@ -287,7 +433,7 @@ superoperator form of the Liouvillian.</p>
 </dd>
 </dl>
 <dl class="simple">
-<dt>op_super<span class="classifier">array</span></dt><dd><p>super operator A</p>
+<dt>op_super<span class="classifier">array</span></dt><dd><p>Superoperator A</p>
 </dd>
 </dl>
 </dd></dl>
@@ -300,11 +446,11 @@ after the other: [1,0,0…], [0,1,0,0,….], …</p>
 <dl class="simple">
 <dt><a href="#id7"><span class="problematic" id="id8">h_</span></a><span class="classifier">array</span></dt><dd><p>Hamilton operator</p>
 </dd>
-<dt>c_ops<span class="classifier">array</span></dt><dd><p>collapse operators for the Lindblad dampers</p>
+<dt>c_ops<span class="classifier">array</span></dt><dd><p>Collapse operators for the Lindblad dampers</p>
 </dd>
 </dl>
 <dl class="simple">
-<dt>op_super<span class="classifier">array</span></dt><dd><p>superoperator form of the Liouvillian</p>
+<dt>op_super<span class="classifier">array</span></dt><dd><p>Superoperator form of the Liouvillian</p>
 </dd>
 </dl>
 </dd></dl>
@@ -325,7 +471,7 @@ after the other: [1,0,0…], [0,1,0,0,….], …</p>
 <code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">pickle_save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">obj</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.pickle_save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to pickle system objects</p>
 <dl class="simple">
-<dt>path<span class="classifier">str</span></dt><dd><p>location of saved data</p>
+<dt>path<span class="classifier">str</span></dt><dd><p>Location of saved data</p>
 </dd>
 </dl>
 <p>obj : System obj</p>
@@ -366,11 +512,11 @@ Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.<
 <dl class="simple">
 <dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>Specify if GPU should be used</p>
 </dd>
-<dt>omega1<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+<dt>omega1<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
 </dd>
-<dt>omega2<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+<dt>omega2<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
 </dd>
-<dt>omega3<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+<dt>omega3<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
 </dd>
 <dt>s_k<span class="classifier">array</span></dt><dd><p>Array calculated with :func:small_s</p>
 </dd>
@@ -378,7 +524,7 @@ Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.<
 </dd>
 </dl>
 <dl class="simple">
-<dt>out_sum<span class="classifier">array</span></dt><dd><p>second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<dt>out_sum<span class="classifier">array</span></dt><dd><p>Second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -407,7 +553,7 @@ Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
 </dd>
 </dl>
 <dl class="simple">
-<dt>s_k<span class="classifier">array</span></dt><dd><p>small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
+<dt>s_k<span class="classifier">array</span></dt><dd><p>Small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
 </dd>
 </dl>
 </dd></dl>
@@ -420,11 +566,11 @@ Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</
 <dl class="simple">
 <dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>Specify if GPU should be used</p>
 </dd>
-<dt>omega1<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+<dt>omega1<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
 </dd>
-<dt>omega2<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+<dt>omega2<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
 </dd>
-<dt>omega3<span class="classifier">float</span></dt><dd><p>frequency of interest</p>
+<dt>omega3<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
 </dd>
 <dt>s_k<span class="classifier">array</span></dt><dd><p>Array calculated with :func:small_s</p>
 </dd>
@@ -432,7 +578,7 @@ Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</
 </dd>
 </dl>
 <dl class="simple">
-<dt>out_sum<span class="classifier">array</span></dt><dd><p>third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<dt>out_sum<span class="classifier">array</span></dt><dd><p>Third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
 </dd>
 </dl>
 </dd></dl>

@@ -1721,6 +1721,49 @@ class System(Spectrum):
     def single_plot(self, order, f_max, f_min=0, arcsinh_plot=False, arcsinh_const=0.02,
                     contours=False, s3_filter=0, s4_filter=0, s2_data=None, s3_data=None,
                     s4_data=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, title=None):
+        """
+        Generates plot of the polyspectum of order "order"
+
+        Parameters
+        ----------
+        order : int {2,3,4}
+            Order of polyspectrum to be plotted
+        f_max : float
+            Maximum value of frequency axis
+        f_min : float
+            Minimum value of frequency axis
+        arcsinh_plot : bool
+            Set if spectral values should be scaled by an arcsinh function (improves visability of small features)
+        arcsinh_const : float
+            Constant to customize the effenct of the scaling
+        contours : bool
+            Set if contours should be shown in the 2D plots
+        s3_filter : int
+            Width of the Gaussian filter applied to the S3
+        s4_filter : int
+            Width of the Gaussian filter applied to the S4
+        s2_data : array
+            Spectral data for the S2
+        s3_data : array
+            Spectral data for the S3
+        s4_data : array
+            Spectral data for the S4
+        s2_f : array
+            Frequencies corresponding to the spectral data of the S2
+        s3_f : array
+            Frequencies corresponding to the spectral data of the S3
+        s4_f : array
+            Frequencies corresponding to the spectral data of the S4
+        imag_plot : bool
+            Set if imaginary part of the spectrum should be plotted
+        title : set
+            Title of the plot
+
+        Returns
+        -------
+        Matplotlib figure
+        """
+
         if order == 2:
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(11, 6))
         else:

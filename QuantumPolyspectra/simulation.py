@@ -99,7 +99,7 @@ def calc_super_A(op):
     Returns
     -------
     op_super : array
-        super operator A
+        Superoperator A
     """
 
     def calc_A(rho, _op):
@@ -225,7 +225,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
     Returns
     -------
     out : array
-        first matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
+        First matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
     """
 
     G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
@@ -319,7 +319,7 @@ def _third_matrix_step(rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eig
     Returns
     -------
     out : array
-        third matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
+        Third matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
     """
     _ = omega2
     _ = omega3
@@ -403,7 +403,7 @@ def small_s(rho_steady, a_prim, eigvecs, eigvec_inv, reshape_ind, enable_gpu, ze
     Returns
     -------
     s_k : array
-        small s (Eq. 7) from 10.1103/PhysRevB.102.119901
+        Small s (Eq. 7) from 10.1103/PhysRevB.102.119901
     """
 
     if enable_gpu:
@@ -447,11 +447,11 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     enable_gpu : bool
         Specify if GPU should be used
     omega1 : float
-        frequency of interest
+        Frequency of interest
     omega2 : float
-        frequency of interest
+        Frequency of interest
     omega3 : float
-        frequency of interest
+        Frequency of interest
     s_k : array
         Array calculated with :func:small_s
     eigvals : array
@@ -460,7 +460,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     Returns
     -------
     out_sum : array
-        second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+        Second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
     """
 
     nu1 = omega1 + omega2 + omega3
@@ -514,11 +514,11 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     enable_gpu : bool
         Specify if GPU should be used
     omega1 : float
-        frequency of interest
+        Frequency of interest
     omega2 : float
-        frequency of interest
+        Frequency of interest
     omega3 : float
-        frequency of interest
+        Frequency of interest
     s_k : array
         Array calculated with :func:small_s
     eigvals : array
@@ -527,7 +527,7 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     Returns
     -------
     out_sum : array
-        third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+        Third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
     """
 
     out = 0
@@ -745,7 +745,7 @@ def calc_liou(rho_, h, c_ops_):
     h : array
         Hamilton operator
     c_ops_ : array
-        collapse operators for the Lindblad dampers
+        Collapse operators for the Lindblad dampers
 
     Returns
     -------
@@ -785,12 +785,12 @@ def calc_super_liou(h_, c_ops):
     h_ : array
         Hamilton operator
     c_ops : array
-        collapse operators for the Lindblad dampers
+        Collapse operators for the Lindblad dampers
 
     Returns
     -------
     op_super : array
-        superoperator form of the Liouvillian
+        Superoperator form of the Liouvillian
     """
     m, n = h_.shape
     op_super = 1j * np.ones((n ** 2, n ** 2))
@@ -811,7 +811,7 @@ def pickle_save(path, obj):
     Parameters
     ----------
     path : str
-        location of saved data
+        Location of saved data
     obj : System obj
 
     """
@@ -867,49 +867,49 @@ class System(Spectrum):
         Dictionary containing the prefactor (float) of the stochastic collaps operators. Should have the same
         keys as the corresponding collaps operators in sc_ops.
     time_series_data_empty : dataframe
-        empty version of the simulation results dataframe to reset any results.
+        Empty version of the simulation results dataframe to reset any results.
     time_series_data : dataframe
-        stores expectation values after the integration of the SME
+        Stores expectation values after the integration of the SME
     freq : dict
-        stores the frequencies from the analytic spectra, order 2 to 4
+        Stores the frequencies from the analytic spectra, order 2 to 4
     S : dict
-        stores the analytic spectra, order 2 to 4
+        Stores the analytic spectra, order 2 to 4
     numeric_f_data : dict
-        stores the frequencies from the numeric spectra, order 2 to 4
+        Stores the frequencies from the numeric spectra, order 2 to 4
     numeric_spec_data : dict
-        stores the numeric spectra, order 2 to 4
+        Stores the numeric spectra, order 2 to 4
     eigvals : array
-        stores eigenvalues of Liouvillian
+        Stores eigenvalues of Liouvillian
     eigvecs : array
-        stores eigenvectors of Liouvillian
+        Stores eigenvectors of Liouvillian
     eigvecs_inv : array
-        stores the matrix inversion of the eigenvector matrix
+        Stores the matrix inversion of the eigenvector matrix
     zero_ind : int
-        contains the index of the steady state in the eigvalues
+        Contains the index of the steady state in the eigvalues
     A_prim : array
-        stores the measurement superoperator \mathcal{A} as defined in 10.1103/PhysRevB.98.205143
+        Stores the measurement superoperator \mathcal{A} as defined in 10.1103/PhysRevB.98.205143
     rho_steady : array
-        steady state of the Liouvillian
+        Steady state of the Liouvillian
     s_k : array
-        stores small s (Eq. 7) from 10.1103/PhysRevB.102.119901
+        Stores small s (Eq. 7) from 10.1103/PhysRevB.102.119901
     expect_data : dict
-        stores expectation values calculated during the integration of the SME (daemon view), keys as in e_ops
+        Stores expectation values calculated during the integration of the SME (daemon view), keys as in e_ops
     expect_with_noise : dict
-        stores expectation + detector noise values calculated during the integration of the SME, keys as in e_ops
+        Stores expectation + detector noise values calculated during the integration of the SME, keys as in e_ops
     N : int
         Number of points in time series in window for the calculation of numerical spectra
     fs : float
-        sampling rate of the simulated signal for numerical spectra
+        Sampling rate of the simulated signal for numerical spectra
     a_w : array
         Fourier coefficients of simulated signal for numerical spectra
     a_w_cut : array
         Contains only the frequencies of interest from a_w (to speed up calculations)
     enable_gpu : bool
-        set if GPU should be used for analytic spectra calculation
+        Set if GPU should be used for analytic spectra calculation
     gpu_0 : int
-        stores pointer to zero an the GPU
+        Stores pointer to zero an the GPU
     reshape_ind: array
-        extracts the trace from a flatted matrix (to avoid reshaping)
+        Extracts the trace from a flatted matrix (to avoid reshaping)
     """
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):
@@ -960,7 +960,7 @@ class System(Spectrum):
         Parameters
         ----------
         path : str
-            location of file
+            Location of file
         """
         self.gpu_0 = 0
         self.eigvals = np.array([])
@@ -1014,30 +1014,30 @@ class System(Spectrum):
         Parameters
         ----------
         f_data : array
-            frequencies at which the spectra are calculated
+            Frequencies at which the spectra are calculated
         order : int {2,3,4}
-            order of the polyspectra to be calculated
+            Order of the polyspectra to be calculated
         measure_op : str
-            key of the operator in sc_ops to be used as measurement operator
+            Key of the operator in sc_ops to be used as measurement operator
         mathcal_a : array
-            stores the measurement superoperator \mathcal{A} as defined in 10.1103/PhysRevB.98.205143
+            Stores the measurement superoperator \mathcal{A} as defined in 10.1103/PhysRevB.98.205143
         g_prim : bool
-            set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
+            Set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
             But unnecessary for standard polyspectra
         bar : bool
-            set if progress bars should be shown during calculation
+            Set if progress bars should be shown during calculation
         beta : float
-            measurement strength used for the calculation. If not set beta is the prefactor
+            Measurement strength used for the calculation. If not set beta is the prefactor
             in sc_measure_strength[measure_op]
         correction_only : bool
-            set if only the correction terms of the S4 from erratum 10.1103/PhysRevB.102.119901 should be
+            Set if only the correction terms of the S4 from erratum 10.1103/PhysRevB.102.119901 should be
             calculated
         beta_offset : bool
-            set if constant offset due to deetector noise should be added to the power spectrum
+            Set if constant offset due to deetector noise should be added to the power spectrum
         enable_gpu : bool
-            set if GPU should be used for calculation
+            Set if GPU should be used for calculation
         cache_trispec : bool
-            set if Matrix multiplication in the calculation of the trispectrum should be cached
+            Set if Matrix multiplication in the calculation of the trispectrum should be cached
 
         Returns
         -------
@@ -1428,11 +1428,11 @@ class System(Spectrum):
         Parameters
         ----------
         seed : int
-            seed for the generation of random numbers for the Wiener process
+            Seed for the generation of random numbers for the Wiener process
         measure_op : str
-            key of the measurement operator in sc_ops
+            Key of the measurement operator in sc_ops
         t : array
-            times at which the integration takes place
+            Times at which the integration takes place
         _solver : str
             Name of the solver used for the intergration of the SME (see the qutip docs for more information)
         with_noise : bool
@@ -1537,7 +1537,7 @@ class System(Spectrum):
         Parameters
         ----------
         ops_with_power : dict
-            key of the operators in e_ops as key with integer labels corresponding the exponent to with the
+            Key of the operators in e_ops as key with integer labels corresponding the exponent to with the
             corresponding trace should be raised to. (Was useful during the experimentation with the current operator.)
         title : str
             Title of plot

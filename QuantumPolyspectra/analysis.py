@@ -605,9 +605,9 @@ class Spectrum:
             if order == 2:
                 if rect_win:
                     ones = to_gpu(np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
-                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=delta_t)
+                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1/delta_t**0.5)
                 else:
-                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
+                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1/delta_t**0.5)
 
                 if filter_func:
                     pre_filter = filter_func(self.freq[2])
@@ -621,7 +621,7 @@ class Spectrum:
                 a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
                 if self.corr_data is not None:
-                    a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=delta_t)
+                    a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1/delta_t**0.5)
                     a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
                     single_spectrum = c2(a_w, a_w_corr, m, coherent=coherent)
 
@@ -634,9 +634,9 @@ class Spectrum:
                 if rect_win:
                     ones = to_gpu(
                         np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
-                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=delta_t)
+                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1/delta_t**0.5)
                 else:
-                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
+                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1/delta_t**0.5)
 
                 if filter_func:
                     pre_filter = filter_func(self.freq[2])
@@ -659,7 +659,7 @@ class Spectrum:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
                     if self.corr_data is not None:
-                        a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=delta_t)
+                        a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1/delta_t**0.5)
                         if random_phase:
                             a_w_all_corr = self.add_random_phase(a_w_all_corr, order, window_size, delta_t, m)
 
@@ -808,7 +808,7 @@ class Spectrum:
                 # subtract window start time to make window start at t=0
                 #a_w = np.sum(np.exp(-1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed, axis=1)
 
-                a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed * self.dt, axis=1)
+                a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed * self.dt / window_width**0.5, axis=1)
                 a_w_all[:, i] = a_w
 
             a_w_all = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))

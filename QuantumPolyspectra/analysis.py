@@ -604,7 +604,8 @@ class Spectrum:
 
             if order == 2:
                 if rect_win:
-                    a_w_all = fft_r2c(chunk_gpu, dim0=0, scale=delta_t)
+                    ones = to_gpu(np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
+                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=delta_t)
                 else:
                     a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
 
@@ -631,7 +632,9 @@ class Spectrum:
 
             elif order > 2:
                 if rect_win:
-                    a_w_all = fft_r2c(chunk_gpu, dim0=0, scale=delta_t)
+                    ones = to_gpu(
+                        np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
+                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=delta_t)
                 else:
                     a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=delta_t)
 
@@ -694,7 +697,7 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def calc_spec_poisson(self, order, window_width, f_max, backend='opencl', m=5, data=None, sigma_t=0.14,
+    def calc_spec_poisson(self, order_in, window_width, f_max, backend='opencl', m=5, data=None, sigma_t=0.14,
                           rect_win=False):
         """
 
@@ -702,7 +705,7 @@ class Spectrum:
         ----------
         sigma_t: float
             width of approximate confined gaussian windows
-        order: int
+        order: int, str ('all')
             order of the calculated spectrum
         window_width: int
             spectra for m windows of window_size is calculated
@@ -722,17 +725,24 @@ class Spectrum:
         if data is not None:
             self.data = data
 
+        if order_in=='all':
+            orders = [2,3,4]
+        else:
+            orders = order_in
+
         af.set_backend(backend)
         # window_width = int(window_width)
         self.fs = f_max
         self.window_width = window_width
         self.m = m
-        self.freq[order] = None
-        self.S[order] = None
-        self.S_gpu[order] = None
-        self.S_sigma_gpu = None
-        self.S_sigma[order] = None
-        self.S_sigmas[order] = []
+
+        for order in orders:
+            self.freq[order] = None
+            self.S[order] = None
+            self.S_gpu[order] = None
+            self.S_sigma_gpu = None
+            self.S_sigma[order] = None
+            self.S_sigmas[order] = []
 
         # -------data setup---------
         if self.data is None:
@@ -752,17 +762,18 @@ class Spectrum:
         w_list = 2 * np.pi * f_list
         n_windows = int(self.main_data.max() // (window_width * m))
 
-        if order == 3:
-            self.freq[order] = f_list[:int(f_max_ind // 2)]
-        else:
-            self.freq[order] = f_list
+        for order in orders:
+            if order == 3:
+                self.freq[order] = f_list[:int(f_max_ind // 2)]
+            else:
+                self.freq[order] = f_list
 
-        if order == 2:
-            self.S_sigmas[2] = 1j * np.empty((f_max_ind, n_windows))
-        elif order == 3:
-            self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, n_windows))
-        elif order == 4:
-            self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
+            if order == 2:
+                self.S_sigmas[2] = 1j * np.empty((f_max_ind, n_windows))
+            elif order == 3:
+                self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, n_windows))
+            elif order == 4:
+                self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
 
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
@@ -782,68 +793,77 @@ class Spectrum:
             a_w_all = 1j * np.empty((w_list.shape[0], m))
             for i, t_clicks in enumerate(windows):
 
-                print('t_clicks.min():', t_clicks.min())
-                print('t_clicks.max():', t_clicks.max())
+                #print('t_clicks.min():', t_clicks.min())
+                #print('t_clicks.max():', t_clicks.max())
 
                 t_clicks_minus_start = t_clicks - i * window_width - m * window_width * frame_number
 
-                print('t_clicks_minus_start.min():', t_clicks_minus_start.min())
-                print('t_clicks_minus_start.max():', t_clicks_minus_start.max())
+                #print('t_clicks_minus_start.min():', t_clicks_minus_start.min())
+                #print('t_clicks_minus_start.max():', t_clicks_minus_start.max())
 
                 if rect_win:
                     t_clicks_windowed = np.ones_like(t_clicks_minus_start)
                 else:
                     t_clicks_windowed = self.apply_window(t_clicks_minus_start, sigma_t=sigma_t)
                 # subtract window start time to make window start at t=0
-                a_w = np.sum(np.exp(-1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed, axis=1)
+                #a_w = np.sum(np.exp(-1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed, axis=1)
+
+                a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed * self.dt, axis=1)
                 a_w_all[:, i] = a_w
 
             a_w_all = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))
 
-            if order == 2:
-                a_w = a_w_all
-                single_spectrum = c2(a_w, a_w, m, coherent=False)
-                sigma_counter = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
+            for order in orders:
+                if order == 2:
+                    a_w = a_w_all
+                    single_spectrum = c2(a_w, a_w, m, coherent=False)
+                    _ = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
 
-            elif order == 3:
-                a_w1 = af.lookup(a_w_all, af.Array(list(range(f_max_ind // 2))), dim=0)
-                a_w2 = a_w1
-                a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
-                single_spectrum = c3(a_w1, a_w2, a_w3, m)
-                sigma_counter = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
+                elif order == 3:
+                    a_w1 = af.lookup(a_w_all, af.Array(list(range(f_max_ind // 2))), dim=0)
+                    a_w2 = a_w1
+                    a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
+                    single_spectrum = c3(a_w1, a_w2, a_w3, m)
+                    _ = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
 
-            elif order == 4:
-                a_w = a_w_all
-                a_w_corr = a_w
-                single_spectrum = c4(a_w, a_w_corr, m)
-                sigma_counter = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
+                elif order == 4:
+                    a_w = a_w_all
+                    a_w_corr = a_w
+                    single_spectrum = c4(a_w, a_w_corr, m)
+                    _ = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
+
+            sigma_counter += 1
 
         assert n_windows == n_chunks, 'n_windows not equal to n_chunks'
 
-        dt = 1 / (2 * f_list.max())
+        #dt = 1 / (2 * f_list.max())
         single_window = self.cgw(len(f_list), ones=False)
 
-        self.S_gpu[order] /= dt * (single_window ** order).sum() * n_chunks
-        self.S[order] = self.S_gpu[order].to_ndarray()
+        for order in orders:
+            self.S_gpu[order] /= self.dt * (single_window ** order).sum() * n_chunks
+            self.S[order] = self.S_gpu[order].to_ndarray()
 
-        self.S_sigmas[order] /= (dt * (single_window ** order).sum() * np.sqrt(n_chunks))
+            self.S_sigmas[order] /= (self.dt * (single_window ** order).sum() * np.sqrt(n_chunks))
 
-        if n_chunks > 1:
-            if order == 2:
-                self.S_sigma_gpu = np.sqrt(
-                    n_chunks / (n_chunks - 1) * (
-                            np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
-                            np.mean(self.S_sigmas[order], axis=1) * np.conj(
-                        np.mean(self.S_sigmas[order], axis=1))))
+            if n_chunks > 1:
+                if order == 2:
+                    self.S_sigma_gpu = np.sqrt(
+                        n_chunks / (n_chunks - 1) * (
+                                np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
+                                np.mean(self.S_sigmas[order], axis=1) * np.conj(
+                            np.mean(self.S_sigmas[order], axis=1))))
 
-            else:
-                self.S_sigma_gpu = np.sqrt(n_chunks / (n_chunks - 1) * (
-                        np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
-                        np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
+                else:
+                    self.S_sigma_gpu = np.sqrt(n_chunks / (n_chunks - 1) * (
+                            np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
+                            np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
 
-            self.S_sigma[order] = self.S_sigma_gpu
+                self.S_sigma[order] = self.S_sigma_gpu
 
-        return self.freq[order], self.S[order], self.S_sigma[order]
+        if orders=='all':
+            return self.freq, self.S, self.S_sigma
+        else:
+            return self.freq[order], self.S[order], self.S_sigma[order]
 
     def calc_spec_mini_bins(self, order, window_width, bin_width, f_max, backend='opencl', coherent=False,
                             m=5, data=None, sigma_t=0.14, rect_win=False, verbose=False):
@@ -869,7 +889,7 @@ class Spectrum:
         -------
 
         """
-
+        print('initializing')
         if data is not None:
             self.data = data
 
@@ -887,25 +907,29 @@ class Spectrum:
         self.S_sigmas[order] = []
 
         # -------data setup---------
+        print('import data')
         if self.data is None:
             main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
         else:
             main_data = self.data
         self.main_data = main_data
 
+        print('initializing frequency array')
         f_min = 1 / window_width
         f_list = np.arange(0, f_max + f_min, f_min)
 
+        print('preparing calculation')
         start_index = 0
         sigma_counter = 0
         enough_data = True
         n_chunks = 0
         f_max_ind = len(f_list)
         w_list = 2 * np.pi * f_list
-        n_windows = int(self.main_data.max() // (window_width * m))
+        n_windows = int(self.main_data[-1] // (window_width * m))
         bins = int(window_width / bin_width)
         delta_t = bin_width
 
+        print('preparing frequency array')
         if self.fs is None:
             self.fs = 1 / delta_t
             freq_all_freq = rfftfreq(int(bins), delta_t)
@@ -936,9 +960,11 @@ class Spectrum:
             elif order == 4:
                 self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
 
+        print('preparing window')
         single_window = self.cgw(int(bins))
         window = to_gpu(np.array(m * [single_window]).flatten().reshape((bins, 1, m), order='F'))
 
+        print('calculating spectrum')
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
             for i in range(m):

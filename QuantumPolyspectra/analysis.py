@@ -288,6 +288,12 @@ def c4(a_w, a_w_corr, m):
     return s4
 
 
+@njit(nopython=True, fastmath=True)
+def poisson_fourier(w_list, t_clicks_minus_start, t_clicks_windowed, dt, window_width):
+    return np.sum(np.exp(1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed * dt / window_width ** 0.5,
+                  axis=1)
+
+
 class Spectrum:
     """
     Spectrum class stores signal data, calculated spectra and error of spectral values.
@@ -325,6 +331,7 @@ class Spectrum:
 
 
     """
+
     def __init__(self, path=None, group_key=None, dataset=None, dt=None, data=None, corr_data=None,
                  corr_path=None, corr_group_key=None, corr_dataset=None):
         self.window_width = None
@@ -409,7 +416,7 @@ class Spectrum:
                      fontdict={'fontsize': 16})
         _ = fig.colorbar(c, ax=ax)
 
-    def cgw(self, len_y, ones=False):
+    def cgw_old(self, len_y, ones=False):
         """Calculation of the approximate gaussian confined window"""
 
         def g(x_):
@@ -424,6 +431,29 @@ class Spectrum:
             window = np.ones(len_y)
         norm = (np.sum(window ** 2) / N_window / self.fs)
         return window / np.sqrt(norm)
+
+    def cgw(self, N_window, fs=None, ones=False):
+        """Calculation of the approximate gaussian confined window"""
+
+        def g(x_):
+            return np.exp(-((x_ - N_window / 2) / (2 * L * sigma_t)) ** 2)
+
+        def calc_window(x, L):
+            return g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
+
+        x = np.linspace(0, N_window, N_window)
+        L = N_window + 1
+        sigma_t = 0.14
+        window = calc_window(x, L)
+        if ones:
+            window = np.ones(N_window)
+        # norm = (np.sum(window ** 2) / N_window / fs)
+        if fs is None:
+            norm = np.sum(window ** 2) / self.fs
+        else:
+            norm = np.sum(window ** 2) / fs
+
+        return window / np.sqrt(norm), norm
 
     def add_random_phase(self, a_w, order, window_size, delta_t, m):
         """Adds a random phase proportional to the frequency to deal with ultra coherent signals"""
@@ -591,7 +621,7 @@ class Spectrum:
                     self.freq[order] = freq_all_freq[f_mask]
                 if verbose:
                     print('Number of points: ' + str(len(self.freq[order])))
-                single_window = self.cgw(int(window_size))
+                single_window, _ = self.cgw(int(window_size))
 
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
 
@@ -604,10 +634,11 @@ class Spectrum:
 
             if order == 2:
                 if rect_win:
-                    ones = to_gpu(np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
-                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1/delta_t**0.5)
+                    ones = to_gpu(
+                        np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
+                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1 / delta_t ** 0.5)
                 else:
-                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1/delta_t**0.5)
+                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1 / delta_t ** 0.5)
 
                 if filter_func:
                     pre_filter = filter_func(self.freq[2])
@@ -621,7 +652,7 @@ class Spectrum:
                 a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
                 if self.corr_data is not None:
-                    a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1/delta_t**0.5)
+                    a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1 / delta_t ** 0.5)
                     a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
                     single_spectrum = c2(a_w, a_w_corr, m, coherent=coherent)
 
@@ -634,9 +665,9 @@ class Spectrum:
                 if rect_win:
                     ones = to_gpu(
                         np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
-                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1/delta_t**0.5)
+                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1 / delta_t ** 0.5)
                 else:
-                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1/delta_t**0.5)
+                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1 / delta_t ** 0.5)
 
                 if filter_func:
                     pre_filter = filter_func(self.freq[2])
@@ -659,7 +690,7 @@ class Spectrum:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
                     if self.corr_data is not None:
-                        a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1/delta_t**0.5)
+                        a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1 / delta_t ** 0.5)
                         if random_phase:
                             a_w_all_corr = self.add_random_phase(a_w_all_corr, order, window_size, delta_t, m)
 
@@ -725,10 +756,10 @@ class Spectrum:
         if data is not None:
             self.data = data
 
-        if order_in=='all':
-            orders = [2,3,4]
+        if order_in == 'all':
+            orders = [2, 3, 4]
         else:
-            orders = order_in
+            orders = [order_in]
 
         af.set_backend(backend)
         # window_width = int(window_width)
@@ -760,7 +791,11 @@ class Spectrum:
         n_chunks = 0
         f_max_ind = len(f_list)
         w_list = 2 * np.pi * f_list
-        n_windows = int(self.main_data.max() // (window_width * m))
+        w_list_gpu = to_gpu(w_list)
+        n_windows = int(self.main_data[-1] // (window_width * m))
+
+        print('number of points:', w_list.shape[0])
+        print('delta f:', w_list[1])
 
         for order in orders:
             if order == 3:
@@ -791,43 +826,61 @@ class Spectrum:
             n_chunks += 1
 
             a_w_all = 1j * np.empty((w_list.shape[0], m))
+            a_w_all_gpu = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))
             for i, t_clicks in enumerate(windows):
 
-                #print('t_clicks.min():', t_clicks.min())
-                #print('t_clicks.max():', t_clicks.max())
+                # print('t_clicks.min():', t_clicks.min())
+                # print('t_clicks.max():', t_clicks.max())
 
                 t_clicks_minus_start = t_clicks - i * window_width - m * window_width * frame_number
 
-                #print('t_clicks_minus_start.min():', t_clicks_minus_start.min())
-                #print('t_clicks_minus_start.max():', t_clicks_minus_start.max())
+                # print('t_clicks_minus_start.min():', t_clicks_minus_start.min())
+                # print('t_clicks_minus_start.max():', t_clicks_minus_start.max())
 
                 if rect_win:
                     t_clicks_windowed = np.ones_like(t_clicks_minus_start)
                 else:
-                    t_clicks_windowed = self.apply_window(t_clicks_minus_start, sigma_t=sigma_t)
+                    t_clicks_windowed, _, _ = self.apply_window(window_width, t_clicks_minus_start, 1/self.dt, sigma_t=sigma_t)
                 # subtract window start time to make window start at t=0
-                #a_w = np.sum(np.exp(-1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed, axis=1)
+                # a_w = np.sum(np.exp(-1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed, axis=1)
 
-                a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed * self.dt / window_width**0.5, axis=1)
-                a_w_all[:, i] = a_w
+                # print(t_clicks_minus_start)
+                # print(t_clicks_windowed)
+                # print('-----------')
 
-            a_w_all = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))
+                # a_w = np.sum(np.exp(1j * np.outer(w_list, t_clicks_minus_start)) * t_clicks_windowed * self.dt / window_width**0.5, axis=1)
+                # a_w_all[:, i] = a_w
+
+                # ------ CPU with NUMBA -------
+                # a_w_all[:, i] = poisson_fourier(w_list, t_clicks_minus_start, t_clicks_windowed, self.dt, window_width)
+
+                # ------ GPU --------
+                t_clicks_minus_start_gpu = to_gpu(t_clicks_minus_start)
+                t_clicks_windowed_gpu = to_gpu(t_clicks_windowed)
+
+                temp1 = af.exp(1j * af.matmulNT(w_list_gpu, t_clicks_minus_start_gpu))
+                temp2 = af.tile(t_clicks_windowed_gpu.T, w_list_gpu.shape[0])
+                a_w_all_gpu[:, 0, i] = af.sum(temp1 * temp2 * self.dt / window_width ** 0.5, dim=1)
+
+                # a_w_all[:, i] = af.sum(af.exp(1j * af.matmulNT(w_list_gpu, t_clicks_minus_start_gpu)) * af.tile(t_clicks_windowed_gpu.T, w_list_gpu.shape[0]) * self.dt / window_width**0.5, dim=1)
+
+            # a_w_all_gpu = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))
 
             for order in orders:
                 if order == 2:
-                    a_w = a_w_all
+                    a_w = a_w_all_gpu
                     single_spectrum = c2(a_w, a_w, m, coherent=False)
                     _ = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
 
                 elif order == 3:
-                    a_w1 = af.lookup(a_w_all, af.Array(list(range(f_max_ind // 2))), dim=0)
+                    a_w1 = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind // 2))), dim=0)
                     a_w2 = a_w1
-                    a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
+                    a_w3 = to_gpu(calc_a_w3(a_w_all_gpu.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m)
                     _ = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
 
                 elif order == 4:
-                    a_w = a_w_all
+                    a_w = a_w_all_gpu
                     a_w_corr = a_w
                     single_spectrum = c4(a_w, a_w_corr, m)
                     _ = self.store_single_spectrum(1, single_spectrum, order, sigma_counter)
@@ -836,8 +889,8 @@ class Spectrum:
 
         assert n_windows == n_chunks, 'n_windows not equal to n_chunks'
 
-        #dt = 1 / (2 * f_list.max())
-        single_window = self.cgw(len(f_list), ones=False)
+        # dt = 1 / (2 * f_list.max())
+        single_window, _ = self.cgw(len(f_list), ones=False)
 
         for order in orders:
             self.S_gpu[order] /= self.dt * (single_window ** order).sum() * n_chunks
@@ -860,7 +913,7 @@ class Spectrum:
 
                 self.S_sigma[order] = self.S_sigma_gpu
 
-        if orders=='all':
+        if orders == 'all':
             return self.freq, self.S, self.S_sigma
         else:
             return self.freq[order], self.S[order], self.S_sigma[order]
@@ -949,7 +1002,7 @@ class Spectrum:
                 self.freq[order] = freq_all_freq[f_mask]
             if verbose:
                 print('Number of points: ' + str(len(self.freq[order])))
-            single_window = self.cgw(int(bins))
+            single_window, _ = self.cgw(int(bins))
 
             window = to_gpu(np.array(m * [single_window]).flatten().reshape((bins, 1, m), order='F'))
 
@@ -961,7 +1014,7 @@ class Spectrum:
                 self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
 
         print('preparing window')
-        single_window = self.cgw(int(bins))
+        single_window, _ = self.cgw(int(bins))
         window = to_gpu(np.array(m * [single_window]).flatten().reshape((bins, 1, m), order='F'))
 
         print('calculating spectrum')
@@ -1055,29 +1108,74 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def apply_window(self, t_clicks, sigma_t=0.14):
-        dt = 0
+    def apply_window_old(self, window_width, t_clicks, fs, sigma_t=0.14, ones=False):
+        """Calculation of the approximate gaussian confined window"""
 
-        def g(t):
-            return np.exp(-((t - self.window_width / 2) / (2 * sigma_t * (self.window_width - dt))) ** 2)
+        def g(x_):
+            return np.exp(-((x_ - N_window / 2) / (2 * L * sigma_t)) ** 2)
 
-        L = self.window_width + dt
-        t_clicks_windowed = g(t_clicks) - (g(-0.5 * dt) * (g(t_clicks + L) + g(t_clicks - L))) / (
-                g(-0.5 * dt + L) + g(-0.5 * dt - L))
+        dt = 1 / fs
+        x = t_clicks / dt
 
-        t_clicks_windowed_normalized = t_clicks_windowed / np.sqrt(np.sum(t_clicks_windowed ** 2) / self.window_width)
-        return t_clicks_windowed_normalized
+        len_y = window_width / dt
+        L = len_y + 1
+        N_window = len_y
+        sigma_t = 0.14
+        window = g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
+        if ones:
+            window = np.ones(len_y)
+
+        x = np.linspace(0, len_y, len_y)
+        window_full = g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
+        norm = (np.sum(window_full ** 2) / N_window / fs)
+        return window / np.sqrt(norm)
+
+    def apply_window(self, window_width, t_clicks, fs, sigma_t=0.14, ones=False):
+        """Calculation of the approximate gaussian confined window"""
+
+        def g(x_):
+            return np.exp(-((x_ - N_window / 2) / (2 * L * sigma_t)) ** 2)
+
+        def calc_window(x, L):
+            return g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
+
+        # ----- Calculation of g_k -------
+
+        dt = 1 / fs
+        x = t_clicks / dt
+
+        N_window = window_width / dt
+        L = N_window + 1
+        sigma_t = 0.14
+
+        window = calc_window(x, L)
+        if ones:
+            window = np.ones(N_window)
+
+        # ------ Normalizing by calculating full window with given resolution ------
+
+        N_window_full = 50
+        dt_full = window_width / (N_window_full)
+
+        window_full, norm = self.cgw(N_window_full, 1 / dt_full, ones=False)
+
+        x_full = np.linspace(0, N_window_full, N_window_full)
+        arr_full = x_full * dt_full
+
+        return window / np.sqrt(norm), window_full, arr_full
 
     def find_end_index(self, start_index, window_width, m, frame_number, i):
         # print('start_index', start_index)
         end_time = window_width * (m * frame_number + (i + 1))
         # print('end_time', end_time)
+
+        if self.main_data[start_index] > end_time:
+            return start_index
+
         i = 1
         while True:
             if start_index + i > self.main_data.shape[0]:
                 return -1
-            elif self.main_data[start_index] > end_time:
-                return start_index
             elif self.main_data[start_index + i] > end_time:
                 # print('self.main_data[start_index + i]', self.main_data[start_index + i])
                 # print('start_index + i', start_index + i)

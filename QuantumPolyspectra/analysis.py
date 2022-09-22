@@ -288,7 +288,7 @@ def c4(a_w, a_w_corr, m):
     return s4
 
 
-@njit(nopython=True)
+@njit
 def find_end_index(data, start_index, window_width, m, frame_number, i):
     end_time = window_width * (m * frame_number + (i + 1))
 
@@ -527,30 +527,37 @@ class Spectrum:
             self.S_gpu[order] += single_spectrum
 
         if order == 2:
-            self.S_sigmas[order][:, sigma_counter] = single_spectrum.to_ndarray()
+            self.S_sigmas[order][:, sigma_counter] = single_spectrum #.to_ndarray()
         else:
-            self.S_sigmas[order][:, :, sigma_counter] = single_spectrum.to_ndarray()
+            self.S_sigmas[order][:, :, sigma_counter] = single_spectrum #.to_ndarray()
         sigma_counter += 1
 
         if sigma_counter % m_var == 0:
 
             if order == 2:
+                self.S_sigma_gpu = af.sqrt(
+                    m_var / (m_var - 1) * (af.mean(self.S_sigmas[order] * af.conjg(self.S_sigmas[order]), dim=1) -
+                                           af.mean(self.S_sigmas[order], dim=1) * af.conjg(
+                                af.mean(self.S_sigmas[order], dim=1))))
 
-                self.S_sigma_gpu = np.sqrt(
-                    m_var / (m_var - 1) * (np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
-                                           np.mean(self.S_sigmas[order], axis=1) * np.conj(
-                                np.mean(self.S_sigmas[order], axis=1))))
+                # self.S_sigma_gpu = np.sqrt(
+                #     m_var / (m_var - 1) * (np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
+                #                            np.mean(self.S_sigmas[order], axis=1) * np.conj(
+                #                 np.mean(self.S_sigmas[order], axis=1))))
 
             else:
+                self.S_sigma_gpu = af.sqrt(m_var / (m_var - 1) * (
+                        af.mean(self.S_sigmas[order] * af.conjg(self.S_sigmas[order]), dim=2) -
+                        af.mean(self.S_sigmas[order], dim=2) * af.conjg(af.mean(self.S_sigmas[order], dim=2))))
 
-                self.S_sigma_gpu = np.sqrt(m_var / (m_var - 1) * (
-                        np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
-                        np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
+                # self.S_sigma_gpu = np.sqrt(m_var / (m_var - 1) * (
+                #         np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
+                #         np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
 
             if self.S_sigma[order] is None:
-                self.S_sigma[order] = self.S_sigma_gpu
+                self.S_sigma[order] = self.S_sigma_gpu.to_ndarray()
             else:
-                self.S_sigma[order] += self.S_sigma_gpu
+                self.S_sigma[order] += self.S_sigma_gpu.to_ndarray()
 
             sigma_counter = 0
 
@@ -853,14 +860,14 @@ class Spectrum:
             else:
                 self.freq[order] = f_list
 
-            m_var = n_windows  # 10  # number of spectra to calculate the variance of spectral values from
+            m_var = 10  # number of spectra to calculate the variance of spectral values from
 
             if order == 2:
-                self.S_sigmas[2] = 1j * np.empty((f_max_ind, m_var))
+                self.S_sigmas[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
             elif order == 3:
-                self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var))
+                self.S_sigmas[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
             elif order == 4:
-                self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, m_var))
+                self.S_sigmas[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
 
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []

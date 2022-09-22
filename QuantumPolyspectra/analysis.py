@@ -473,24 +473,42 @@ class Spectrum:
         plt.plot(t, first_frame)
         plt.show()
 
-    def store_single_spectrum(self, i, single_spectrum, order, sigma_counter):
+    def store_single_spectrum(self, single_spectrum, order, sigma_counter, m_var, delta_t, single_window):
+
         if self.S_gpu[order] is None:
             self.S_gpu[order] = single_spectrum
-            if i % 1 == 0:
-                if order == 2:
-                    self.S_sigmas[order][:, sigma_counter] = single_spectrum.to_ndarray()
-                else:
-                    self.S_sigmas[order][:, :, sigma_counter] = single_spectrum.to_ndarray()
-                sigma_counter += 1
-
         else:
             self.S_gpu[order] += single_spectrum
-            if i % 1 == 0:
-                if order == 2:
-                    self.S_sigmas[order][:, sigma_counter] = single_spectrum.to_ndarray()
-                else:
-                    self.S_sigmas[order][:, :, sigma_counter] = single_spectrum.to_ndarray()
-                sigma_counter += 1
+
+        if order == 2:
+            self.S_sigmas[order][:, sigma_counter] = single_spectrum.to_ndarray()
+        else:
+            self.S_sigmas[order][:, :, sigma_counter] = single_spectrum.to_ndarray()
+        sigma_counter += 1
+
+        if sigma_counter % m_var == 0:
+
+            self.S_sigmas[order] /= (delta_t * (single_window ** order).sum()) # * np.sqrt(m_var))
+
+            if order == 2:
+
+                self.S_sigma_gpu = np.sqrt(
+                    m_var / (m_var - 1) * (np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
+                                                 np.mean(self.S_sigmas[order], axis=1) * np.conj(
+                                np.mean(self.S_sigmas[order], axis=1))))
+
+            else:
+
+                self.S_sigma_gpu = np.sqrt(m_var / (m_var - 1) * (
+                        np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
+                        np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
+
+            if self.S_sigma[order] is None:
+                self.S_sigma[order] = self.S_sigma_gpu
+            else:
+                self.S_sigma[order] += self.S_sigma_gpu
+
+            sigma_counter = 0
 
         return sigma_counter
 
@@ -625,20 +643,22 @@ class Spectrum:
 
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
 
+                m_var = 10  # number of spectra to calculate the variance of spectral values from
+
                 if order == 2:
-                    self.S_sigmas[2] = 1j * np.empty((f_max_ind, n_windows))
+                    self.S_sigmas[2] = 1j * np.empty((f_max_ind, m_var))
                 elif order == 3:
-                    self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, n_windows))
+                    self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var))
                 elif order == 4:
-                    self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
+                    self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, m_var))
 
             if order == 2:
                 if rect_win:
                     ones = to_gpu(
                         np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
-                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1 / delta_t ** 0)
+                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1)
                 else:
-                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1 / delta_t ** 0)
+                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1)
 
                 if filter_func:
                     pre_filter = filter_func(self.freq[2])
@@ -652,22 +672,22 @@ class Spectrum:
                 a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
                 if self.corr_data is not None:
-                    a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1 / delta_t ** 0)
+                    a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
                     a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
                     single_spectrum = c2(a_w, a_w_corr, m, coherent=coherent)
 
                 else:
                     single_spectrum = c2(a_w, a_w, m, coherent=coherent)
 
-                sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+                sigma_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var, delta_t, single_window)
 
             elif order > 2:
                 if rect_win:
                     ones = to_gpu(
                         np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
-                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1 / delta_t ** 0)
+                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1)
                 else:
-                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1 / delta_t ** 0)
+                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1)
 
                 if filter_func:
                     pre_filter = filter_func(self.freq[2])
@@ -684,13 +704,13 @@ class Spectrum:
                     a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m)
 
-                    sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+                    sigma_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var, delta_t, single_window)
 
                 if order == 4:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
                     if self.corr_data is not None:
-                        a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1 / delta_t ** 0)
+                        a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
                         if random_phase:
                             a_w_all_corr = self.add_random_phase(a_w_all_corr, order, window_size, delta_t, m)
 
@@ -700,7 +720,7 @@ class Spectrum:
 
                     single_spectrum = c4(a_w, a_w_corr, m)
 
-                    sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+                    sigma_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var, delta_t, single_window)
 
             if n_chunks == break_after:
                 break
@@ -710,23 +730,7 @@ class Spectrum:
         self.S_gpu[order] /= delta_t * (single_window ** order).sum() * n_chunks
         self.S[order] = self.S_gpu[order].to_ndarray()
 
-        self.S_sigmas[order] /= (delta_t * (single_window ** order).sum() * np.sqrt(n_chunks))
-
-        if n_chunks > 1:
-            if order == 2:
-
-                self.S_sigma_gpu = np.sqrt(
-                    n_chunks / (n_chunks - 1) * (np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
-                                                 np.mean(self.S_sigmas[order], axis=1) * np.conj(
-                                np.mean(self.S_sigmas[order], axis=1))))
-
-            else:
-
-                self.S_sigma_gpu = np.sqrt(n_chunks / (n_chunks - 1) * (
-                        np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
-                        np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
-
-            self.S_sigma[order] = self.S_sigma_gpu
+        self.S_sigma[order] /= n_windows // m_var * np.sqrt(n_windows)
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 

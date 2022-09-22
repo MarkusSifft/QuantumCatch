@@ -288,6 +288,81 @@ def c4(a_w, a_w_corr, m):
     return s4
 
 
+@njit(nopython=True)
+def find_end_index(data, start_index, window_width, m, frame_number, i):
+    end_time = window_width * (m * frame_number + (i + 1))
+
+    if data[start_index] > end_time:
+        return start_index
+
+    if end_time > data[-1]:
+        return -1
+
+    i = 1
+    while True:
+        if data[start_index + i] > end_time:
+            return start_index + i
+        i += 1
+
+
+@njit
+def g(x_, N_window, L, sigma_t):
+    return np.exp(-((x_ - N_window / 2) / (2 * L * sigma_t)) ** 2)
+
+
+@njit
+def calc_window(x, N_window, L, sigma_t):
+    return g(x, N_window, L, sigma_t) - (g(-0.5, N_window, L, sigma_t) * (
+            g(x + L, N_window, L, sigma_t) + g(x - L, N_window, L, sigma_t))) / (
+                   g(-0.5 + L, N_window, L, sigma_t) + g(-0.5 - L, N_window, L, sigma_t))
+
+
+@njit
+def cgw(N_window, fs=None, ones=False):
+    """Calculation of the approximate gaussian confined window"""
+
+    x = np.linspace(0, N_window, N_window)
+    L = N_window + 1
+    sigma_t = 0.14
+    window = calc_window(x, N_window, L, sigma_t)
+    if ones:
+        window = np.ones(N_window)
+
+    norm = np.sum(window ** 2) / fs
+
+    return window / np.sqrt(norm), norm
+
+
+@njit
+def apply_window(window_width, t_clicks, fs, sigma_t=0.14):
+    """Calculation of the approximate gaussian confined window"""
+
+    # ----- Calculation of g_k -------
+
+    dt = 1 / fs
+    x = t_clicks / dt
+
+    N_window = window_width / dt
+    L = N_window + 1
+
+    window = calc_window(x, N_window, L, sigma_t)
+    #if ones:
+    #    window = np.ones(N_window)
+
+    # ------ Normalizing by calculating full window with given resolution ------
+
+    N_window_full = 70
+    dt_full = window_width / N_window_full
+
+    #window_full, norm = cgw(N_window_full, 1 / dt_full, ones=ones)
+    window_full, norm = cgw(N_window_full, 1 / dt_full)
+
+    x_full = np.linspace(0, N_window_full, N_window_full)
+    arr_full = x_full * dt_full
+
+    return window / np.sqrt(norm), window_full, N_window_full
+
+
 class Spectrum:
     """
     Spectrum class stores signal data, calculated spectra and error of spectral values.
@@ -426,29 +501,6 @@ class Spectrum:
         norm = (np.sum(window ** 2) / N_window / self.fs)
         return window / np.sqrt(norm)
 
-    def cgw(self, N_window, fs=None, ones=False):
-        """Calculation of the approximate gaussian confined window"""
-
-        def g(x_):
-            return np.exp(-((x_ - N_window / 2) / (2 * L * sigma_t)) ** 2)
-
-        def calc_window(x, L):
-            return g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
-
-        x = np.linspace(0, N_window, N_window)
-        L = N_window + 1
-        sigma_t = 0.14
-        window = calc_window(x, L)
-        if ones:
-            window = np.ones(N_window)
-        # norm = (np.sum(window ** 2) / N_window / fs)
-        if fs is None:
-            norm = np.sum(window ** 2) / self.fs
-        else:
-            norm = np.sum(window ** 2) / fs
-
-        return window / np.sqrt(norm), norm
-
     def add_random_phase(self, a_w, order, window_size, delta_t, m):
         """Adds a random phase proportional to the frequency to deal with ultra coherent signals"""
         random_factors = np.random.uniform(high=window_size * delta_t, size=m)
@@ -486,7 +538,7 @@ class Spectrum:
 
                 self.S_sigma_gpu = np.sqrt(
                     m_var / (m_var - 1) * (np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
-                                                 np.mean(self.S_sigmas[order], axis=1) * np.conj(
+                                           np.mean(self.S_sigmas[order], axis=1) * np.conj(
                                 np.mean(self.S_sigmas[order], axis=1))))
 
             else:
@@ -631,7 +683,7 @@ class Spectrum:
                     self.freq[order] = freq_all_freq[f_mask]
                 if verbose:
                     print('Number of points: ' + str(len(self.freq[order])))
-                single_window, _ = self.cgw(int(window_size))
+                single_window, _ = cgw(int(window_size), self.fs)
 
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
 
@@ -666,7 +718,8 @@ class Spectrum:
                 if self.corr_data is not None:
                     a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
                     a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
-                    single_spectrum = c2(a_w, a_w_corr, m, coherent=coherent) / (delta_t * (single_window ** order).sum())
+                    single_spectrum = c2(a_w, a_w_corr, m, coherent=coherent) / (
+                            delta_t * (single_window ** order).sum())
 
                 else:
                     single_spectrum = c2(a_w, a_w, m, coherent=coherent) / (delta_t * (single_window ** order).sum())
@@ -800,7 +853,7 @@ class Spectrum:
             else:
                 self.freq[order] = f_list
 
-            m_var = n_windows # 10  # number of spectra to calculate the variance of spectral values from
+            m_var = n_windows  # 10  # number of spectra to calculate the variance of spectral values from
 
             if order == 2:
                 self.S_sigmas[2] = 1j * np.empty((f_max_ind, m_var))
@@ -812,7 +865,7 @@ class Spectrum:
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
             for i in range(m):
-                end_index = self.find_end_index(start_index, window_width, m, frame_number, i)
+                end_index = find_end_index(self.main_data, start_index, window_width, m, frame_number, i)
                 if end_index == -1:
                     enough_data = False
                     break
@@ -833,7 +886,9 @@ class Spectrum:
                 if rect_win:
                     t_clicks_windowed = np.ones_like(t_clicks_minus_start)
                 else:
-                    t_clicks_windowed, single_window, N_window_full = self.apply_window(window_width, t_clicks_minus_start, 1/self.dt, sigma_t=sigma_t)
+                    t_clicks_windowed, single_window, N_window_full = apply_window(window_width,
+                                                                                        t_clicks_minus_start,
+                                                                                        1 / self.dt, sigma_t=sigma_t)
 
                 # ------ GPU --------
                 t_clicks_minus_start_gpu = to_gpu(t_clicks_minus_start)
@@ -867,7 +922,6 @@ class Spectrum:
         assert n_windows == n_chunks, 'n_windows not equal to n_chunks'
 
         for order in orders:
-
             self.S_gpu[order] /= n_chunks
             self.S[order] = self.S_gpu[order].to_ndarray()
 
@@ -962,7 +1016,7 @@ class Spectrum:
                 self.freq[order] = freq_all_freq[f_mask]
             if verbose:
                 print('Number of points: ' + str(len(self.freq[order])))
-            single_window, _ = self.cgw(int(bins))
+            single_window, _ = cgw(int(bins), self.fs)
 
             window = to_gpu(np.array(m * [single_window]).flatten().reshape((bins, 1, m), order='F'))
 
@@ -974,14 +1028,14 @@ class Spectrum:
                 self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
 
         print('preparing window')
-        single_window, _ = self.cgw(int(bins))
+        single_window, _ = cgw(int(bins), self.fs)
         window = to_gpu(np.array(m * [single_window]).flatten().reshape((bins, 1, m), order='F'))
 
         print('calculating spectrum')
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
             for i in range(m):
-                end_index = self.find_end_index(start_index, window_width, m, frame_number, i)
+                end_index = find_end_index(start_index, window_width, m, frame_number, i)
                 if end_index == -1:
                     enough_data = False
                     break
@@ -1089,58 +1143,6 @@ class Spectrum:
         window_full = g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
         norm = (np.sum(window_full ** 2) / N_window / fs)
         return window / np.sqrt(norm), window / np.sqrt(norm)
-
-    def apply_window(self, window_width, t_clicks, fs, sigma_t=0.14, ones=False):
-        """Calculation of the approximate gaussian confined window"""
-
-        def g(x_):
-            return np.exp(-((x_ - N_window / 2) / (2 * L * sigma_t)) ** 2)
-
-        def calc_window(x, L):
-            return g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
-
-        # ----- Calculation of g_k -------
-
-        dt = 1 / fs
-        x = t_clicks / dt
-
-        N_window = window_width / dt
-        L = N_window + 1
-        sigma_t = 0.14
-
-        window = calc_window(x, L)
-        if ones:
-            window = np.ones(N_window)
-
-        # ------ Normalizing by calculating full window with given resolution ------
-
-        N_window_full = 70
-        dt_full = window_width / N_window_full
-
-        window_full, norm = self.cgw(N_window_full, 1 / dt_full, ones=ones)
-
-        x_full = np.linspace(0, N_window_full, N_window_full)
-        arr_full = x_full * dt_full
-
-        return window / np.sqrt(norm), window_full, N_window_full
-
-    def find_end_index(self, start_index, window_width, m, frame_number, i):
-
-        end_time = window_width * (m * frame_number + (i + 1))
-
-        if self.main_data[start_index] > end_time:
-            return start_index
-
-        i = 1
-        while True:
-            if start_index + i > self.main_data.shape[0]:
-                return -1
-            elif self.main_data[start_index + i] > end_time:
-                # print('self.main_data[start_index + i]', self.main_data[start_index + i])
-                # print('start_index + i', start_index + i)
-                return start_index + i
-            else:
-                i += 1
 
     def poly_plot(self, f_max, f_min=0, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,

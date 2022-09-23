@@ -783,7 +783,7 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def calc_spec_poisson(self, order_in, window_width, f_max, backend='opencl', m=5, data=None, sigma_t=0.14,
+    def calc_spec_poisson(self, order_in, window_width, f_max, f_list=None, backend='opencl', m=5, data=None, sigma_t=0.14,
                           rect_win=False):
         """
 
@@ -814,7 +814,7 @@ class Spectrum:
         if order_in == 'all':
             orders = [2, 3, 4]
         else:
-            orders = [order_in]
+            orders = order_in
 
         af.set_backend(backend)
         # window_width = int(window_width)
@@ -838,7 +838,8 @@ class Spectrum:
         self.main_data = main_data
 
         f_min = 1 / window_width
-        f_list = np.arange(0, f_max + f_min, f_min)
+        if f_list is None:
+            f_list = np.arange(0, f_max + f_min, f_min)
 
         start_index = 0
         sigma_counter_2 = 0
@@ -851,8 +852,8 @@ class Spectrum:
         w_list_gpu = to_gpu(w_list)
         n_windows = int(self.main_data[-1] // (window_width * m))
 
-        print('number of points:', w_list.shape[0])
-        print('delta f:', w_list[1])
+        print('number of points:', f_list.shape[0])
+        print('delta f:', f_list[1] - f_list[0])
 
         for order in orders:
             if order == 3:
@@ -899,11 +900,13 @@ class Spectrum:
 
                 # ------ GPU --------
                 t_clicks_minus_start_gpu = to_gpu(t_clicks_minus_start)
-                t_clicks_windowed_gpu = to_gpu(t_clicks_windowed)
+                t_clicks_windowed_gpu = to_gpu(t_clicks_windowed).as_type(af.Dtype.c64)
 
                 temp1 = af.exp(1j * af.matmulNT(w_list_gpu, t_clicks_minus_start_gpu))
-                temp2 = af.tile(t_clicks_windowed_gpu.T, w_list_gpu.shape[0])
-                a_w_all_gpu[:, 0, i] = af.sum(temp1 * temp2, dim=1)
+                #temp2 = af.tile(t_clicks_windowed_gpu.T, w_list_gpu.shape[0])
+                #a_w_all_gpu[:, 0, i] = af.sum(temp1 * temp2, dim=1)
+
+                a_w_all_gpu[:, 0, i] = af.matmul(temp1, t_clicks_windowed_gpu)
 
             delta_t = window_width / N_window_full
 
@@ -934,7 +937,7 @@ class Spectrum:
 
             self.S_sigma[order] /= n_windows // m_var * np.sqrt(n_windows)
 
-        if orders == 'all':
+        if order_in == 'all':
             return self.freq, self.S, self.S_sigma
         else:
             return self.freq[order], self.S[order], self.S_sigma[order]

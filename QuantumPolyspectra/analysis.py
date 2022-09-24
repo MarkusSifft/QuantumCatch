@@ -37,6 +37,7 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+from brokenaxes import brokenaxes
 
 try:
     import arrayfire as af
@@ -1156,7 +1157,8 @@ class Spectrum:
 
     def poly_plot(self, f_max, f_min=0, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
-                  s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, plot_error=True):
+                  s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, plot_error=True,
+                  broken_lims=None):
 
         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(24, 7), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
         plt.rc('text', usetex=False)
@@ -1164,7 +1166,7 @@ class Spectrum:
         plt.rcParams["axes.axisbelow"] = False
 
         # -------- S2 ---------
-        if True:  # self.S[2] is not None and not self.S[2].shape[0] == 0:
+        if self.S[2] is not None and not self.S[2].shape[0] == 0:
             if imag_plot:
                 s2_data = np.imag(self.S[2]) if s2_data is None else np.imag(s2_data)
                 s2_sigma = np.imag(self.S_sigma[2]) if s2_sigma is None else np.imag(s2_sigma)
@@ -1192,7 +1194,14 @@ class Spectrum:
                         s2_sigma_m[i] = np.arcsinh(alpha * s2_sigma_m[i]) / alpha
 
             if s2_f is None:
-                s2_f = self.freq[2]
+                s2_f = self.freq[2].copy()
+            if broken_lims is not None:
+                s2_f_original = s2_f.copy()
+                diffs = []
+                for i in range(len(broken_lims) - 1):
+                    diff = broken_lims[i + 1][0] - broken_lims[i][1]
+                    diffs.append(diff)
+                    s2_f[s2_f > broken_lims[i][1]] -= diff
 
             ax[0].set_xlim([f_min, f_max])
 
@@ -1209,10 +1218,24 @@ class Spectrum:
             ax[0].plot(s2_f, s2_data, color=[0, 0.5, 0.9], linewidth=3)
 
             ax[0].tick_params(axis='both', direction='in')
-            (ax[0]).set_ylabel(r"$S^{(2)}_z$ (Hz$^{-1}$)", labelpad=13, fontdict={'fontsize': 14})
-            (ax[0]).set_xlabel(r"$\omega / 2\pi$ (Hz)", labelpad=13, fontdict={'fontsize': 14})
+            ax[0].set_ylabel(r"$S^{(2)}_z$ (Hz$^{-1}$)", labelpad=13, fontdict={'fontsize': 14})
+            ax[0].set_xlabel(r"$\omega / 2\pi$ (Hz)", labelpad=13, fontdict={'fontsize': 14})
 
             ax[0].set_title(r"$S^{(2)}_z$ (Hz$^{-1}$)", fontdict={'fontsize': 16})
+
+            if broken_lims is not None:
+                ylims = ax[0].get_ylim()
+                for i, diff in enumerate(diffs):
+                    ax[0].vlines(broken_lims[i][-1]-sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
+
+                ax[0].set_ylim(ylims)
+                x_labels = ax[0].get_xticks()
+                x_labels = np.array(x_labels)
+                for i, diff in enumerate(diffs):
+                    x_labels[x_labels>broken_lims[i][-1]] += diff
+                x_labels = [str(np.round(i*100)/100) for i in x_labels]
+                ax[0].set_xticklabels(x_labels)
+
 
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
@@ -1231,7 +1254,7 @@ class Spectrum:
                 x_, y_ = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
                 return np.ma.masked_array(np.interp(value, x_, y_), np.isnan(value))
 
-        if True:  # self.S[3] is not None and not self.S[3].shape[0] == 0:
+        if self.S[3] is not None and not self.S[3].shape[0] == 0:
 
             if imag_plot:
                 s3_data = np.imag(self.S[3]).copy() if s3_data is None else np.imag(s3_data).copy()
@@ -1283,7 +1306,7 @@ class Spectrum:
             cbar = fig.colorbar(c, ax=(ax[1]))
 
         # -------- S4 ---------
-        if True:  # self.S[4] is not None and not self.S[4].shape[0] == 0:
+        if self.S[4] is not None and not self.S[4].shape[0] == 0:
             if imag_plot:
                 s4_data = np.imag(self.S[4]).copy() if s4_data is None else np.imag(s4_data).copy()
                 s4_sigma = np.imag(self.S_sigma[4]).copy() if s4_sigma is None else np.imag(s4_sigma).copy()
@@ -1303,6 +1326,13 @@ class Spectrum:
 
             if s4_f is None:
                 s4_f = self.freq[4]
+            if broken_lims is not None:
+                s2_f_original = s2_f.copy()
+                diffs = []
+                for i in range(len(broken_lims) - 1):
+                    diff = broken_lims[i + 1][0] - broken_lims[i][1]
+                    diffs.append(diff)
+                    s2_f[s2_f > broken_lims[i][1]] -= diff
 
             vmin = np.min(s4_data)
             vmax = np.max(s4_data)

@@ -347,7 +347,7 @@ def apply_window(window_width, t_clicks, fs, sigma_t=0.14):
     L = N_window + 1
 
     window = calc_window(x, N_window, L, sigma_t)
-    #if ones:
+    # if ones:
     #    window = np.ones(N_window)
 
     # ------ Normalizing by calculating full window with given resolution ------
@@ -355,7 +355,7 @@ def apply_window(window_width, t_clicks, fs, sigma_t=0.14):
     N_window_full = 70
     dt_full = window_width / N_window_full
 
-    #window_full, norm = cgw(N_window_full, 1 / dt_full, ones=ones)
+    # window_full, norm = cgw(N_window_full, 1 / dt_full, ones=ones)
     window_full, norm = cgw(N_window_full, 1 / dt_full)
 
     x_full = np.linspace(0, N_window_full, N_window_full)
@@ -528,9 +528,9 @@ class Spectrum:
             self.S_gpu[order] += single_spectrum
 
         if order == 2:
-            self.S_sigmas[order][:, sigma_counter] = single_spectrum #.to_ndarray()
+            self.S_sigmas[order][:, sigma_counter] = single_spectrum  # .to_ndarray()
         else:
-            self.S_sigmas[order][:, :, sigma_counter] = single_spectrum #.to_ndarray()
+            self.S_sigmas[order][:, :, sigma_counter] = single_spectrum  # .to_ndarray()
         sigma_counter += 1
 
         if sigma_counter % m_var == 0:
@@ -784,7 +784,8 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def calc_spec_poisson(self, order_in, window_width, f_max, f_list=None, backend='opencl', m=5, data=None, sigma_t=0.14,
+    def calc_spec_poisson(self, order_in, window_width, f_max, f_list=None, backend='opencl', m=5, data=None,
+                          sigma_t=0.14,
                           rect_win=False):
         """
 
@@ -896,16 +897,16 @@ class Spectrum:
                     t_clicks_windowed = np.ones_like(t_clicks_minus_start)
                 else:
                     t_clicks_windowed, single_window, N_window_full = apply_window(window_width,
-                                                                                        t_clicks_minus_start,
-                                                                                        1 / self.dt, sigma_t=sigma_t)
+                                                                                   t_clicks_minus_start,
+                                                                                   1 / self.dt, sigma_t=sigma_t)
 
                 # ------ GPU --------
                 t_clicks_minus_start_gpu = to_gpu(t_clicks_minus_start)
                 t_clicks_windowed_gpu = to_gpu(t_clicks_windowed).as_type(af.Dtype.c64)
 
                 temp1 = af.exp(1j * af.matmulNT(w_list_gpu, t_clicks_minus_start_gpu))
-                #temp2 = af.tile(t_clicks_windowed_gpu.T, w_list_gpu.shape[0])
-                #a_w_all_gpu[:, 0, i] = af.sum(temp1 * temp2, dim=1)
+                # temp2 = af.tile(t_clicks_windowed_gpu.T, w_list_gpu.shape[0])
+                # a_w_all_gpu[:, 0, i] = af.sum(temp1 * temp2, dim=1)
 
                 a_w_all_gpu[:, 0, i] = af.matmul(temp1, t_clicks_windowed_gpu)
 
@@ -1226,16 +1227,15 @@ class Spectrum:
             if broken_lims is not None:
                 ylims = ax[0].get_ylim()
                 for i, diff in enumerate(diffs):
-                    ax[0].vlines(broken_lims[i][-1]-sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
+                    ax[0].vlines(broken_lims[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
 
                 ax[0].set_ylim(ylims)
                 x_labels = ax[0].get_xticks()
                 x_labels = np.array(x_labels)
                 for i, diff in enumerate(diffs):
-                    x_labels[x_labels>broken_lims[i][-1]] += diff
-                x_labels = [str(np.round(i*100)/100) for i in x_labels]
+                    x_labels[x_labels > broken_lims[i][-1]] += diff
+                x_labels = [str(np.round(i * 100) / 100) for i in x_labels]
                 ax[0].set_xticklabels(x_labels)
-
 
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
@@ -1325,14 +1325,15 @@ class Spectrum:
                     s4_sigma = np.arcsinh(alpha * s4_sigma) / alpha
 
             if s4_f is None:
-                s4_f = self.freq[4]
+                s4_f = self.freq[4].copy()
+
             if broken_lims is not None:
-                s2_f_original = s2_f.copy()
+                s4_f_original = s4_f.copy()
                 diffs = []
                 for i in range(len(broken_lims) - 1):
                     diff = broken_lims[i + 1][0] - broken_lims[i][1]
                     diffs.append(diff)
-                    s2_f[s2_f > broken_lims[i][1]] -= diff
+                    s4_f[s4_f > broken_lims[i][1]] -= diff
 
             vmin = np.min(s4_data)
             vmax = np.max(s4_data)
@@ -1363,6 +1364,24 @@ class Spectrum:
                 ax[2].set_title(r'$S^{(4)}_z $ (Hz$^{-3}$) (%i$\sigma$ confidence)' % (sigma),
                                 fontdict={'fontsize': 16})
             cbar = fig.colorbar(c, ax=(ax[2]))
+
+            if broken_lims is not None:
+                ylims = ax[2].get_ylim()
+                for i, diff in enumerate(diffs):
+                    ax[2].vlines(broken_lims[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
+                    ax[2].hlines(broken_lims[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
+
+                ax[2].set_ylim(ylims)
+                ax[2].set_xlim(ylims)
+
+                x_labels = ax[2].get_xticks()
+                x_labels = np.array(x_labels)
+                for i, diff in enumerate(diffs):
+                    x_labels[x_labels > broken_lims[i][-1]] += diff
+                x_labels = [str(np.round(i * 100) / 100) for i in x_labels]
+                # ax[2].set_xticklabels(x_labels)
+                # ax[2].set_yticklabels(x_labels)
+
 
         plt.show()
 

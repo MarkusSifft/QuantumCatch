@@ -96,7 +96,7 @@ def to_hdf(dt, data, path, group_name, dataset_name):
         d.attrs['dt'] = dt
 
 
-def import_data(path, group_key, dataset):
+def import_data(path, group_key, dataset, full_import=False):
     """
     Helper function to load data from h5 file into numpy array.
     Import of .h5 data with format group_key -> data + attrs[dt]
@@ -119,7 +119,10 @@ def import_data(path, group_key, dataset):
     main_group = main[group_key]
     main_data = main_group[dataset]
     delta_t = main_data.attrs['dt']
-    return main_data, delta_t
+    if full_import:
+        return main_data[()], delta_t
+    else:
+        return main_data, delta_t
 
 
 @njit(parallel=False)
@@ -834,7 +837,7 @@ class Spectrum:
 
         # -------data setup---------
         if self.data is None:
-            main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
+            main_data, delta_t = import_data(self.path, self.group_key, self.dataset, full_import=True)
         else:
             main_data = self.data
 

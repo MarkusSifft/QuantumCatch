@@ -784,9 +784,9 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def calc_spec_poisson(self, order_in, window_width, f_max, f_list=None, backend='opencl', m=5, data=None,
-                          sigma_t=0.14,
-                          rect_win=False):
+    def calc_spec_poisson(self, order_in, window_width, f_max, f_list=None, backend='opencl', m=10, m_var=10,
+                          data=None,
+                          sigma_t=0.14, rect_win=False):
         """
 
         Parameters
@@ -837,7 +837,6 @@ class Spectrum:
             main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
         else:
             main_data = self.data
-        self.main_data = main_data
 
         f_min = 1 / window_width
         if f_list is None:
@@ -852,7 +851,7 @@ class Spectrum:
         f_max_ind = len(f_list)
         w_list = 2 * np.pi * f_list
         w_list_gpu = to_gpu(w_list)
-        n_windows = int(self.main_data[-1] // (window_width * m))
+        n_windows = int(main_data[-1] // (window_width * m))
 
         print('number of points:', f_list.shape[0])
         print('delta f:', f_list[1] - f_list[0])
@@ -862,8 +861,6 @@ class Spectrum:
                 self.freq[order] = f_list[:int(f_max_ind // 2)]
             else:
                 self.freq[order] = f_list
-
-            m_var = 10  # number of spectra to calculate the variance of spectral values from
 
             if order == 2:
                 self.S_sigmas[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
@@ -875,12 +872,12 @@ class Spectrum:
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
             for i in range(m):
-                end_index = find_end_index(self.main_data, start_index, window_width, m, frame_number, i)
+                end_index = find_end_index(main_data, start_index, window_width, m, frame_number, i)
                 if end_index == -1:
                     enough_data = False
                     break
                 else:
-                    windows.append(self.main_data[start_index:end_index])
+                    windows.append(main_data[start_index:end_index])
                     start_index = end_index
             if not enough_data:
                 break
@@ -1156,7 +1153,7 @@ class Spectrum:
         norm = (np.sum(window_full ** 2) / N_window / fs)
         return window / np.sqrt(norm), window / np.sqrt(norm)
 
-    def poly_plot(self, f_max, f_min=0, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
+    def poly_plot(self, f_max=None, f_min=None, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
                   s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, plot_error=True,
                   broken_lims=None):
@@ -1204,6 +1201,10 @@ class Spectrum:
                     diffs.append(diff)
                     s2_f[s2_f > broken_lims[i][1]] -= diff
 
+            if f_max is None:
+                f_max = s2_f.max()
+            if f_min is None:
+                f_min = s2_f.min()
             ax[0].set_xlim([f_min, f_max])
 
             if plot_error and (s2_sigma is not None or self.S_sigma[2] is not None):
@@ -1292,8 +1293,12 @@ class Spectrum:
                 c1 = (ax[1]).pcolormesh(x, y, sigma_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
             if contours:
                 (ax[1]).contour(x, y, gaussian_filter(z, s3_filter), 15, colors='k', linewidths=0.7)
-
+            if f_max is None:
+                f_max = s2_f.max()
+            if f_min is None:
+                f_min = s2_f.min()
             ax[1].axis([f_min, f_max, f_min, f_max])
+
             (ax[1]).set_ylabel(r"$\omega_2 / 2 \pi $ (Hz)", fontdict={'fontsize': 14})
             (ax[1]).set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
             ax[1].tick_params(axis='both', direction='in')
@@ -1353,7 +1358,12 @@ class Spectrum:
             if contours:
                 (ax[2]).contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)
 
+            if f_max is None:
+                f_max = s2_f.max()
+            if f_min is None:
+                f_min = s2_f.min()
             ax[2].axis([f_min, f_max, f_min, f_max])
+
             (ax[2]).set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
             (ax[2]).set_ylabel(r"$\omega_2 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
             ax[2].tick_params(axis='both', direction='in')

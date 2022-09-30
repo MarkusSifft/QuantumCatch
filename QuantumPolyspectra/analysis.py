@@ -412,16 +412,21 @@ class Spectrum:
         self.freq = [None, None, None, None, None]
         self.f_max = 0
         self.fs = None
+        self.f_lists = {2: None, 3: None, 4: None}
         self.S = [None, None, None, None, None]
         self.S_gpu = [None, None, None, None, None]
         self.S_sigma = [None, None, None, None, None]
         self.S_sigma_gpu = [None, None, None, None, None]
         self.S_sigmas = [[], [], [], [], []]
+        self.S_stationarity_temp = [None, None, None, None, None]
+        self.S_stationarity = [[], [], [], [], []]
         self.group_key = group_key
         self.dataset = dataset
         self.S_intergral = []
         self.window_size = None
-        self.m = None
+        self.m = {2: None, 3: None, 4: None}
+        self.m_var = {2: None, 3: None, 4: None}
+        self.m_stationarity = {2: None, 3: None, 4: None}
         self.first_frame_plotted = False
         self.delta_t = 0
         self.data = data
@@ -439,6 +444,7 @@ class Spectrum:
         self.corr_data = None
         self.data = None
         self.S_sigmas = None
+        self.S_stationarity_temp = None
         pickle_save(path, self)
 
     def stationarity_plot(self, contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,
@@ -449,7 +455,7 @@ class Spectrum:
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
-        s2_array = np.real(self.S_sigmas[2])
+        s2_array = np.real(self.S_stationarity[2])
 
         s2_array = gaussian_filter(s2_array, sigma=[0, s2_filter])
 
@@ -470,7 +476,7 @@ class Spectrum:
         vmin = np.min(s2_array)
         vmax = np.max(s2_array)
 
-        t_for_one_spec = self.delta_t * self.m * self.window_size
+        t_for_one_spec = self.window_width * self.m[2] * self.m_stationarity[2]
         time_axis = np.arange(0, s2_array.shape[0] * t_for_one_spec, t_for_one_spec)
         print(f'One spectrum calculated from a {t_for_one_spec * s2_filter / 60} min measurement')
 
@@ -523,7 +529,7 @@ class Spectrum:
         plt.plot(t, first_frame)
         plt.show()
 
-    def store_single_spectrum(self, single_spectrum, order, sigma_counter, m_var):
+    def store_single_spectrum(self, single_spectrum, order, sigma_counter, m_var, stationarity_counter, m_stationarity):
 
         if self.S_gpu[order] is None:
             self.S_gpu[order] = single_spectrum
@@ -535,6 +541,20 @@ class Spectrum:
         else:
             self.S_sigmas[order][:, :, sigma_counter] = single_spectrum  # .to_ndarray()
         sigma_counter += 1
+
+        if m_stationarity is not None:
+            if order == 2:
+                self.S_stationarity_temp[order][:, m_stationarity] = single_spectrum  # .to_ndarray()
+            else:
+                self.S_stationarity_temp[order][:, :, m_stationarity] = single_spectrum  # .to_ndarray()
+            stationarity_counter += 1
+
+            if stationarity_counter % m_stationarity == 0:
+                if order == 2:
+                    self.S_stationarity[order].append(af.mean(self.S_stationarity_temp[order], dim=1).to_ndarray())
+                else:
+                    self.S_stationarity[order].append(af.mean(self.S_stationarity_temp[order], dim=2).to_ndarray())
+                stationarity_counter = 0
 
         if sigma_counter % m_var == 0:
 
@@ -565,7 +585,7 @@ class Spectrum:
 
             sigma_counter = 0
 
-        return sigma_counter
+        return sigma_counter, stationarity_counter
 
     def calc_overlap(self, unit, imag=False, scale_t=1):
         plt.figure(figsize=(28, 13))
@@ -603,7 +623,8 @@ class Spectrum:
 
     def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
-                  break_after=1e6, m=10, window_shift=1, random_phase=False, dt=None, data=None, rect_win=False):
+                  break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False, dt=None, data=None,
+                  rect_win=False, stationarity_counter=None, m_stationarity=None):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
         if dt is not None:
             self.dt = dt
@@ -615,7 +636,8 @@ class Spectrum:
         af.set_backend(backend)
         window_size = int(window_size)
         self.window_size = window_size
-        self.m = m
+        self.m[order] = m
+        self.m_var[order] = m_var
         self.fs = None
         window = None
         f_max_ind = None
@@ -626,9 +648,11 @@ class Spectrum:
         self.S_sigma_gpu = None
         self.S_sigma[order] = None
         self.S_sigmas[order] = []
+        self.S_stationarity_temp[order] = []
 
         single_window = None
         sigma_counter = 0
+        stationarity_counter = 0
 
         # -------data setup---------
         if self.data is None:
@@ -698,14 +722,21 @@ class Spectrum:
 
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
 
-                m_var = 10  # number of spectra to calculate the variance of spectral values from
-
                 if order == 2:
                     self.S_sigmas[2] = 1j * np.empty((f_max_ind, m_var))
                 elif order == 3:
                     self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var))
                 elif order == 4:
                     self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, m_var))
+
+                if m_stationarity is not None:
+                    if order == 2:
+                        self.S_stationarity_temp[2] = to_gpu(1j * np.empty((f_max_ind, m_stationarity)))
+                    elif order == 3:
+                        self.S_stationarity_temp[3] = to_gpu(
+                            1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_stationarity)))
+                    elif order == 4:
+                        self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
 
             if order == 2:
                 if rect_win:
@@ -735,7 +766,7 @@ class Spectrum:
                 else:
                     single_spectrum = c2(a_w, a_w, m, coherent=coherent) / (delta_t * (single_window ** order).sum())
 
-                sigma_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var)
+                sigma_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var, stationarity_counter, m_stationarity)
 
             elif order > 2:
                 if rect_win:
@@ -760,7 +791,7 @@ class Spectrum:
                     a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
 
-                    sigma_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var)
+                    sigma_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var, stationarity_counter, m_stationarity)
 
                 if order == 4:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
@@ -775,7 +806,7 @@ class Spectrum:
                         a_w_corr = a_w
 
                     single_spectrum = c4(a_w, a_w_corr, m) / (delta_t * (single_window ** order).sum())
-                    sigma_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var)
+                    sigma_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var, stationarity_counter, m_stationarity)
 
             if n_chunks == break_after:
                 break
@@ -787,8 +818,8 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_sigma[order]
 
-    def calc_spec_poisson(self, order_in, window_width, f_max, f_list=None, backend='opencl', m=10, m_var=10,
-                          data=None,
+    def calc_spec_poisson(self, order_in, window_width, f_max, f_lists=None, backend='opencl', m=10, m_var=10,
+                          m_stationarity=None, data=None, full_import=False, scale_data_and_dt=1,
                           sigma_t=0.14, rect_win=False):
         """
 
@@ -825,9 +856,15 @@ class Spectrum:
         # window_width = int(window_width)
         self.fs = f_max
         self.window_width = window_width
-        self.m = m
+
+        if f_lists is not None:
+            f_list = np.hstack(f_lists)
 
         for order in orders:
+            self.f_lists[order] = f_lists
+            self.m[order] = m
+            self.m_var[order] = m_var
+            self.m_stationarity[order] = m_stationarity
             self.freq[order] = None
             self.S[order] = None
             self.S_gpu[order] = None
@@ -837,10 +874,16 @@ class Spectrum:
 
         # -------data setup---------
         if self.data is None:
-            main_data, delta_t = import_data(self.path, self.group_key, self.dataset, full_import=True)
+            main_data, delta_t = import_data(self.path, self.group_key, self.dataset, full_import=full_import)
         else:
             main_data = self.data
+            delta_t = self.dt
 
+        if scale_data_and_dt is not None:
+            main_data *= scale_data_and_dt
+            delta_t *= scale_data_and_dt
+
+        self.delta_t = delta_t
         f_min = 1 / window_width
         if f_list is None:
             f_list = np.arange(0, f_max + f_min, f_min)
@@ -849,6 +892,9 @@ class Spectrum:
         sigma_counter_2 = 0
         sigma_counter_3 = 0
         sigma_counter_4 = 0
+        stationarity_counter_2 = 0
+        stationarity_counter_3 = 0
+        stationarity_counter_4 = 0
         enough_data = True
         n_chunks = 0
         f_max_ind = len(f_list)
@@ -871,6 +917,15 @@ class Spectrum:
                 self.S_sigmas[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
             elif order == 4:
                 self.S_sigmas[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
+
+            if m_stationarity is not None:
+                if order == 2:
+                    self.S_stationarity_temp[2] = to_gpu(1j * np.empty((f_max_ind, m_stationarity)))
+                elif order == 3:
+                    self.S_stationarity_temp[3] = to_gpu(
+                        1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_stationarity)))
+                elif order == 4:
+                    self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
 
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
@@ -898,7 +953,7 @@ class Spectrum:
                 else:
                     t_clicks_windowed, single_window, N_window_full = apply_window(window_width,
                                                                                    t_clicks_minus_start,
-                                                                                   1 / self.dt, sigma_t=sigma_t)
+                                                                                   1 / delta_t, sigma_t=sigma_t)
 
                 # ------ GPU --------
                 t_clicks_minus_start_gpu = to_gpu(t_clicks_minus_start)
@@ -916,20 +971,20 @@ class Spectrum:
                 if order == 2:
                     a_w = a_w_all_gpu
                     single_spectrum = c2(a_w, a_w, m, coherent=False) / (delta_t * (single_window ** order).sum())
-                    sigma_counter_2 = self.store_single_spectrum(single_spectrum, order, sigma_counter_2, m_var)
+                    sigma_counter_2, stationarity_counter_2 = self.store_single_spectrum(single_spectrum, order, sigma_counter_2, m_var, stationarity_counter_2, m_stationarity)
 
                 elif order == 3:
                     a_w1 = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind // 2))), dim=0)
                     a_w2 = a_w1
                     a_w3 = to_gpu(calc_a_w3(a_w_all_gpu.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
-                    sigma_counter_3 = self.store_single_spectrum(single_spectrum, order, sigma_counter_3, m_var)
+                    sigma_counter_3, stationarity_counter_3 = self.store_single_spectrum(single_spectrum, order, sigma_counter_3, m_var, stationarity_counter_3, m_stationarity)
 
                 elif order == 4:
                     a_w = a_w_all_gpu
                     a_w_corr = a_w
                     single_spectrum = c4(a_w, a_w_corr, m) / (delta_t * (single_window ** order).sum())
-                    sigma_counter_4 = self.store_single_spectrum(single_spectrum, order, sigma_counter_4, m_var)
+                    sigma_counter_4, stationarity_counter_4 = self.store_single_spectrum(single_spectrum, order, sigma_counter_4, m_var, stationarity_counter_4, m_stationarity)
 
         assert n_windows == n_chunks, 'n_windows not equal to n_chunks'
 
@@ -1156,7 +1211,8 @@ class Spectrum:
         norm = (np.sum(window_full ** 2) / N_window / fs)
         return window / np.sqrt(norm), window / np.sqrt(norm)
 
-    def poly_plot(self, f_max=None, f_min=None, sigma=1, green_alpha=0.3, arcsinh_plot=False, arcsinh_const=0.02,
+    def poly_plot(self, f_max=None, f_min=None, f_scale=1, unit='Hz', sigma=1, green_alpha=0.3, arcsinh_plot=False,
+                  arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
                   s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, plot_error=True,
                   broken_lims=None):
@@ -1166,23 +1222,30 @@ class Spectrum:
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
+        if broken_lims is None:
+            broken_lims = []
+            for part in self.f_lists[2]:
+                broken_lims.append((part[0], part[-1]))
+
         # -------- S2 ---------
         if self.S[2] is not None and not self.S[2].shape[0] == 0:
             if imag_plot:
-                s2_data = np.imag(self.S[2]) if s2_data is None else np.imag(s2_data)
-                s2_sigma = np.imag(self.S_sigma[2]) if s2_sigma is None else np.imag(s2_sigma)
+                s2_data = np.imag(self.S[2]).copy() if s2_data is None else np.imag(s2_data).copy()
+                s2_sigma = np.imag(self.S_sigma[2]).copy() if s2_sigma is None else np.imag(s2_sigma).copy()
             else:
-                s2_data = np.real(self.S[2]) if s2_data is None else np.real(s2_data)
+                s2_data = np.real(self.S[2]).copy() if s2_data is None else np.real(s2_data).copy()
                 if s2_sigma is not None or self.S_sigma[2] is not None:
-                    s2_sigma = np.real(self.S_sigma[2]) if s2_sigma is None else np.real(s2_sigma)
+                    s2_sigma = np.real(self.S_sigma[2]).copy() if s2_sigma is None else np.real(s2_sigma).copy()
+
+            s2_data *= f_scale
 
             s2_sigma_p = []
             s2_sigma_m = []
 
             if s2_sigma is not None or self.S_sigma[2] is not None:
                 for i in range(0, 5):
-                    s2_sigma_p.append(s2_data + (i + 1) * s2_sigma)
-                    s2_sigma_m.append(s2_data - (i + 1) * s2_sigma)
+                    s2_sigma_p.append(s2_data + (i + 1) * s2_sigma * f_scale)
+                    s2_sigma_m.append(s2_data - (i + 1) * s2_sigma * f_scale)
 
             if arcsinh_plot:
                 x_max = np.max(np.abs(s2_data))
@@ -1195,14 +1258,15 @@ class Spectrum:
                         s2_sigma_m[i] = np.arcsinh(alpha * s2_sigma_m[i]) / alpha
 
             if s2_f is None:
-                s2_f = self.freq[2].copy()
+                s2_f = self.freq[2].copy() * f_scale
             if broken_lims is not None:
+                broken_lims_scaled = [(f_scale * i, f_scale * j) for i, j in broken_lims]
                 s2_f_original = s2_f.copy()
                 diffs = []
-                for i in range(len(broken_lims) - 1):
-                    diff = broken_lims[i + 1][0] - broken_lims[i][1]
+                for i in range(len(broken_lims_scaled) - 1):
+                    diff = broken_lims_scaled[i + 1][0] - broken_lims_scaled[i][1]
                     diffs.append(diff)
-                    s2_f[s2_f > broken_lims[i][1]] -= diff
+                    s2_f[s2_f > broken_lims_scaled[i][1]] -= diff
 
             if f_max is None:
                 f_max = s2_f.max()
@@ -1223,22 +1287,22 @@ class Spectrum:
             ax[0].plot(s2_f, s2_data, color=[0, 0.5, 0.9], linewidth=3)
 
             ax[0].tick_params(axis='both', direction='in')
-            ax[0].set_ylabel(r"$S^{(2)}_z$ (Hz$^{-1}$)", labelpad=13, fontdict={'fontsize': 14})
-            ax[0].set_xlabel(r"$\omega / 2\pi$ (Hz)", labelpad=13, fontdict={'fontsize': 14})
+            ax[0].set_ylabel(r"$S^{(2)}_z$ (" + unit + r"$^{-1}$)", labelpad=13, fontdict={'fontsize': 14})
+            ax[0].set_xlabel(r"$\omega / 2\pi$ (" + unit + r")", labelpad=13, fontdict={'fontsize': 14})
 
-            ax[0].set_title(r"$S^{(2)}_z$ (Hz$^{-1}$)", fontdict={'fontsize': 16})
+            ax[0].set_title(r"$S^{(2)}_z$ (" + unit + r"$^{-1}$)", fontdict={'fontsize': 16})
 
             if broken_lims is not None:
                 ylims = ax[0].get_ylim()
                 for i, diff in enumerate(diffs):
-                    ax[0].vlines(broken_lims[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
+                    ax[0].vlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
 
                 ax[0].set_ylim(ylims)
                 x_labels = ax[0].get_xticks()
                 x_labels = np.array(x_labels)
                 for i, diff in enumerate(diffs):
-                    x_labels[x_labels > broken_lims[i][-1]] += diff
-                x_labels = [str(np.round(i * 100) / 100) for i in x_labels]
+                    x_labels[x_labels > broken_lims_scaled[i][-1]] += diff
+                x_labels = [str(np.round(i * 1000) / 1000) for i in x_labels]
                 ax[0].set_xticklabels(x_labels)
 
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
@@ -1268,6 +1332,9 @@ class Spectrum:
                 if s3_sigma is not None or self.S_sigma[3] is not None:
                     s3_sigma = np.real(self.S_sigma[3]).copy() if s3_sigma is None else np.real(s3_sigma).copy()
 
+            s3_data *= f_scale ** 2
+            s3_sigma *= f_scale ** 2
+
             if s3_sigma is not None or self.S_sigma[3] is not None:
                 s3_sigma *= sigma
             if arcsinh_plot:
@@ -1278,12 +1345,12 @@ class Spectrum:
                     s3_sigma = np.arcsinh(alpha * s3_sigma) / alpha
 
             if s3_f is None:
-                s3_f = self.freq[3]
+                s3_f = self.freq[3] * f_scale
 
             vmin = np.min(s3_data)
             vmax = np.max(s3_data)
-
-            norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
+            norm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+            # norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
 
             y, x = np.meshgrid(s3_f, s3_f)
             z = s3_data.copy()
@@ -1302,14 +1369,14 @@ class Spectrum:
                 f_min = s2_f.min()
             ax[1].axis([f_min, f_max, f_min, f_max])
 
-            (ax[1]).set_ylabel(r"$\omega_2 / 2 \pi $ (Hz)", fontdict={'fontsize': 14})
-            (ax[1]).set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
+            (ax[1]).set_ylabel(r"$\omega_2 / 2 \pi $ (" + unit + r")", fontdict={'fontsize': 14})
+            (ax[1]).set_xlabel(r"$\omega_1 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
             ax[1].tick_params(axis='both', direction='in')
             if green_alpha == 0:
-                ax[1].set_title(r'$S^{(3)}_z $ (Hz$^{-2}$)',
+                ax[1].set_title(r'$S^{(3)}_z $ (' + unit + r'$^{-2}$)',
                                 fontdict={'fontsize': 16})
             else:
-                ax[1].set_title(r'$S^{(3)}_z $ (Hz$^{-2}$) (%i$\sigma$ confidence)' % sigma,
+                ax[1].set_title(r'$S^{(3)}_z $ (' + unit + r'$^{-2}$) (%i$\sigma$ confidence)' % sigma,
                                 fontdict={'fontsize': 16})
             cbar = fig.colorbar(c, ax=(ax[1]))
 
@@ -1323,6 +1390,9 @@ class Spectrum:
                 if s4_sigma is not None or self.S_sigma[4] is not None:
                     s4_sigma = np.real(self.S_sigma[4]).copy() if s4_sigma is None else np.real(s4_sigma).copy()
 
+            s4_data *= f_scale
+            s4_sigma *= f_scale
+
             if s4_sigma is not None or self.S_sigma[4] is not None:
                 s4_sigma *= sigma
             if arcsinh_plot:
@@ -1333,20 +1403,21 @@ class Spectrum:
                     s4_sigma = np.arcsinh(alpha * s4_sigma) / alpha
 
             if s4_f is None:
-                s4_f = self.freq[4].copy()
+                s4_f = self.freq[4].copy() * f_scale
 
             if broken_lims is not None:
+                broken_lims_scaled = [(f_scale * i, f_scale * j) for i, j in broken_lims]
                 s4_f_original = s4_f.copy()
                 diffs = []
-                for i in range(len(broken_lims) - 1):
-                    diff = broken_lims[i + 1][0] - broken_lims[i][1]
+                for i in range(len(broken_lims_scaled) - 1):
+                    diff = broken_lims_scaled[i + 1][0] - broken_lims_scaled[i][1]
                     diffs.append(diff)
-                    s4_f[s4_f > broken_lims[i][1]] -= diff
+                    s4_f[s4_f > broken_lims_scaled[i][1]] -= diff
 
             vmin = np.min(s4_data)
             vmax = np.max(s4_data)
-
-            norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
+            norm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+            # norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
 
             y, x = np.meshgrid(s4_f, s4_f)
             z = s4_data.copy()
@@ -1367,22 +1438,22 @@ class Spectrum:
                 f_min = s2_f.min()
             ax[2].axis([f_min, f_max, f_min, f_max])
 
-            (ax[2]).set_xlabel(r"$\omega_1 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
-            (ax[2]).set_ylabel(r"$\omega_2 / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
+            (ax[2]).set_xlabel(r"$\omega_1 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
+            (ax[2]).set_ylabel(r"$\omega_2 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
             ax[2].tick_params(axis='both', direction='in')
             if green_alpha == 0:
-                ax[2].set_title(r'$S^{(4)}_z $ (Hz$^{-3}$)',
+                ax[2].set_title(r'$S^{(4)}_z $ (' + unit + r'$^{-3}$)',
                                 fontdict={'fontsize': 16})
             else:
-                ax[2].set_title(r'$S^{(4)}_z $ (Hz$^{-3}$) (%i$\sigma$ confidence)' % (sigma),
+                ax[2].set_title(r'$S^{(4)}_z $ (' + unit + r'$^{-3}$) (%i$\sigma$ confidence)' % (sigma),
                                 fontdict={'fontsize': 16})
             cbar = fig.colorbar(c, ax=(ax[2]))
 
             if broken_lims is not None:
                 ylims = ax[2].get_ylim()
                 for i, diff in enumerate(diffs):
-                    ax[2].vlines(broken_lims[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
-                    ax[2].hlines(broken_lims[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
+                    ax[2].vlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
+                    ax[2].hlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
 
                 ax[2].set_ylim(ylims)
                 ax[2].set_xlim(ylims)
@@ -1390,11 +1461,10 @@ class Spectrum:
                 x_labels = ax[2].get_xticks()
                 x_labels = np.array(x_labels)
                 for i, diff in enumerate(diffs):
-                    x_labels[x_labels > broken_lims[i][-1]] += diff
-                x_labels = [str(np.round(i * 100) / 100) for i in x_labels]
-                # ax[2].set_xticklabels(x_labels)
-                # ax[2].set_yticklabels(x_labels)
-
+                    x_labels[x_labels > broken_lims_scaled[i][-1]] += diff
+                x_labels = [str(np.round(i * 1000) / 1000) for i in x_labels]
+                ax[2].set_xticklabels(x_labels)
+                ax[2].set_yticklabels(x_labels)
 
         plt.show()
 

@@ -17,6 +17,7 @@
       <w>nopython</w>
       <w>numba</w>
       <w>pympler</w>
+      <w>stationarity</w>
       <w>steadystate</w>
     </words>
   </dictionary>

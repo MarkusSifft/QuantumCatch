@@ -557,7 +557,6 @@ class Spectrum:
                 stationarity_counter = 0
 
         if sigma_counter % m_var == 0:
-
             if order == 2:
                 self.S_sigma_gpu = af.sqrt(
                     m_var / (m_var - 1) * (af.mean(self.S_sigmas[order] * af.conjg(self.S_sigmas[order]), dim=1) -
@@ -624,7 +623,7 @@ class Spectrum:
     def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
                   break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False, dt=None, data=None,
-                  rect_win=False, stationarity_counter=None, m_stationarity=None):
+                  rect_win=False, m_stationarity=None):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
         if dt is not None:
             self.dt = dt
@@ -638,6 +637,7 @@ class Spectrum:
         self.window_size = window_size
         self.m[order] = m
         self.m_var[order] = m_var
+        self.m_stationarity[order] = m_stationarity
         self.fs = None
         window = None
         f_max_ind = None
@@ -723,11 +723,11 @@ class Spectrum:
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
 
                 if order == 2:
-                    self.S_sigmas[2] = 1j * np.empty((f_max_ind, m_var))
+                    self.S_sigmas[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
                 elif order == 3:
-                    self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var))
+                    self.S_sigmas[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
                 elif order == 4:
-                    self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, m_var))
+                    self.S_sigmas[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
 
                 if m_stationarity is not None:
                     if order == 2:
@@ -825,10 +825,22 @@ class Spectrum:
 
         Parameters
         ----------
+        m_var: int
+            number of spectra to calculate the variance from (should be set as high as possible)
+        rect_win: bool
+            if true no window function will be applied to the window
+        scale_data_and_dt: float
+            scaling factor to scale timestamps and dt (not yet implemented, due to type error)
+        full_import: bool
+            whether to load all data into RAM (should be set true if possible)
+        m_stationarity: int
+            number of spectra after which their mean is stored to varify stationarity of the data
+        f_lists: list of arrays
+            frequencies at which the spectra will be calculated (can be multiple arrays with different frequency steps)
         sigma_t: float
             width of approximate confined gaussian windows
-        order: int, str ('all')
-            order of the calculated spectrum
+        order_in: array of int, str ('all')
+            orders of the spectra to be calculated, e.g., [2,4]
         window_width: int
             spectra for m windows of window_size is calculated
         f_max: float
@@ -859,6 +871,8 @@ class Spectrum:
 
         if f_lists is not None:
             f_list = np.hstack(f_lists)
+        else:
+            f_list = None
 
         for order in orders:
             self.f_lists[order] = f_lists
@@ -871,6 +885,7 @@ class Spectrum:
             self.S_sigma_gpu = None
             self.S_sigma[order] = None
             self.S_sigmas[order] = []
+            self.S_stationarity_temp[order] = []
 
         # -------data setup---------
         if self.data is None:
@@ -1222,7 +1237,7 @@ class Spectrum:
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
-        if broken_lims is None:
+        if broken_lims is not None:
             broken_lims = []
             for part in self.f_lists[2]:
                 broken_lims.append((part[0], part[-1]))
@@ -1345,12 +1360,11 @@ class Spectrum:
                     s3_sigma = np.arcsinh(alpha * s3_sigma) / alpha
 
             if s3_f is None:
-                s3_f = self.freq[3] * f_scale
+                s3_f = self.freq[3].copy() * f_scale
 
             vmin = np.min(s3_data)
             vmax = np.max(s3_data)
-            norm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
-            # norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
+            norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
 
             y, x = np.meshgrid(s3_f, s3_f)
             z = s3_data.copy()
@@ -1364,9 +1378,9 @@ class Spectrum:
             if contours:
                 (ax[1]).contour(x, y, gaussian_filter(z, s3_filter), 15, colors='k', linewidths=0.7)
             if f_max is None:
-                f_max = s2_f.max()
+                f_max = s3_f.max()
             if f_min is None:
-                f_min = s2_f.min()
+                f_min = s3_f.min()
             ax[1].axis([f_min, f_max, f_min, f_max])
 
             (ax[1]).set_ylabel(r"$\omega_2 / 2 \pi $ (" + unit + r")", fontdict={'fontsize': 14})
@@ -1390,8 +1404,8 @@ class Spectrum:
                 if s4_sigma is not None or self.S_sigma[4] is not None:
                     s4_sigma = np.real(self.S_sigma[4]).copy() if s4_sigma is None else np.real(s4_sigma).copy()
 
-            s4_data *= f_scale
-            s4_sigma *= f_scale
+            s4_data *= f_scale ** 3
+            s4_sigma *= f_scale ** 3
 
             if s4_sigma is not None or self.S_sigma[4] is not None:
                 s4_sigma *= sigma
@@ -1416,8 +1430,7 @@ class Spectrum:
 
             vmin = np.min(s4_data)
             vmax = np.max(s4_data)
-            norm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
-            # norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
+            norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
 
             y, x = np.meshgrid(s4_f, s4_f)
             z = s4_data.copy()
@@ -1433,9 +1446,9 @@ class Spectrum:
                 (ax[2]).contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)
 
             if f_max is None:
-                f_max = s2_f.max()
+                f_max = s4_f.max()
             if f_min is None:
-                f_min = s2_f.min()
+                f_min = s4_f.min()
             ax[2].axis([f_min, f_max, f_min, f_max])
 
             (ax[2]).set_xlabel(r"$\omega_1 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})

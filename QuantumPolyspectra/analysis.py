@@ -372,7 +372,7 @@ def arcsinh_scaling(s_data, arcsinh_const, order, s_err=None, s_err_p=None, s_er
     alpha = 1 / (x_max * arcsinh_const)
     s_data = np.arcsinh(alpha * s_data) / alpha
 
-    if order==2:
+    if order == 2:
         if s_err_p is not None:
             for i in range(0, 5):
                 s_err_p[i] = np.arcsinh(alpha * s_err_p[i]) / alpha
@@ -793,7 +793,9 @@ class Spectrum:
                 else:
                     single_spectrum = c2(a_w, a_w, m, coherent=coherent) / (delta_t * (single_window ** order).sum())
 
-                err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter, m_var, stationarity_counter, m_stationarity)
+                err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter,
+                                                                               m_var, stationarity_counter,
+                                                                               m_stationarity)
 
             elif order > 2:
                 if rect_win:
@@ -818,7 +820,9 @@ class Spectrum:
                     a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
 
-                    err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter, m_var, stationarity_counter, m_stationarity)
+                    err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter,
+                                                                                   m_var, stationarity_counter,
+                                                                                   m_stationarity)
 
                 if order == 4:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
@@ -833,7 +837,9 @@ class Spectrum:
                         a_w_corr = a_w
 
                     single_spectrum = c4(a_w, a_w_corr, m) / (delta_t * (single_window ** order).sum())
-                    err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter, m_var, stationarity_counter, m_stationarity)
+                    err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter,
+                                                                                   m_var, stationarity_counter,
+                                                                                   m_stationarity)
 
             if n_chunks == break_after:
                 break
@@ -1013,20 +1019,29 @@ class Spectrum:
                 if order == 2:
                     a_w = a_w_all_gpu
                     single_spectrum = c2(a_w, a_w, m, coherent=False) / (delta_t * (single_window ** order).sum())
-                    err_counter_2, stationarity_counter_2 = self.store_single_spectrum(single_spectrum, order, err_counter_2, m_var, stationarity_counter_2, m_stationarity)
+                    err_counter_2, stationarity_counter_2 = self.store_single_spectrum(single_spectrum, order,
+                                                                                       err_counter_2, m_var,
+                                                                                       stationarity_counter_2,
+                                                                                       m_stationarity)
 
                 elif order == 3:
                     a_w1 = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind // 2))), dim=0)
                     a_w2 = a_w1
                     a_w3 = to_gpu(calc_a_w3(a_w_all_gpu.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
-                    err_counter_3, stationarity_counter_3 = self.store_single_spectrum(single_spectrum, order, err_counter_3, m_var, stationarity_counter_3, m_stationarity)
+                    err_counter_3, stationarity_counter_3 = self.store_single_spectrum(single_spectrum, order,
+                                                                                       err_counter_3, m_var,
+                                                                                       stationarity_counter_3,
+                                                                                       m_stationarity)
 
                 elif order == 4:
                     a_w = a_w_all_gpu
                     a_w_corr = a_w
                     single_spectrum = c4(a_w, a_w_corr, m) / (delta_t * (single_window ** order).sum())
-                    err_counter_4, stationarity_counter_4 = self.store_single_spectrum(single_spectrum, order, err_counter_4, m_var, stationarity_counter_4, m_stationarity)
+                    err_counter_4, stationarity_counter_4 = self.store_single_spectrum(single_spectrum, order,
+                                                                                       err_counter_4, m_var,
+                                                                                       stationarity_counter_4,
+                                                                                       m_stationarity)
 
         assert n_windows == n_chunks, 'n_windows not equal to n_chunks'
 
@@ -1286,51 +1301,58 @@ class Spectrum:
             for part in self.f_lists[2]:
                 broken_lims.append((part[0], part[-1]))
 
-        # -------- S2 ---------
-        if self.S[2] is not None and not self.S[2].shape[0] == 0:
-            order = 2
-            s2_data, s2_err = self.import_spec_data_for_plotting(s2_data, s2_err, order, imag_plot)
+        s_data_plot = {2: None, 3: None, 4: None}
+        s_err_plot = {2: None, 3: None, 4: None}
+        s_f_plot = {2: None, 3: None, 4: None}
 
-            s2_data *= f_scale
+        # -------- S2 ---------
+        order = 2
+        if self.S[order] is not None and not self.S[order].shape[0] == 0:
+            s_data_plot[order], s_err_plot[order] = self.import_spec_data_for_plotting(s2_data, s2_err, order,
+                                                                                       imag_plot)
+
+            s_data_plot[order] *= f_scale ** (order - 1)
 
             s2_err_p = []
             s2_err_m = []
 
-            if s2_err is not None or self.S_err[2] is not None:
+            if s_err_plot[order] is not None or self.S_err[2] is not None:
                 for i in range(0, 5):
-                    s2_err_p.append(s2_data + (i + 1) * s2_err * f_scale)
-                    s2_err_m.append(s2_data - (i + 1) * s2_err * f_scale)
+                    s2_err_p.append(s_data_plot[order] + (i + 1) * s_err_plot[order] * f_scale)
+                    s2_err_m.append(s_data_plot[order] - (i + 1) * s_err_plot[order] * f_scale)
 
             if arcsinh_plot:
-                s2_data, s2_err_p, s2_err_m = arcsinh_scaling(s2_data, arcsinh_const, order, s_err_p=s2_err_p, s_err_m=s2_err_m)
+                s_data_plot[order], s2_err_p, s2_err_m = arcsinh_scaling(s_data_plot[order], arcsinh_const, order,
+                                                                         s_err_p=s2_err_p, s_err_m=s2_err_m)
 
             if s2_f is None:
-                s2_f = self.freq[2].copy() * f_scale
+                s_f_plot[order] = self.freq[2].copy() * f_scale
+            else:
+                s_f_plot[order] = s2_f * f_scale
+
             if broken_lims is not None:
-                s2_f, diffs, broken_lims_scaled = connect_broken_axis(s2_f, broken_lims, f_scale)
+                s_f_plot[order], diffs, broken_lims_scaled = connect_broken_axis(s_f_plot[order], broken_lims, f_scale)
 
             if f_max is None:
-                f_max = s2_f.max()
+                f_max = s_f_plot[order].max()
             if f_min is None:
-                f_min = s2_f.min()
+                f_min = s_f_plot[order].min()
             ax[0].set_xlim([f_min, f_max])
 
-            if plot_error and (s2_err is not None or self.S_err[2] is not None):
+            if plot_error and (s_err_plot[order] is not None or self.S_err[2] is not None):
                 for i in range(0, 5):
-                    ax[0].plot(s2_f, s2_err_p[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
+                    ax[0].plot(s_f_plot[order], s2_err_p[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
                                linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
-                    #  labelLines(ax[0].get_lines(), zorder=2.5, align=False, fontsize=14)
                     for i in range(0, 5):
-                        ax[0].plot(s2_f, s2_err_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
+                        ax[0].plot(s_f_plot[order], s2_err_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
                                    linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
-            ax[0].plot(s2_f, s2_data, color=[0, 0.5, 0.9], linewidth=3)
+            ax[0].plot(s_f_plot[order], s_data_plot[order], color=[0, 0.5, 0.9], linewidth=3)
 
             ax[0].tick_params(axis='both', direction='in')
             ax[0].set_ylabel(r"$S^{(2)}_z$ (" + unit + r"$^{-1}$)", labelpad=13, fontdict={'fontsize': 14})
             ax[0].set_xlabel(r"$\omega / 2\pi$ (" + unit + r")", labelpad=13, fontdict={'fontsize': 14})
-
             ax[0].set_title(r"$S^{(2)}_z$ (" + unit + r"$^{-1}$)", fontdict={'fontsize': 16})
 
             if broken_lims is not None:
@@ -1346,12 +1368,11 @@ class Spectrum:
                 x_labels = [str(np.round(i * 1000) / 1000) for i in x_labels]
                 ax[0].set_xticklabels(x_labels)
 
-        cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
+        # -------- S3 ---------
 
+        cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
         color_array = np.array([[0., 0., 0., 0.], [0., 0.5, 0., green_alpha]])
         cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
-
-        # -------- S3 ---------
 
         class MidpointNormalize(colors.Normalize):
 
@@ -1363,125 +1384,87 @@ class Spectrum:
                 x_, y_ = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
                 return np.ma.masked_array(np.interp(value, x_, y_), np.isnan(value))
 
-        if self.S[3] is not None and not self.S[3].shape[0] == 0:
+        for order in [3, 4]:
+            if self.S[order] is not None and not self.S[order].shape[0] == 0:
 
-            order = 3
-            s3_data, s3_err = self.import_spec_data_for_plotting(s3_data, s3_err, order, imag_plot)
+                s_data_plot[order], s_err_plot[order] = self.import_spec_data_for_plotting(s4_data, s4_err, order,
+                                                                                           imag_plot)
 
-            s3_data *= f_scale ** 2
-            s3_err *= f_scale ** 2
+                s_data_plot[order] *= f_scale ** (order - 1)
 
-            if s3_err is not None or self.S_err[3] is not None:
-                s3_err *= sigma
-            if arcsinh_plot:
-                s3_data, s3_err = arcsinh_scaling(s3_data, arcsinh_const, order, s_err=s3_err)
+                if s_err_plot[order] is not None or self.S_err[order] is not None:
+                    s_err_plot[order] *= sigma
+                    s_err_plot[order] *= f_scale ** (order - 1)
 
-            if s3_f is None:
-                s3_f = self.freq[3].copy() * f_scale
+                if arcsinh_plot:
+                    s_data_plot[order], s_err_plot[order] = arcsinh_scaling(s_data_plot[order], arcsinh_const, order,
+                                                                            s_err=s_err_plot[order])
 
-            vmin = np.min(s3_data)
-            vmax = np.max(s3_data)
-            norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
+                if s4_f is None:
+                    s_f_plot[order] = self.freq[order].copy() * f_scale
+                else:
+                    s_f_plot[order] = s4_f * f_scale
 
-            y, x = np.meshgrid(s3_f, s3_f)
-            z = s3_data.copy()
-            err_matrix = np.zeros_like(z)
-            if s3_err is not None or self.S_err[3] is not None:
-                err_matrix[np.abs(s3_data) < s3_err] = 1
+                if broken_lims is not None:
+                    s_f_plot[order], diffs, broken_lims_scaled = connect_broken_axis(s_f_plot[order], broken_lims,
+                                                                                     f_scale)
 
-            c = (ax[1]).pcolormesh(x, y, z, cmap=cmap, norm=norm, shading='auto')
-            if s3_err is not None or self.S_err[3] is not None:
-                c1 = (ax[1]).pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
-            if contours:
-                (ax[1]).contour(x, y, gaussian_filter(z, s3_filter), 15, colors='k', linewidths=0.7)
-            if f_max is None:
-                f_max = s3_f.max()
-            if f_min is None:
-                f_min = s3_f.min()
-            ax[1].axis([f_min, f_max, f_min, f_max])
+                vmin = np.min(s_data_plot[order])
+                vmax = np.max(s_data_plot[order])
+                norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
 
-            (ax[1]).set_ylabel(r"$\omega_2 / 2 \pi $ (" + unit + r")", fontdict={'fontsize': 14})
-            (ax[1]).set_xlabel(r"$\omega_1 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
-            ax[1].tick_params(axis='both', direction='in')
-            if green_alpha == 0:
-                ax[1].set_title(r'$S^{(3)}_z $ (' + unit + r'$^{-2}$)',
-                                fontdict={'fontsize': 16})
-            else:
-                ax[1].set_title(r'$S^{(3)}_z $ (' + unit + r'$^{-2}$) (%i$\sigma$ confidence)' % sigma,
-                                fontdict={'fontsize': 16})
-            cbar = fig.colorbar(c, ax=(ax[1]))
+                y, x = np.meshgrid(s_f_plot[order], s_f_plot[order])
+                z = s_data_plot[order].copy()
+                err_matrix = np.zeros_like(z)
+                if s_err_plot[order] is not None or self.S_err[order] is not None:
+                    err_matrix[np.abs(s_data_plot[order]) < s_err_plot[order]] = 1
 
-        # -------- S4 ---------
-        if self.S[4] is not None and not self.S[4].shape[0] == 0:
+                c = ax[order - 2].pcolormesh(x, y, z, cmap=cmap, norm=norm, zorder=1, shading='auto')
+                if s_err_plot[order] is not None or self.S_err[order] is not None:
+                    c1 = ax[order - 2].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
 
-            order = 4
-            s4_data, s4_err = self.import_spec_data_for_plotting(s4_data, s4_err, order, imag_plot)
+                if contours:
+                    ax[order - 2].contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)
 
-            s4_data *= f_scale ** 3
+                if f_max is None:
+                    f_max = s_f_plot[order].max()
+                if f_min is None:
+                    f_min = s_f_plot[order].min()
+                ax[order - 2].axis([f_min, f_max, f_min, f_max])
 
-            if s4_err is not None or self.S_err[4] is not None:
-                s4_err *= sigma
-                s4_err *= f_scale ** 3
+                ax[order - 2].set_xlabel(r"$\omega_1 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
+                ax[order - 2].set_ylabel(r"$\omega_2 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
+                ax[order - 2].tick_params(axis='both', direction='in')
 
-            if arcsinh_plot:
-                s4_data, s4_err = arcsinh_scaling(s4_data, arcsinh_const, order, s_err=s4_err)
+                if green_alpha == 0:
+                    ax[order - 2].set_title(
+                        r'$S^{(' + f'{order}' + r')}_z $ (' + unit + r'$^{-' + f'{order - 1}' + r'}$)',
+                        fontdict={'fontsize': 16})
+                else:
+                    ax[order - 2].set_title(
+                        r'$S^{(' + f'{order}' + r')}_z $ (' + unit + r'$^{-' + f'{order - 1}' + r'}$) (%i$\sigma$ confidence)' % (
+                            sigma),
+                        fontdict={'fontsize': 16})
+                cbar = fig.colorbar(c, ax=(ax[order - 2]))
 
-            if s4_f is None:
-                s4_f = self.freq[4].copy() * f_scale
+                if broken_lims is not None:
+                    ylims = ax[order - 2].get_ylim()
+                    for i, diff in enumerate(diffs):
+                        ax[order - 2].vlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1],
+                                             linestyles='dashed')
+                        ax[order - 2].hlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1],
+                                             linestyles='dashed')
 
-            if broken_lims is not None:
-                s4_f, diffs, broken_lims_scaled = connect_broken_axis(s4_f, broken_lims, f_scale)
+                    ax[order - 2].set_ylim(ylims)
+                    ax[order - 2].set_xlim(ylims)
 
-            vmin = np.min(s4_data)
-            vmax = np.max(s4_data)
-            norm = MidpointNormalize(midpoint=0, vmin=vmin, vmax=vmax)
-
-            y, x = np.meshgrid(s4_f, s4_f)
-            z = s4_data.copy()
-            err_matrix = np.zeros_like(z)
-            if s4_err is not None or self.S_err[4] is not None:
-                err_matrix[np.abs(s4_data) < s4_err] = 1
-
-            c = (ax[2]).pcolormesh(x, y, z, cmap=cmap, norm=norm, zorder=1, shading='auto')
-            if s4_err is not None or self.S_err[4] is not None:
-                c1 = (ax[2]).pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
-
-            if contours:
-                (ax[2]).contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)
-
-            if f_max is None:
-                f_max = s4_f.max()
-            if f_min is None:
-                f_min = s4_f.min()
-            ax[2].axis([f_min, f_max, f_min, f_max])
-
-            (ax[2]).set_xlabel(r"$\omega_1 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
-            (ax[2]).set_ylabel(r"$\omega_2 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
-            ax[2].tick_params(axis='both', direction='in')
-            if green_alpha == 0:
-                ax[2].set_title(r'$S^{(4)}_z $ (' + unit + r'$^{-3}$)',
-                                fontdict={'fontsize': 16})
-            else:
-                ax[2].set_title(r'$S^{(4)}_z $ (' + unit + r'$^{-3}$) (%i$\sigma$ confidence)' % (sigma),
-                                fontdict={'fontsize': 16})
-            cbar = fig.colorbar(c, ax=(ax[2]))
-
-            if broken_lims is not None:
-                ylims = ax[2].get_ylim()
-                for i, diff in enumerate(diffs):
-                    ax[2].vlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
-                    ax[2].hlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1], linestyles='dashed')
-
-                ax[2].set_ylim(ylims)
-                ax[2].set_xlim(ylims)
-
-                x_labels = ax[2].get_xticks()
-                x_labels = np.array(x_labels)
-                for i, diff in enumerate(diffs):
-                    x_labels[x_labels > broken_lims_scaled[i][-1]] += diff
-                x_labels = [str(np.round(i * 1000) / 1000) for i in x_labels]
-                ax[2].set_xticklabels(x_labels)
-                ax[2].set_yticklabels(x_labels)
+                    x_labels = ax[order - 2].get_xticks()
+                    x_labels = np.array(x_labels)
+                    for i, diff in enumerate(diffs):
+                        x_labels[x_labels > broken_lims_scaled[i][-1]] += diff
+                    x_labels = [str(np.round(i * 1000) / 1000) for i in x_labels]
+                    ax[order - 2].set_xticklabels(x_labels)
+                    ax[order - 2].set_yticklabels(x_labels)
 
         plt.show()
 

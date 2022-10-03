@@ -1341,11 +1341,17 @@ class Spectrum:
 
             if imag_plot:
                 s3_data = np.imag(self.S[3]).copy() if s3_data is None else np.imag(s3_data).copy()
-                s3_sigma = np.imag(self.S_sigma[3]).copy() if s3_sigma is None else np.imag(s3_sigma).copy()
+                if s3_sigma is not None:
+                    s3_sigma = np.imag(s3_sigma).copy()
+                elif self.S_sigma[3] is not None:
+                    s3_sigma = np.imag(self.S_sigma[3]).copy()
+
             else:
                 s3_data = np.real(self.S[3]).copy() if s3_data is None else np.real(s3_data).copy()
-                if s3_sigma is not None or self.S_sigma[3] is not None:
-                    s3_sigma = np.real(self.S_sigma[3]).copy() if s3_sigma is None else np.real(s3_sigma).copy()
+                if s3_sigma is not None:
+                    s3_sigma = np.real(s3_sigma).copy()
+                elif self.S_sigma[3] is not None:
+                    s3_sigma = np.real(self.S_sigma[3]).copy()
 
             s3_data *= f_scale ** 2
             s3_sigma *= f_scale ** 2
@@ -1396,19 +1402,27 @@ class Spectrum:
 
         # -------- S4 ---------
         if self.S[4] is not None and not self.S[4].shape[0] == 0:
+
             if imag_plot:
                 s4_data = np.imag(self.S[4]).copy() if s4_data is None else np.imag(s4_data).copy()
-                s4_sigma = np.imag(self.S_sigma[4]).copy() if s4_sigma is None else np.imag(s4_sigma).copy()
+                if s4_sigma is not None:
+                    s4_sigma = np.imag(s4_sigma).copy()
+                elif self.S_sigma[4] is not None:
+                    s4_sigma = np.imag(self.S_sigma[4]).copy()
+
             else:
                 s4_data = np.real(self.S[4]).copy() if s4_data is None else np.real(s4_data).copy()
-                if s4_sigma is not None or self.S_sigma[4] is not None:
-                    s4_sigma = np.real(self.S_sigma[4]).copy() if s4_sigma is None else np.real(s4_sigma).copy()
+                if s4_sigma is not None:
+                    s4_sigma = np.real(s4_sigma).copy()
+                elif self.S_sigma[4] is not None:
+                    s4_sigma = np.real(self.S_sigma[4]).copy()
 
             s4_data *= f_scale ** 3
-            s4_sigma *= f_scale ** 3
 
             if s4_sigma is not None or self.S_sigma[4] is not None:
                 s4_sigma *= sigma
+                s4_sigma *= f_scale ** 3
+
             if arcsinh_plot:
                 x_max = np.max(np.abs(s4_data))
                 alpha = 1 / (x_max * arcsinh_const)

@@ -1226,6 +1226,25 @@ class Spectrum:
         norm = (np.sum(window_full ** 2) / N_window / fs)
         return window / np.sqrt(norm), window / np.sqrt(norm)
 
+    def import_higher_order_for_plotting(self, s_data, s_sigma, order, imag_plot):
+        if imag_plot:
+            s_data = np.imag(self.S[order]).copy() if s_data is None else np.imag(s_data).copy()
+            if s_sigma is not None:
+                s_sigma = np.imag(s_sigma).copy()
+            elif self.S_sigma[order] is not None:
+                s_sigma = np.imag(self.S_sigma[order]).copy()
+
+        else:
+            s_data = np.real(self.S[order]).copy() if s_data is None else np.real(s_data).copy()
+            if s_sigma is not None:
+                s_sigma = np.real(s_sigma).copy()
+            elif self.S_sigma[order] is not None:
+                s_sigma = np.real(self.S_sigma[order]).copy()
+
+        return s_data, s_sigma
+
+    #def arcsinh_scaling(self, ):
+
     def poly_plot(self, f_max=None, f_min=None, f_scale=1, unit='Hz', sigma=1, green_alpha=0.3, arcsinh_plot=False,
                   arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
@@ -1339,19 +1358,8 @@ class Spectrum:
 
         if self.S[3] is not None and not self.S[3].shape[0] == 0:
 
-            if imag_plot:
-                s3_data = np.imag(self.S[3]).copy() if s3_data is None else np.imag(s3_data).copy()
-                if s3_sigma is not None:
-                    s3_sigma = np.imag(s3_sigma).copy()
-                elif self.S_sigma[3] is not None:
-                    s3_sigma = np.imag(self.S_sigma[3]).copy()
-
-            else:
-                s3_data = np.real(self.S[3]).copy() if s3_data is None else np.real(s3_data).copy()
-                if s3_sigma is not None:
-                    s3_sigma = np.real(s3_sigma).copy()
-                elif self.S_sigma[3] is not None:
-                    s3_sigma = np.real(self.S_sigma[3]).copy()
+            order = 3
+            s3_data, s3_sigma = self.import_higher_order_for_plotting(s3_data, s3_sigma, order, imag_plot)
 
             s3_data *= f_scale ** 2
             s3_sigma *= f_scale ** 2
@@ -1403,19 +1411,8 @@ class Spectrum:
         # -------- S4 ---------
         if self.S[4] is not None and not self.S[4].shape[0] == 0:
 
-            if imag_plot:
-                s4_data = np.imag(self.S[4]).copy() if s4_data is None else np.imag(s4_data).copy()
-                if s4_sigma is not None:
-                    s4_sigma = np.imag(s4_sigma).copy()
-                elif self.S_sigma[4] is not None:
-                    s4_sigma = np.imag(self.S_sigma[4]).copy()
-
-            else:
-                s4_data = np.real(self.S[4]).copy() if s4_data is None else np.real(s4_data).copy()
-                if s4_sigma is not None:
-                    s4_sigma = np.real(s4_sigma).copy()
-                elif self.S_sigma[4] is not None:
-                    s4_sigma = np.real(self.S_sigma[4]).copy()
+            order = 4
+            s4_data, s4_sigma = self.import_higher_order_for_plotting(s4_data, s4_sigma, order, imag_plot)
 
             s4_data *= f_scale ** 3
 

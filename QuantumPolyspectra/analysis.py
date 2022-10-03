@@ -367,13 +367,21 @@ def apply_window(window_width, t_clicks, fs, sigma_t=0.14):
     return window / np.sqrt(norm), window_full, N_window_full
 
 
-def arcsinh_scaling(s_data, s_sigma, arcsinh_const):
+def arcsinh_scaling(s_data, arcsinh_const, order, s_sigma=None, s_sigma_p=None, s_sigma_m=None):
     x_max = np.max(np.abs(s_data))
     alpha = 1 / (x_max * arcsinh_const)
     s_data = np.arcsinh(alpha * s_data) / alpha
-    if s_sigma is not None:
-        s_sigma = np.arcsinh(alpha * s_sigma) / alpha
-    return s_data, s_sigma
+
+    if order==2:
+        if s_sigma_p is not None:
+            for i in range(0, 5):
+                s_sigma_p[i] = np.arcsinh(alpha * s_sigma_p[i]) / alpha
+                s_sigma_m[i] = np.arcsinh(alpha * s_sigma_m[i]) / alpha
+        return s_data, s_sigma_p, s_sigma_m
+    else:
+        if s_sigma is not None:
+            s_sigma = np.arcsinh(alpha * s_sigma) / alpha
+        return s_data, s_sigma
 
 
 class Spectrum:
@@ -1284,14 +1292,7 @@ class Spectrum:
                     s2_sigma_m.append(s2_data - (i + 1) * s2_sigma * f_scale)
 
             if arcsinh_plot:
-                x_max = np.max(np.abs(s2_data))
-                alpha = 1 / (x_max * arcsinh_const)
-                s2_data = np.arcsinh(alpha * s2_data) / alpha
-
-                if s2_sigma is not None or self.S_sigma[2] is not None:
-                    for i in range(0, 5):
-                        s2_sigma_p[i] = np.arcsinh(alpha * s2_sigma_p[i]) / alpha
-                        s2_sigma_m[i] = np.arcsinh(alpha * s2_sigma_m[i]) / alpha
+                s2_data, s2_sigma_p, s2_sigma_m = arcsinh_scaling(s2_data, arcsinh_const, order, s_sigma_p=s2_sigma_p, s_sigma_m=s2_sigma_m)
 
             if s2_f is None:
                 s2_f = self.freq[2].copy() * f_scale
@@ -1369,7 +1370,7 @@ class Spectrum:
             if s3_sigma is not None or self.S_sigma[3] is not None:
                 s3_sigma *= sigma
             if arcsinh_plot:
-                s3_data, s3_sigma = arcsinh_scaling(s3_data, s3_sigma, arcsinh_const)
+                s3_data, s3_sigma = arcsinh_scaling(s3_data, arcsinh_const, order, s_sigma=s3_sigma)
 
             if s3_f is None:
                 s3_f = self.freq[3].copy() * f_scale
@@ -1419,7 +1420,7 @@ class Spectrum:
                 s4_sigma *= f_scale ** 3
 
             if arcsinh_plot:
-                s4_data, s4_sigma = arcsinh_scaling(s4_data, s4_sigma, arcsinh_const)
+                s4_data, s4_sigma = arcsinh_scaling(s4_data, arcsinh_const, order, s_sigma=s4_sigma)
 
             if s4_f is None:
                 s4_f = self.freq[4].copy() * f_scale

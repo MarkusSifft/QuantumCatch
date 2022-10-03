@@ -1263,7 +1263,7 @@ class Spectrum:
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
-        if broken_lims is not None:
+        if self.f_lists[2] is not None:
             broken_lims = []
             for part in self.f_lists[2]:
                 broken_lims.append((part[0], part[-1]))
@@ -1431,7 +1431,6 @@ class Spectrum:
 
             if broken_lims is not None:
                 broken_lims_scaled = [(f_scale * i, f_scale * j) for i, j in broken_lims]
-                s4_f_original = s4_f.copy()
                 diffs = []
                 for i in range(len(broken_lims_scaled) - 1):
                     diff = broken_lims_scaled[i + 1][0] - broken_lims_scaled[i][1]

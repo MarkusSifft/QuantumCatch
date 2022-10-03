@@ -1235,7 +1235,7 @@ class Spectrum:
         norm = (np.sum(window_full ** 2) / N_window / fs)
         return window / np.sqrt(norm), window / np.sqrt(norm)
 
-    def import_higher_order_for_plotting(self, s_data, s_sigma, order, imag_plot):
+    def import_spec_data_for_plotting(self, s_data, s_sigma, order, imag_plot):
         if imag_plot:
             s_data = np.imag(self.S[order]).copy() if s_data is None else np.imag(s_data).copy()
             if s_sigma is not None:
@@ -1270,13 +1270,8 @@ class Spectrum:
 
         # -------- S2 ---------
         if self.S[2] is not None and not self.S[2].shape[0] == 0:
-            if imag_plot:
-                s2_data = np.imag(self.S[2]).copy() if s2_data is None else np.imag(s2_data).copy()
-                s2_sigma = np.imag(self.S_sigma[2]).copy() if s2_sigma is None else np.imag(s2_sigma).copy()
-            else:
-                s2_data = np.real(self.S[2]).copy() if s2_data is None else np.real(s2_data).copy()
-                if s2_sigma is not None or self.S_sigma[2] is not None:
-                    s2_sigma = np.real(self.S_sigma[2]).copy() if s2_sigma is None else np.real(s2_sigma).copy()
+            order = 2
+            s2_data, s2_sigma = self.import_spec_data_for_plotting(s2_data, s2_sigma, order, imag_plot)
 
             s2_data *= f_scale
 
@@ -1366,7 +1361,7 @@ class Spectrum:
         if self.S[3] is not None and not self.S[3].shape[0] == 0:
 
             order = 3
-            s3_data, s3_sigma = self.import_higher_order_for_plotting(s3_data, s3_sigma, order, imag_plot)
+            s3_data, s3_sigma = self.import_spec_data_for_plotting(s3_data, s3_sigma, order, imag_plot)
 
             s3_data *= f_scale ** 2
             s3_sigma *= f_scale ** 2
@@ -1415,7 +1410,7 @@ class Spectrum:
         if self.S[4] is not None and not self.S[4].shape[0] == 0:
 
             order = 4
-            s4_data, s4_sigma = self.import_higher_order_for_plotting(s4_data, s4_sigma, order, imag_plot)
+            s4_data, s4_sigma = self.import_spec_data_for_plotting(s4_data, s4_sigma, order, imag_plot)
 
             s4_data *= f_scale ** 3
 

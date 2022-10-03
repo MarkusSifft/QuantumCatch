@@ -367,6 +367,15 @@ def apply_window(window_width, t_clicks, fs, sigma_t=0.14):
     return window / np.sqrt(norm), window_full, N_window_full
 
 
+def arcsinh_scaling(s_data, s_sigma, arcsinh_const):
+    x_max = np.max(np.abs(s_data))
+    alpha = 1 / (x_max * arcsinh_const)
+    s_data = np.arcsinh(alpha * s_data) / alpha
+    if s_sigma is not None:
+        s_sigma = np.arcsinh(alpha * s_sigma) / alpha
+    return s_data, s_sigma
+
+
 class Spectrum:
     """
     Spectrum class stores signal data, calculated spectra and error of spectral values.
@@ -1243,8 +1252,6 @@ class Spectrum:
 
         return s_data, s_sigma
 
-    #def arcsinh_scaling(self, ):
-
     def poly_plot(self, f_max=None, f_min=None, f_scale=1, unit='Hz', sigma=1, green_alpha=0.3, arcsinh_plot=False,
                   arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
@@ -1367,11 +1374,7 @@ class Spectrum:
             if s3_sigma is not None or self.S_sigma[3] is not None:
                 s3_sigma *= sigma
             if arcsinh_plot:
-                x_max = np.max(np.abs(s3_data))
-                alpha = 1 / (x_max * arcsinh_const)
-                s3_data = np.arcsinh(alpha * s3_data) / alpha
-                if s3_sigma is not None or self.S_sigma[3] is not None:
-                    s3_sigma = np.arcsinh(alpha * s3_sigma) / alpha
+                s3_data, s3_sigma = arcsinh_scaling(s3_data, s3_sigma, arcsinh_const)
 
             if s3_f is None:
                 s3_f = self.freq[3].copy() * f_scale
@@ -1421,11 +1424,7 @@ class Spectrum:
                 s4_sigma *= f_scale ** 3
 
             if arcsinh_plot:
-                x_max = np.max(np.abs(s4_data))
-                alpha = 1 / (x_max * arcsinh_const)
-                s4_data = np.arcsinh(alpha * s4_data) / alpha
-                if s4_sigma is not None or self.S_sigma[4] is not None:
-                    s4_sigma = np.arcsinh(alpha * s4_sigma) / alpha
+                s4_data, s4_sigma = arcsinh_scaling(s4_data, s4_sigma, arcsinh_const)
 
             if s4_f is None:
                 s4_f = self.freq[4].copy() * f_scale

@@ -48,7 +48,7 @@ class FitTelegraph(Spectrum):
         plt.rcParams["axes.axisbelow"] = False
 
         t_for_one_spec = self.delta_t * self.m * self.window_size
-        time_axis = np.arange(0, self.S_sigmas[2].shape[0] * t_for_one_spec, t_for_one_spec)[::filter]
+        time_axis = np.arange(0, self.S_errs[2].shape[0] * t_for_one_spec, t_for_one_spec)[::filter]
 
         plt.errorbar(time_axis, gamma_ins, yerr=gamma_ins_err, label=r'$\gamma_{in}$')
         plt.errorbar(time_axis, gamma_outs, yerr=gamma_outs_err, label=r'$\gamma_{out}$')
@@ -59,11 +59,11 @@ class FitTelegraph(Spectrum):
                      fontdict={'fontsize': 16})
 
     def fit_stationarity_plot(self, starting_gammas, with_s4=False, filter=0, plot=True):
-        s2_array = np.real(self.S_sigmas[2])
+        s2_array = np.real(self.S_errs[2])
         s2_array = gaussian_filter(s2_array, sigma=[0, filter])
-        s3_array = np.real(self.S_sigmas[3])
+        s3_array = np.real(self.S_errs[3])
         s3_array = gaussian_filter(s3_array, sigma=[0, 0, filter])
-        s4_array = np.real(self.S_sigmas[4])
+        s4_array = np.real(self.S_errs[4])
         s4_array = gaussian_filter(s4_array, sigma=[0, 0, filter])
 
         s2_f = self.freq[2]
@@ -129,8 +129,8 @@ class FitTelegraph(Spectrum):
         data = np.array([np.real(s2_data), np.real(s3_data), np.real(s4_data)])
 
         if err is None:
-            err = np.concatenate([np.real(self.S_sigma[2]).flatten(), np.real(self.S_sigma[3]).flatten(),
-                                  np.real(self.S_sigma[4]).flatten()])
+            err = np.concatenate([np.real(self.S_err[2]).flatten(), np.real(self.S_err[3]).flatten(),
+                                  np.real(self.S_err[4]).flatten()])
 
         omega_list = [s2_f, s3_f, s4_f]
 

@@ -367,24 +367,24 @@ def apply_window(window_width, t_clicks, fs, sigma_t=0.14):
     return window / np.sqrt(norm), window_full, N_window_full
 
 
-def arcsinh_scaling(s_data, arcsinh_const, order, s_sigma=None, s_sigma_p=None, s_sigma_m=None):
+def arcsinh_scaling(s_data, arcsinh_const, order, s_err=None, s_err_p=None, s_err_m=None):
     x_max = np.max(np.abs(s_data))
     alpha = 1 / (x_max * arcsinh_const)
     s_data = np.arcsinh(alpha * s_data) / alpha
 
     if order==2:
-        if s_sigma_p is not None:
+        if s_err_p is not None:
             for i in range(0, 5):
-                s_sigma_p[i] = np.arcsinh(alpha * s_sigma_p[i]) / alpha
-                s_sigma_m[i] = np.arcsinh(alpha * s_sigma_m[i]) / alpha
-        return s_data, s_sigma_p, s_sigma_m
+                s_err_p[i] = np.arcsinh(alpha * s_err_p[i]) / alpha
+                s_err_m[i] = np.arcsinh(alpha * s_err_m[i]) / alpha
+        return s_data, s_err_p, s_err_m
     else:
-        if s_sigma is not None:
-            s_sigma = np.arcsinh(alpha * s_sigma) / alpha
-        return s_data, s_sigma
+        if s_err is not None:
+            s_err = np.arcsinh(alpha * s_err) / alpha
+        return s_data, s_err
 
 
-def conneect_broken_axis(s_f, broken_lims, f_scale):
+def connect_broken_axis(s_f, broken_lims, f_scale):
     broken_lims_scaled = [(f_scale * i, f_scale * j) for i, j in broken_lims]
     diffs = []
     for i in range(len(broken_lims_scaled) - 1):
@@ -442,9 +442,9 @@ class Spectrum:
         self.f_lists = {2: None, 3: None, 4: None}
         self.S = [None, None, None, None, None]
         self.S_gpu = [None, None, None, None, None]
-        self.S_sigma = [None, None, None, None, None]
-        self.S_sigma_gpu = [None, None, None, None, None]
-        self.S_sigmas = [[], [], [], [], []]
+        self.S_err = [None, None, None, None, None]
+        self.S_err_gpu = [None, None, None, None, None]
+        self.S_errs = [[], [], [], [], []]
         self.S_stationarity_temp = [None, None, None, None, None]
         self.S_stationarity = [[], [], [], [], []]
         self.group_key = group_key
@@ -466,11 +466,11 @@ class Spectrum:
 
     def save_spec(self, path):
         self.S_gpu = None
-        self.S_sigma_gpu = None
+        self.S_err_gpu = None
         self.main_data = None
         self.corr_data = None
         self.data = None
-        self.S_sigmas = None
+        self.S_errs = None
         self.S_stationarity_temp = None
         pickle_save(path, self)
 
@@ -556,7 +556,7 @@ class Spectrum:
         plt.plot(t, first_frame)
         plt.show()
 
-    def store_single_spectrum(self, single_spectrum, order, sigma_counter, m_var, stationarity_counter, m_stationarity):
+    def store_single_spectrum(self, single_spectrum, order, err_counter, m_var, stationarity_counter, m_stationarity):
 
         if self.S_gpu[order] is None:
             self.S_gpu[order] = single_spectrum
@@ -564,10 +564,10 @@ class Spectrum:
             self.S_gpu[order] += single_spectrum
 
         if order == 2:
-            self.S_sigmas[order][:, sigma_counter] = single_spectrum  # .to_ndarray()
+            self.S_errs[order][:, err_counter] = single_spectrum  # .to_ndarray()
         else:
-            self.S_sigmas[order][:, :, sigma_counter] = single_spectrum  # .to_ndarray()
-        sigma_counter += 1
+            self.S_errs[order][:, :, err_counter] = single_spectrum  # .to_ndarray()
+        err_counter += 1
 
         if m_stationarity is not None:
             if order == 2:
@@ -583,48 +583,48 @@ class Spectrum:
                     self.S_stationarity[order].append(af.mean(self.S_stationarity_temp[order], dim=2).to_ndarray())
                 stationarity_counter = 0
 
-        if sigma_counter % m_var == 0:
+        if err_counter % m_var == 0:
             if order == 2:
-                self.S_sigma_gpu = af.sqrt(
-                    m_var / (m_var - 1) * (af.mean(self.S_sigmas[order] * af.conjg(self.S_sigmas[order]), dim=1) -
-                                           af.mean(self.S_sigmas[order], dim=1) * af.conjg(
-                                af.mean(self.S_sigmas[order], dim=1))))
+                self.S_err_gpu = af.sqrt(
+                    m_var / (m_var - 1) * (af.mean(self.S_errs[order] * af.conjg(self.S_errs[order]), dim=1) -
+                                           af.mean(self.S_errs[order], dim=1) * af.conjg(
+                                af.mean(self.S_errs[order], dim=1))))
 
-                # self.S_sigma_gpu = np.sqrt(
-                #     m_var / (m_var - 1) * (np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
-                #                            np.mean(self.S_sigmas[order], axis=1) * np.conj(
-                #                 np.mean(self.S_sigmas[order], axis=1))))
+                # self.S_err_gpu = np.sqrt(
+                #     m_var / (m_var - 1) * (np.mean(self.S_errs[order] * np.conj(self.S_errs[order]), axis=1) -
+                #                            np.mean(self.S_errs[order], axis=1) * np.conj(
+                #                 np.mean(self.S_errs[order], axis=1))))
 
             else:
-                self.S_sigma_gpu = af.sqrt(m_var / (m_var - 1) * (
-                        af.mean(self.S_sigmas[order] * af.conjg(self.S_sigmas[order]), dim=2) -
-                        af.mean(self.S_sigmas[order], dim=2) * af.conjg(af.mean(self.S_sigmas[order], dim=2))))
+                self.S_err_gpu = af.sqrt(m_var / (m_var - 1) * (
+                        af.mean(self.S_errs[order] * af.conjg(self.S_errs[order]), dim=2) -
+                        af.mean(self.S_errs[order], dim=2) * af.conjg(af.mean(self.S_errs[order], dim=2))))
 
-                # self.S_sigma_gpu = np.sqrt(m_var / (m_var - 1) * (
-                #         np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
-                #         np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
+                # self.S_err_gpu = np.sqrt(m_var / (m_var - 1) * (
+                #         np.mean(self.S_errs[order] * np.conj(self.S_errs[order]), axis=2) -
+                #         np.mean(self.S_errs[order], axis=2) * np.conj(np.mean(self.S_errs[order], axis=2))))
 
-            if self.S_sigma[order] is None:
-                self.S_sigma[order] = self.S_sigma_gpu.to_ndarray()
+            if self.S_err[order] is None:
+                self.S_err[order] = self.S_err_gpu.to_ndarray()
             else:
-                self.S_sigma[order] += self.S_sigma_gpu.to_ndarray()
+                self.S_err[order] += self.S_err_gpu.to_ndarray()
 
-            sigma_counter = 0
+            err_counter = 0
 
-        return sigma_counter, stationarity_counter
+        return err_counter, stationarity_counter
 
     def calc_overlap(self, unit, imag=False, scale_t=1):
         plt.figure(figsize=(28, 13))
 
-        overlap_s2 = [np.var(self.S_sigmas[2][:, i] * self.S[2]) for i in range(self.S_sigmas[2][1, :].shape[0])]
+        overlap_s2 = [np.var(self.S_errs[2][:, i] * self.S[2]) for i in range(self.S_errs[2][1, :].shape[0])]
 
-        overlap_s3 = [np.var(self.S_sigmas[3][:, :, i] * self.S[3]) for i in
-                      range(self.S_sigmas[3][1, 1, :].shape[0])]
+        overlap_s3 = [np.var(self.S_errs[3][:, :, i] * self.S[3]) for i in
+                      range(self.S_errs[3][1, 1, :].shape[0])]
 
-        overlap_s4 = [np.var(self.S_sigmas[4][:, :, i] * self.S[4]) for i in
-                      range(self.S_sigmas[4][1, 1, :].shape[0])]
+        overlap_s4 = [np.var(self.S_errs[4][:, :, i] * self.S[4]) for i in
+                      range(self.S_errs[4][1, 1, :].shape[0])]
 
-        t = np.linspace(0, self.dt * self.main_data.shape[0], self.S_sigmas[4][1, 1, :].shape[0]) / scale_t
+        t = np.linspace(0, self.dt * self.main_data.shape[0], self.S_errs[4][1, 1, :].shape[0]) / scale_t
         t_main = np.linspace(0, self.dt * self.main_data.shape[0], self.main_data.shape[0]) / scale_t
 
         if imag:
@@ -672,13 +672,13 @@ class Spectrum:
         self.f_max = 0
         self.S[order] = None
         self.S_gpu[order] = None
-        self.S_sigma_gpu = None
-        self.S_sigma[order] = None
-        self.S_sigmas[order] = []
+        self.S_err_gpu = None
+        self.S_err[order] = None
+        self.S_errs[order] = []
         self.S_stationarity_temp[order] = []
 
         single_window = None
-        sigma_counter = 0
+        err_counter = 0
         stationarity_counter = 0
 
         # -------data setup---------
@@ -750,11 +750,11 @@ class Spectrum:
                 window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
 
                 if order == 2:
-                    self.S_sigmas[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
+                    self.S_errs[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
                 elif order == 3:
-                    self.S_sigmas[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
+                    self.S_errs[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
                 elif order == 4:
-                    self.S_sigmas[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
+                    self.S_errs[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
 
                 if m_stationarity is not None:
                     if order == 2:
@@ -793,7 +793,7 @@ class Spectrum:
                 else:
                     single_spectrum = c2(a_w, a_w, m, coherent=coherent) / (delta_t * (single_window ** order).sum())
 
-                sigma_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var, stationarity_counter, m_stationarity)
+                err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter, m_var, stationarity_counter, m_stationarity)
 
             elif order > 2:
                 if rect_win:
@@ -818,7 +818,7 @@ class Spectrum:
                     a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
 
-                    sigma_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var, stationarity_counter, m_stationarity)
+                    err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter, m_var, stationarity_counter, m_stationarity)
 
                 if order == 4:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
@@ -833,7 +833,7 @@ class Spectrum:
                         a_w_corr = a_w
 
                     single_spectrum = c4(a_w, a_w_corr, m) / (delta_t * (single_window ** order).sum())
-                    sigma_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, sigma_counter, m_var, stationarity_counter, m_stationarity)
+                    err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter, m_var, stationarity_counter, m_stationarity)
 
             if n_chunks == break_after:
                 break
@@ -841,9 +841,9 @@ class Spectrum:
         self.S_gpu[order] /= n_chunks
         self.S[order] = self.S_gpu[order].to_ndarray()
 
-        self.S_sigma[order] /= n_windows // m_var * np.sqrt(n_windows)
+        self.S_err[order] /= n_windows // m_var * np.sqrt(n_windows)
 
-        return self.freq[order], self.S[order], self.S_sigma[order]
+        return self.freq[order], self.S[order], self.S_err[order]
 
     def calc_spec_poisson(self, order_in, window_width, f_max, f_lists=None, backend='opencl', m=10, m_var=10,
                           m_stationarity=None, data=None, full_import=False, scale_data_and_dt=1,
@@ -909,9 +909,9 @@ class Spectrum:
             self.freq[order] = None
             self.S[order] = None
             self.S_gpu[order] = None
-            self.S_sigma_gpu = None
-            self.S_sigma[order] = None
-            self.S_sigmas[order] = []
+            self.S_err_gpu = None
+            self.S_err[order] = None
+            self.S_errs[order] = []
             self.S_stationarity_temp[order] = []
 
         # -------data setup---------
@@ -931,9 +931,9 @@ class Spectrum:
             f_list = np.arange(0, f_max + f_min, f_min)
 
         start_index = 0
-        sigma_counter_2 = 0
-        sigma_counter_3 = 0
-        sigma_counter_4 = 0
+        err_counter_2 = 0
+        err_counter_3 = 0
+        err_counter_4 = 0
         stationarity_counter_2 = 0
         stationarity_counter_3 = 0
         stationarity_counter_4 = 0
@@ -954,11 +954,11 @@ class Spectrum:
                 self.freq[order] = f_list
 
             if order == 2:
-                self.S_sigmas[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
+                self.S_errs[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
             elif order == 3:
-                self.S_sigmas[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
+                self.S_errs[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
             elif order == 4:
-                self.S_sigmas[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
+                self.S_errs[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
 
             if m_stationarity is not None:
                 if order == 2:
@@ -1013,20 +1013,20 @@ class Spectrum:
                 if order == 2:
                     a_w = a_w_all_gpu
                     single_spectrum = c2(a_w, a_w, m, coherent=False) / (delta_t * (single_window ** order).sum())
-                    sigma_counter_2, stationarity_counter_2 = self.store_single_spectrum(single_spectrum, order, sigma_counter_2, m_var, stationarity_counter_2, m_stationarity)
+                    err_counter_2, stationarity_counter_2 = self.store_single_spectrum(single_spectrum, order, err_counter_2, m_var, stationarity_counter_2, m_stationarity)
 
                 elif order == 3:
                     a_w1 = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind // 2))), dim=0)
                     a_w2 = a_w1
                     a_w3 = to_gpu(calc_a_w3(a_w_all_gpu.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
-                    sigma_counter_3, stationarity_counter_3 = self.store_single_spectrum(single_spectrum, order, sigma_counter_3, m_var, stationarity_counter_3, m_stationarity)
+                    err_counter_3, stationarity_counter_3 = self.store_single_spectrum(single_spectrum, order, err_counter_3, m_var, stationarity_counter_3, m_stationarity)
 
                 elif order == 4:
                     a_w = a_w_all_gpu
                     a_w_corr = a_w
                     single_spectrum = c4(a_w, a_w_corr, m) / (delta_t * (single_window ** order).sum())
-                    sigma_counter_4, stationarity_counter_4 = self.store_single_spectrum(single_spectrum, order, sigma_counter_4, m_var, stationarity_counter_4, m_stationarity)
+                    err_counter_4, stationarity_counter_4 = self.store_single_spectrum(single_spectrum, order, err_counter_4, m_var, stationarity_counter_4, m_stationarity)
 
         assert n_windows == n_chunks, 'n_windows not equal to n_chunks'
 
@@ -1034,12 +1034,12 @@ class Spectrum:
             self.S_gpu[order] /= n_chunks
             self.S[order] = self.S_gpu[order].to_ndarray()
 
-            self.S_sigma[order] /= n_windows // m_var * np.sqrt(n_windows)
+            self.S_err[order] /= n_windows // m_var * np.sqrt(n_windows)
 
         if order_in == 'all':
-            return self.freq, self.S, self.S_sigma
+            return self.freq, self.S, self.S_err
         else:
-            return self.freq[order], self.S[order], self.S_sigma[order]
+            return self.freq[order], self.S[order], self.S_err[order]
 
     def calc_spec_mini_bins(self, order, window_width, bin_width, f_max, backend='opencl', coherent=False,
                             m=5, data=None, sigma_t=0.14, rect_win=False, verbose=False):
@@ -1078,9 +1078,9 @@ class Spectrum:
         self.freq[order] = None
         self.S[order] = None
         self.S_gpu[order] = None
-        self.S_sigma_gpu = None
-        self.S_sigma[order] = None
-        self.S_sigmas[order] = []
+        self.S_err_gpu = None
+        self.S_err[order] = None
+        self.S_errs[order] = []
 
         # -------data setup---------
         print('import data')
@@ -1096,7 +1096,7 @@ class Spectrum:
 
         print('preparing calculation')
         start_index = 0
-        sigma_counter = 0
+        err_counter = 0
         enough_data = True
         n_chunks = 0
         f_max_ind = len(f_list)
@@ -1130,11 +1130,11 @@ class Spectrum:
             window = to_gpu(np.array(m * [single_window]).flatten().reshape((bins, 1, m), order='F'))
 
             if order == 2:
-                self.S_sigmas[2] = 1j * np.empty((f_max_ind, n_windows))
+                self.S_errs[2] = 1j * np.empty((f_max_ind, n_windows))
             elif order == 3:
-                self.S_sigmas[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, n_windows))
+                self.S_errs[3] = 1j * np.empty((f_max_ind // 2, f_max_ind // 2, n_windows))
             elif order == 4:
-                self.S_sigmas[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
+                self.S_errs[4] = 1j * np.empty((f_max_ind, f_max_ind, n_windows))
 
         print('preparing window')
         single_window, _ = cgw(int(bins), self.fs)
@@ -1180,7 +1180,7 @@ class Spectrum:
 
                 a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
                 single_spectrum = c2(a_w, a_w, m, coherent=coherent)
-                sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+                err_counter = self.store_single_spectrum(i, single_spectrum, order, err_counter)
 
             elif order > 2:
                 if rect_win:
@@ -1194,7 +1194,7 @@ class Spectrum:
                     a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m)
 
-                    sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+                    err_counter = self.store_single_spectrum(i, single_spectrum, order, err_counter)
 
                 if order == 4:
                     a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
@@ -1203,7 +1203,7 @@ class Spectrum:
 
                     single_spectrum = c4(a_w, a_w_corr, m)
 
-                    sigma_counter = self.store_single_spectrum(i, single_spectrum, order, sigma_counter)
+                    err_counter = self.store_single_spectrum(i, single_spectrum, order, err_counter)
 
         assert n_windows == n_chunks, 'n_windows not equal to n_chunks'
 
@@ -1212,24 +1212,24 @@ class Spectrum:
         self.S_gpu[order] /= dt * (single_window ** order).sum() * n_chunks
         self.S[order] = self.S_gpu[order].to_ndarray()
 
-        self.S_sigmas[order] /= (dt * (single_window ** order).sum() * np.sqrt(n_chunks))
+        self.S_errs[order] /= (dt * (single_window ** order).sum() * np.sqrt(n_chunks))
 
         if n_chunks > 1:
             if order == 2:
-                self.S_sigma_gpu = np.sqrt(
+                self.S_err_gpu = np.sqrt(
                     n_chunks / (n_chunks - 1) * (
-                            np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=1) -
-                            np.mean(self.S_sigmas[order], axis=1) * np.conj(
-                        np.mean(self.S_sigmas[order], axis=1))))
+                            np.mean(self.S_errs[order] * np.conj(self.S_errs[order]), axis=1) -
+                            np.mean(self.S_errs[order], axis=1) * np.conj(
+                        np.mean(self.S_errs[order], axis=1))))
 
             else:
-                self.S_sigma_gpu = np.sqrt(n_chunks / (n_chunks - 1) * (
-                        np.mean(self.S_sigmas[order] * np.conj(self.S_sigmas[order]), axis=2) -
-                        np.mean(self.S_sigmas[order], axis=2) * np.conj(np.mean(self.S_sigmas[order], axis=2))))
+                self.S_err_gpu = np.sqrt(n_chunks / (n_chunks - 1) * (
+                        np.mean(self.S_errs[order] * np.conj(self.S_errs[order]), axis=2) -
+                        np.mean(self.S_errs[order], axis=2) * np.conj(np.mean(self.S_errs[order], axis=2))))
 
-            self.S_sigma[order] = self.S_sigma_gpu
+            self.S_err[order] = self.S_err_gpu
 
-        return self.freq[order], self.S[order], self.S_sigma[order]
+        return self.freq[order], self.S[order], self.S_err[order]
 
     def apply_window_old(self, window_width, t_clicks, fs, sigma_t=0.14, ones=False):
         """Calculation of the approximate gaussian confined window"""
@@ -1253,27 +1253,27 @@ class Spectrum:
         norm = (np.sum(window_full ** 2) / N_window / fs)
         return window / np.sqrt(norm), window / np.sqrt(norm)
 
-    def import_spec_data_for_plotting(self, s_data, s_sigma, order, imag_plot):
+    def import_spec_data_for_plotting(self, s_data, s_err, order, imag_plot):
         if imag_plot:
             s_data = np.imag(self.S[order]).copy() if s_data is None else np.imag(s_data).copy()
-            if s_sigma is not None:
-                s_sigma = np.imag(s_sigma).copy()
-            elif self.S_sigma[order] is not None:
-                s_sigma = np.imag(self.S_sigma[order]).copy()
+            if s_err is not None:
+                s_err = np.imag(s_err).copy()
+            elif self.S_err[order] is not None:
+                s_err = np.imag(self.S_err[order]).copy()
 
         else:
             s_data = np.real(self.S[order]).copy() if s_data is None else np.real(s_data).copy()
-            if s_sigma is not None:
-                s_sigma = np.real(s_sigma).copy()
-            elif self.S_sigma[order] is not None:
-                s_sigma = np.real(self.S_sigma[order]).copy()
+            if s_err is not None:
+                s_err = np.real(s_err).copy()
+            elif self.S_err[order] is not None:
+                s_err = np.real(self.S_err[order]).copy()
 
-        return s_data, s_sigma
+        return s_data, s_err
 
     def poly_plot(self, f_max=None, f_min=None, f_scale=1, unit='Hz', sigma=1, green_alpha=0.3, arcsinh_plot=False,
                   arcsinh_const=0.02,
-                  contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_sigma=None, s3_data=None, s3_sigma=None,
-                  s4_data=None, s4_sigma=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, plot_error=True,
+                  contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_err=None, s3_data=None, s3_err=None,
+                  s4_data=None, s4_err=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, plot_error=True,
                   broken_lims=None):
 
         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(24, 7), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
@@ -1289,25 +1289,25 @@ class Spectrum:
         # -------- S2 ---------
         if self.S[2] is not None and not self.S[2].shape[0] == 0:
             order = 2
-            s2_data, s2_sigma = self.import_spec_data_for_plotting(s2_data, s2_sigma, order, imag_plot)
+            s2_data, s2_err = self.import_spec_data_for_plotting(s2_data, s2_err, order, imag_plot)
 
             s2_data *= f_scale
 
-            s2_sigma_p = []
-            s2_sigma_m = []
+            s2_err_p = []
+            s2_err_m = []
 
-            if s2_sigma is not None or self.S_sigma[2] is not None:
+            if s2_err is not None or self.S_err[2] is not None:
                 for i in range(0, 5):
-                    s2_sigma_p.append(s2_data + (i + 1) * s2_sigma * f_scale)
-                    s2_sigma_m.append(s2_data - (i + 1) * s2_sigma * f_scale)
+                    s2_err_p.append(s2_data + (i + 1) * s2_err * f_scale)
+                    s2_err_m.append(s2_data - (i + 1) * s2_err * f_scale)
 
             if arcsinh_plot:
-                s2_data, s2_sigma_p, s2_sigma_m = arcsinh_scaling(s2_data, arcsinh_const, order, s_sigma_p=s2_sigma_p, s_sigma_m=s2_sigma_m)
+                s2_data, s2_err_p, s2_err_m = arcsinh_scaling(s2_data, arcsinh_const, order, s_err_p=s2_err_p, s_err_m=s2_err_m)
 
             if s2_f is None:
                 s2_f = self.freq[2].copy() * f_scale
             if broken_lims is not None:
-                s2_f, diffs, broken_lims_scaled = conneect_broken_axis(s2_f, broken_lims, f_scale)
+                s2_f, diffs, broken_lims_scaled = connect_broken_axis(s2_f, broken_lims, f_scale)
 
             if f_max is None:
                 f_max = s2_f.max()
@@ -1315,14 +1315,14 @@ class Spectrum:
                 f_min = s2_f.min()
             ax[0].set_xlim([f_min, f_max])
 
-            if plot_error and (s2_sigma is not None or self.S_sigma[2] is not None):
+            if plot_error and (s2_err is not None or self.S_err[2] is not None):
                 for i in range(0, 5):
-                    ax[0].plot(s2_f, s2_sigma_p[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
+                    ax[0].plot(s2_f, s2_err_p[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
                                linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
                     #  labelLines(ax[0].get_lines(), zorder=2.5, align=False, fontsize=14)
                     for i in range(0, 5):
-                        ax[0].plot(s2_f, s2_sigma_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
+                        ax[0].plot(s2_f, s2_err_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
                                    linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
             ax[0].plot(s2_f, s2_data, color=[0, 0.5, 0.9], linewidth=3)
@@ -1366,15 +1366,15 @@ class Spectrum:
         if self.S[3] is not None and not self.S[3].shape[0] == 0:
 
             order = 3
-            s3_data, s3_sigma = self.import_spec_data_for_plotting(s3_data, s3_sigma, order, imag_plot)
+            s3_data, s3_err = self.import_spec_data_for_plotting(s3_data, s3_err, order, imag_plot)
 
             s3_data *= f_scale ** 2
-            s3_sigma *= f_scale ** 2
+            s3_err *= f_scale ** 2
 
-            if s3_sigma is not None or self.S_sigma[3] is not None:
-                s3_sigma *= sigma
+            if s3_err is not None or self.S_err[3] is not None:
+                s3_err *= sigma
             if arcsinh_plot:
-                s3_data, s3_sigma = arcsinh_scaling(s3_data, arcsinh_const, order, s_sigma=s3_sigma)
+                s3_data, s3_err = arcsinh_scaling(s3_data, arcsinh_const, order, s_err=s3_err)
 
             if s3_f is None:
                 s3_f = self.freq[3].copy() * f_scale
@@ -1385,13 +1385,13 @@ class Spectrum:
 
             y, x = np.meshgrid(s3_f, s3_f)
             z = s3_data.copy()
-            sigma_matrix = np.zeros_like(z)
-            if s3_sigma is not None or self.S_sigma[3] is not None:
-                sigma_matrix[np.abs(s3_data) < s3_sigma] = 1
+            err_matrix = np.zeros_like(z)
+            if s3_err is not None or self.S_err[3] is not None:
+                err_matrix[np.abs(s3_data) < s3_err] = 1
 
             c = (ax[1]).pcolormesh(x, y, z, cmap=cmap, norm=norm, shading='auto')
-            if s3_sigma is not None or self.S_sigma[3] is not None:
-                c1 = (ax[1]).pcolormesh(x, y, sigma_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
+            if s3_err is not None or self.S_err[3] is not None:
+                c1 = (ax[1]).pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
             if contours:
                 (ax[1]).contour(x, y, gaussian_filter(z, s3_filter), 15, colors='k', linewidths=0.7)
             if f_max is None:
@@ -1415,22 +1415,22 @@ class Spectrum:
         if self.S[4] is not None and not self.S[4].shape[0] == 0:
 
             order = 4
-            s4_data, s4_sigma = self.import_spec_data_for_plotting(s4_data, s4_sigma, order, imag_plot)
+            s4_data, s4_err = self.import_spec_data_for_plotting(s4_data, s4_err, order, imag_plot)
 
             s4_data *= f_scale ** 3
 
-            if s4_sigma is not None or self.S_sigma[4] is not None:
-                s4_sigma *= sigma
-                s4_sigma *= f_scale ** 3
+            if s4_err is not None or self.S_err[4] is not None:
+                s4_err *= sigma
+                s4_err *= f_scale ** 3
 
             if arcsinh_plot:
-                s4_data, s4_sigma = arcsinh_scaling(s4_data, arcsinh_const, order, s_sigma=s4_sigma)
+                s4_data, s4_err = arcsinh_scaling(s4_data, arcsinh_const, order, s_err=s4_err)
 
             if s4_f is None:
                 s4_f = self.freq[4].copy() * f_scale
 
             if broken_lims is not None:
-                s4_f, diffs, broken_lims_scaled = conneect_broken_axis(s4_f, broken_lims, f_scale)
+                s4_f, diffs, broken_lims_scaled = connect_broken_axis(s4_f, broken_lims, f_scale)
 
             vmin = np.min(s4_data)
             vmax = np.max(s4_data)
@@ -1438,13 +1438,13 @@ class Spectrum:
 
             y, x = np.meshgrid(s4_f, s4_f)
             z = s4_data.copy()
-            sigma_matrix = np.zeros_like(z)
-            if s4_sigma is not None or self.S_sigma[4] is not None:
-                sigma_matrix[np.abs(s4_data) < s4_sigma] = 1
+            err_matrix = np.zeros_like(z)
+            if s4_err is not None or self.S_err[4] is not None:
+                err_matrix[np.abs(s4_data) < s4_err] = 1
 
             c = (ax[2]).pcolormesh(x, y, z, cmap=cmap, norm=norm, zorder=1, shading='auto')
-            if s4_sigma is not None or self.S_sigma[4] is not None:
-                c1 = (ax[2]).pcolormesh(x, y, sigma_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
+            if s4_err is not None or self.S_err[4] is not None:
+                c1 = (ax[2]).pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
 
             if contours:
                 (ax[2]).contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)

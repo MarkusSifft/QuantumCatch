@@ -384,6 +384,16 @@ def arcsinh_scaling(s_data, arcsinh_const, order, s_sigma=None, s_sigma_p=None, 
         return s_data, s_sigma
 
 
+def conneect_broken_axis(s_f, broken_lims, f_scale):
+    broken_lims_scaled = [(f_scale * i, f_scale * j) for i, j in broken_lims]
+    diffs = []
+    for i in range(len(broken_lims_scaled) - 1):
+        diff = broken_lims_scaled[i + 1][0] - broken_lims_scaled[i][1]
+        diffs.append(diff)
+        s_f[s_f > broken_lims_scaled[i][1]] -= diff
+    return s_f, diffs, broken_lims_scaled
+
+
 class Spectrum:
     """
     Spectrum class stores signal data, calculated spectra and error of spectral values.
@@ -1297,13 +1307,7 @@ class Spectrum:
             if s2_f is None:
                 s2_f = self.freq[2].copy() * f_scale
             if broken_lims is not None:
-                broken_lims_scaled = [(f_scale * i, f_scale * j) for i, j in broken_lims]
-                s2_f_original = s2_f.copy()
-                diffs = []
-                for i in range(len(broken_lims_scaled) - 1):
-                    diff = broken_lims_scaled[i + 1][0] - broken_lims_scaled[i][1]
-                    diffs.append(diff)
-                    s2_f[s2_f > broken_lims_scaled[i][1]] -= diff
+                s2_f, diffs, broken_lims_scaled = conneect_broken_axis(s2_f, broken_lims, f_scale)
 
             if f_max is None:
                 f_max = s2_f.max()
@@ -1426,12 +1430,7 @@ class Spectrum:
                 s4_f = self.freq[4].copy() * f_scale
 
             if broken_lims is not None:
-                broken_lims_scaled = [(f_scale * i, f_scale * j) for i, j in broken_lims]
-                diffs = []
-                for i in range(len(broken_lims_scaled) - 1):
-                    diff = broken_lims_scaled[i + 1][0] - broken_lims_scaled[i][1]
-                    diffs.append(diff)
-                    s4_f[s4_f > broken_lims_scaled[i][1]] -= diff
+                s4_f, diffs, broken_lims_scaled = conneect_broken_axis(s4_f, broken_lims, f_scale)
 
             vmin = np.min(s4_data)
             vmax = np.max(s4_data)

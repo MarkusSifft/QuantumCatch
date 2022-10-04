@@ -47,7 +47,7 @@ class FitTelegraph(Spectrum):
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
-        t_for_one_spec = self.delta_t * self.m * self.window_size
+        t_for_one_spec = self.delta_t * self.m * self.window_points
         time_axis = np.arange(0, self.S_errs[2].shape[0] * t_for_one_spec, t_for_one_spec)[::filter]
 
         plt.errorbar(time_axis, gamma_ins, yerr=gamma_ins_err, label=r'$\gamma_{in}$')

@@ -422,7 +422,7 @@ class Spectrum:
 
     Attributes
     ----------
-    window_width : float
+    T_window : float
         (Experimental) Length of window in second used for the calculation of
         the Poisson spectra and mini binned spectra
     path : str
@@ -434,7 +434,7 @@ class Spectrum:
 
     def __init__(self, path=None, group_key=None, dataset=None, dt=None, data=None, corr_data=None,
                  corr_path=None, corr_group_key=None, corr_dataset=None):
-        self.window_width = None
+        self.T_window = None
         self.path = path
         self.freq = [None, None, None, None, None]
         self.f_max = 0
@@ -450,7 +450,7 @@ class Spectrum:
         self.group_key = group_key
         self.dataset = dataset
         self.S_intergral = []
-        self.window_size = None
+        self.window_points = None
         self.m = {2: None, 3: None, 4: None}
         self.m_var = {2: None, 3: None, 4: None}
         self.m_stationarity = {2: None, 3: None, 4: None}
@@ -474,16 +474,20 @@ class Spectrum:
         self.S_stationarity_temp = None
         pickle_save(path, self)
 
-    def stationarity_plot(self, contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,
-                          normalize='area'):
+    def stationarity_plot(self, f_unit='Hz', t_unit='s', contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,
+                          normalize='area', f_scale=1):
         """Plots the saved spectra versus time to make changes over time visible"""
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(24, 7))
         plt.rc('text', usetex=False)
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
-        s2_array = np.real(self.S_stationarity[2])
+        if self.f_lists[2] is not None:
+            broken_lims = []
+            for part in self.f_lists[2]:
+                broken_lims.append((part[0], part[-1]))
 
+        s2_array = np.real(self.S_stationarity[2]).T.copy()
         s2_array = gaussian_filter(s2_array, sigma=[0, s2_filter])
 
         if normalize == 'area':
@@ -491,23 +495,21 @@ class Spectrum:
         elif normalize == 'zero':
             s2_array /= np.max(s2_array, axis=0)
 
-        s2_array = s2_array.T
-
         if arcsinh_plot:
-            x_max = np.max(np.abs(s2_array))
-            alpha = 1 / (x_max * arcsinh_const)
-            s2_array = np.arcsinh(alpha * s2_array) / alpha
-
-        s2_f = self.freq[2]
+            s2_array, _, _ = arcsinh_scaling(s2_array, arcsinh_const, order=2)
 
         vmin = np.min(s2_array)
         vmax = np.max(s2_array)
 
-        t_for_one_spec = self.window_width * self.m[2] * self.m_stationarity[2]
-        time_axis = np.arange(0, s2_array.shape[0] * t_for_one_spec, t_for_one_spec)
-        print(f'One spectrum calculated from a {t_for_one_spec * s2_filter / 60} min measurement')
+        t_for_one_spec = self.T_window * self.m[2] * self.m_stationarity[2]
+        time_axis = np.arange(0, s2_array.shape[1] * t_for_one_spec, t_for_one_spec)
+        print(f'One spectrum calculated from a {t_for_one_spec * s2_filter} ' + t_unit + ' measurement')
 
-        y, x = np.meshgrid(s2_f, time_axis)
+        s2_f = self.freq[2].copy()
+        if broken_lims is not None:
+            s2_f, diffs, broken_lims_scaled = connect_broken_axis(s2_f, broken_lims, f_scale)
+
+        x, y = np.meshgrid(time_axis, s2_f)
 
         c = ax.pcolormesh(x, y, s2_array, cmap='rainbow', vmin=vmin, vmax=vmax)  # norm=norm)
         if contours:
@@ -515,28 +517,26 @@ class Spectrum:
 
         if f_max:
             ax.axis([0, np.max(time_axis), 0, f_max])
-        ax.set_xlabel(r"$t$ (s)", fontdict={'fontsize': 14})
-        ax.set_ylabel(r"$\omega / 2 \pi$ (Hz)", fontdict={'fontsize': 14})
+        ax.set_xlabel(r"$"+t_unit+r"$ (s)", fontdict={'fontsize': 14})
+        ax.set_ylabel(r"$\omega / 2 \pi$ (" + f_unit + r")", fontdict={'fontsize': 14})
         ax.tick_params(axis='both', direction='in')
-        ax.set_title(r'$S^{(2)}_z $ (Hz$^{-1}$) vs $t$',
+        ax.set_title(r'$S^{(2)}_z $ (' + f_unit + r'$^{-1}$) vs $'+t_unit+r'$',
                      fontdict={'fontsize': 16})
         _ = fig.colorbar(c, ax=ax)
 
-    def cgw_old(self, len_y, ones=False):
-        """Calculation of the approximate gaussian confined window"""
+        if broken_lims is not None:
+            xlims = ax.get_xlim()
+            for i, diff in enumerate(diffs):
+                ax.hlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), xlims[0], xlims[1], linestyles='dashed')
 
-        def g(x_):
-            return np.exp(-((x_ - N_window / 2) / (2 * L * sigma_t)) ** 2)
+            ax.set_xlim(xlims)
 
-        x = np.linspace(0, len_y, len_y)
-        L = len(x) + 1
-        N_window = len(x)
-        sigma_t = 0.14
-        window = g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
-        if ones:
-            window = np.ones(len_y)
-        norm = (np.sum(window ** 2) / N_window / self.fs)
-        return window / np.sqrt(norm)
+            y_labels = ax.get_yticks()
+            y_labels = np.array(y_labels)
+            for i, diff in enumerate(diffs):
+                y_labels[y_labels > broken_lims_scaled[i][-1]] += diff
+            y_labels = [str(np.round(i * 1000) / 1000) for i in y_labels]
+            ax.set_yticklabels(y_labels)
 
     def add_random_phase(self, a_w, order, window_size, delta_t, m):
         """Adds a random phase proportional to the frequency to deal with ultra coherent signals"""
@@ -571,9 +571,9 @@ class Spectrum:
 
         if m_stationarity is not None:
             if order == 2:
-                self.S_stationarity_temp[order][:, m_stationarity] = single_spectrum  # .to_ndarray()
+                self.S_stationarity_temp[order][:, stationarity_counter] = single_spectrum  # .to_ndarray()
             else:
-                self.S_stationarity_temp[order][:, :, m_stationarity] = single_spectrum  # .to_ndarray()
+                self.S_stationarity_temp[order][:, :, stationarity_counter] = single_spectrum  # .to_ndarray()
             stationarity_counter += 1
 
             if stationarity_counter % m_stationarity == 0:
@@ -590,19 +590,10 @@ class Spectrum:
                                            af.mean(self.S_errs[order], dim=1) * af.conjg(
                                 af.mean(self.S_errs[order], dim=1))))
 
-                # self.S_err_gpu = np.sqrt(
-                #     m_var / (m_var - 1) * (np.mean(self.S_errs[order] * np.conj(self.S_errs[order]), axis=1) -
-                #                            np.mean(self.S_errs[order], axis=1) * np.conj(
-                #                 np.mean(self.S_errs[order], axis=1))))
-
             else:
                 self.S_err_gpu = af.sqrt(m_var / (m_var - 1) * (
                         af.mean(self.S_errs[order] * af.conjg(self.S_errs[order]), dim=2) -
                         af.mean(self.S_errs[order], dim=2) * af.conjg(af.mean(self.S_errs[order], dim=2))))
-
-                # self.S_err_gpu = np.sqrt(m_var / (m_var - 1) * (
-                #         np.mean(self.S_errs[order] * np.conj(self.S_errs[order]), axis=2) -
-                #         np.mean(self.S_errs[order], axis=2) * np.conj(np.mean(self.S_errs[order], axis=2))))
 
             if self.S_err[order] is None:
                 self.S_err[order] = self.S_err_gpu.to_ndarray()
@@ -647,7 +638,7 @@ class Spectrum:
         plt.show()
         return t, t_main, overlap_s2, overlap_s3, overlap_s4
 
-    def calc_spec(self, order, window_size, f_max, backend='opencl', scaling_factor=1,
+    def calc_spec(self, order, T_window, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
                   break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False, dt=None, data=None,
                   rect_win=False, m_stationarity=None):
@@ -660,8 +651,7 @@ class Spectrum:
 
         n_chunks = 0
         af.set_backend(backend)
-        window_size = int(window_size)
-        self.window_size = window_size
+        self.T_window = T_window
         self.m[order] = m
         self.m_var[order] = m_var
         self.m_stationarity[order] = m_stationarity
@@ -692,31 +682,35 @@ class Spectrum:
         self.delta_t = delta_t
         corr_shift /= delta_t  # conversion of shift in seconds to shift in dt
 
+        window_points = int(np.round(T_window / delta_t))
+        print('Actual T_window:', window_points * delta_t)
+        self.window_points = window_points
+
         if self.corr_data is None and not corr_default == 'white_noise' and self.corr_path is not None:
             corr_data, _ = import_data(self.corr_data_path, self.corr_group_key, self.corr_dataset)
         elif self.corr_data is not None:
             corr_data = self.corr_data
 
         n_data_points = main_data.shape[0]
-        n_windows = int(np.floor(n_data_points / (m * window_size)))
+        n_windows = int(np.floor(n_data_points / (m * window_points)))
         n_windows = int(
-            np.floor(n_windows - corr_shift / (m * window_size)))  # number of windows is reduced if corr shifted
+            np.floor(n_windows - corr_shift / (m * window_points)))  # number of windows is reduced if corr shifted
 
         for i in tqdm_notebook(np.arange(0, n_windows - 1 + window_shift, window_shift), leave=False):
-            chunk = scaling_factor * main_data[int(i * (window_size * m)): int((i + 1) * (window_size * m))]
+            chunk = scaling_factor * main_data[int(i * (window_points * m)): int((i + 1) * (window_points * m))]
 
             if not self.first_frame_plotted:
-                self.plot_first_frame(chunk, delta_t, window_size)
+                self.plot_first_frame(chunk, delta_t, window_points)
                 self.first_frame_plotted = True
 
-            chunk_gpu = to_gpu(chunk.reshape((window_size, 1, m), order='F'))
+            chunk_gpu = to_gpu(chunk.reshape((window_points, 1, m), order='F'))
             if self.corr_data == 'white_noise':  # use white noise to check for false correlations
-                chunk_corr = np.random.randn(window_size, 1, m)
+                chunk_corr = np.random.randn(window_points, 1, m)
                 chunk_corr_gpu = to_gpu(chunk_corr)
             elif self.corr_data is not None:
-                chunk_corr = scaling_factor * corr_data[int(i * (window_size * m) + corr_shift): int(
-                    (i + 1) * (window_size * m) + corr_shift)]
-                chunk_corr_gpu = to_gpu(chunk_corr.reshape((window_size, 1, m), order='F'))
+                chunk_corr = scaling_factor * corr_data[int(i * (window_points * m) + corr_shift): int(
+                    (i + 1) * (window_points * m) + corr_shift)]
+                chunk_corr_gpu = to_gpu(chunk_corr.reshape((window_points, 1, m), order='F'))
 
             if n_chunks == 0:
                 if verbose:
@@ -728,7 +722,7 @@ class Spectrum:
             # --------- Calculate sampling rate and window function-----------
             if self.fs is None:
                 self.fs = 1 / delta_t
-                freq_all_freq = rfftfreq(int(window_size), delta_t)
+                freq_all_freq = rfftfreq(int(window_points), delta_t)
                 if verbose:
                     print('Maximum frequency:', np.max(freq_all_freq))
 
@@ -745,9 +739,9 @@ class Spectrum:
                     self.freq[order] = freq_all_freq[f_mask]
                 if verbose:
                     print('Number of points: ' + str(len(self.freq[order])))
-                single_window, _ = cgw(int(window_size), self.fs)
+                single_window, _ = cgw(int(window_points), self.fs)
 
-                window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_size, 1, m), order='F'))
+                window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_points, 1, m), order='F'))
 
                 if order == 2:
                     self.S_errs[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
@@ -768,7 +762,7 @@ class Spectrum:
             if order == 2:
                 if rect_win:
                     ones = to_gpu(
-                        np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
+                        np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_points, 1, m), order='F'))
                     a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1)
                 else:
                     a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1)
@@ -780,7 +774,7 @@ class Spectrum:
                     a_w_all = filter_mat * a_w_all
 
                 if random_phase:
-                    a_w_all = self.add_random_phase(a_w_all, order, window_size, delta_t, m)
+                    a_w_all = self.add_random_phase(a_w_all, order, window_points, delta_t, m)
 
                 a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
@@ -800,7 +794,7 @@ class Spectrum:
             elif order > 2:
                 if rect_win:
                     ones = to_gpu(
-                        np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_size, 1, m), order='F'))
+                        np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_points, 1, m), order='F'))
                     a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1)
                 else:
                     a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1)
@@ -812,7 +806,7 @@ class Spectrum:
                     a_w_all = filter_mat * a_w_all
 
                 if random_phase:
-                    a_w_all = self.add_random_phase(a_w_all, order, window_size, delta_t, m)
+                    a_w_all = self.add_random_phase(a_w_all, order, window_points, delta_t, m)
 
                 if order == 3:
                     a_w1 = af.lookup(a_w_all, af.Array(list(range(f_max_ind // 2))), dim=0)
@@ -830,7 +824,7 @@ class Spectrum:
                     if self.corr_data is not None:
                         a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
                         if random_phase:
-                            a_w_all_corr = self.add_random_phase(a_w_all_corr, order, window_size, delta_t, m)
+                            a_w_all_corr = self.add_random_phase(a_w_all_corr, order, window_points, delta_t, m)
 
                         a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
                     else:
@@ -851,7 +845,7 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_err[order]
 
-    def calc_spec_poisson(self, order_in, window_width, f_max, f_lists=None, backend='opencl', m=10, m_var=10,
+    def calc_spec_poisson(self, order_in, T_window, f_max, f_lists=None, backend='opencl', m=10, m_var=10,
                           m_stationarity=None, data=None, full_import=False, scale_data_and_dt=1,
                           sigma_t=0.14, rect_win=False):
         """
@@ -874,14 +868,14 @@ class Spectrum:
             width of approximate confined gaussian windows
         order_in: array of int, str ('all')
             orders of the spectra to be calculated, e.g., [2,4]
-        window_width: int
-            spectra for m windows of window_size is calculated
+        T_window: int
+            spectra for m windows of window_points is calculated
         f_max: float
             maximum frequency of the spectra to be calculated
         backend: str
             backend for arrayfire
         m: int
-            spectra for m windows of window_size is calculated
+            spectra for m windows of window_points is calculated
         data: array
             timestamps of clicks
         Returns
@@ -898,9 +892,9 @@ class Spectrum:
             orders = order_in
 
         af.set_backend(backend)
-        # window_width = int(window_width)
+        # T_window = int(T_window)
         self.fs = f_max
-        self.window_width = window_width
+        self.T_window = T_window
 
         if f_lists is not None:
             f_list = np.hstack(f_lists)
@@ -932,7 +926,7 @@ class Spectrum:
             delta_t *= scale_data_and_dt
 
         self.delta_t = delta_t
-        f_min = 1 / window_width
+        f_min = 1 / T_window
         if f_list is None:
             f_list = np.arange(0, f_max + f_min, f_min)
 
@@ -948,7 +942,7 @@ class Spectrum:
         f_max_ind = len(f_list)
         w_list = 2 * np.pi * f_list
         w_list_gpu = to_gpu(w_list)
-        n_windows = int(main_data[-1] // (window_width * m))
+        n_windows = int(main_data[-1] // (T_window * m))
 
         print('number of points:', f_list.shape[0])
         print('delta f:', f_list[1] - f_list[0])
@@ -978,7 +972,7 @@ class Spectrum:
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
             for i in range(m):
-                end_index = find_end_index(main_data, start_index, window_width, m, frame_number, i)
+                end_index = find_end_index(main_data, start_index, T_window, m, frame_number, i)
                 if end_index == -1:
                     enough_data = False
                     break
@@ -994,12 +988,12 @@ class Spectrum:
             a_w_all_gpu = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))
             for i, t_clicks in enumerate(windows):
 
-                t_clicks_minus_start = t_clicks - i * window_width - m * window_width * frame_number
+                t_clicks_minus_start = t_clicks - i * T_window - m * T_window * frame_number
 
                 if rect_win:
                     t_clicks_windowed = np.ones_like(t_clicks_minus_start)
                 else:
-                    t_clicks_windowed, single_window, N_window_full = apply_window(window_width,
+                    t_clicks_windowed, single_window, N_window_full = apply_window(T_window,
                                                                                    t_clicks_minus_start,
                                                                                    1 / delta_t, sigma_t=sigma_t)
 
@@ -1013,7 +1007,7 @@ class Spectrum:
 
                 a_w_all_gpu[:, 0, i] = af.matmul(temp1, t_clicks_windowed_gpu)
 
-            delta_t = window_width / N_window_full
+            delta_t = T_window / N_window_full
 
             for order in orders:
                 if order == 2:
@@ -1067,13 +1061,13 @@ class Spectrum:
         order: int
             order of the calculated spectrum
         window_width: int
-            spectra for m windows of window_size is calculated
+            spectra for m windows of window_points is calculated
         f_max: float
             maximum frequency of the spectra to be calculated
         backend: str
             backend for arrayfire
         m: int
-            spectra for m windows of window_size is calculated
+            spectra for m windows of window_points is calculated
         data: array
             timestamps of clicks
         Returns
@@ -1085,10 +1079,10 @@ class Spectrum:
             self.data = data
 
         af.set_backend(backend)
-        # window_width = int(window_width)
+        # T_window = int(T_window)
         # self.fs = f_max
         self.fs = None
-        self.window_width = window_width
+        self.T_window = window_width
         self.m = m
         self.freq[order] = None
         self.S[order] = None
@@ -1246,28 +1240,6 @@ class Spectrum:
 
         return self.freq[order], self.S[order], self.S_err[order]
 
-    def apply_window_old(self, window_width, t_clicks, fs, sigma_t=0.14, ones=False):
-        """Calculation of the approximate gaussian confined window"""
-
-        def g(x_):
-            return np.exp(-((x_ - N_window / 2) / (2 * L * sigma_t)) ** 2)
-
-        dt = 1 / fs
-        x = t_clicks / dt
-
-        len_y = window_width / dt
-        L = len_y + 1
-        N_window = len_y
-        sigma_t = 0.14
-        window = g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
-        if ones:
-            window = np.ones(len_y)
-
-        x = np.linspace(0, len_y, len_y)
-        window_full = g(x) - (g(-0.5) * (g(x + L) + g(x - L))) / (g(-0.5 + L) + g(-0.5 - L))
-        norm = (np.sum(window_full ** 2) / N_window / fs)
-        return window / np.sqrt(norm), window / np.sqrt(norm)
-
     def import_spec_data_for_plotting(self, s_data, s_err, order, imag_plot):
         if imag_plot:
             s_data = np.imag(self.S[order]).copy() if s_data is None else np.imag(s_data).copy()
@@ -1368,7 +1340,7 @@ class Spectrum:
                 x_labels = [str(np.round(i * 1000) / 1000) for i in x_labels]
                 ax[0].set_xticklabels(x_labels)
 
-        # -------- S3 ---------
+        # -------- S3 and S4 ---------
 
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
         color_array = np.array([[0., 0., 0., 0.], [0., 0.5, 0., green_alpha]])
@@ -1419,52 +1391,53 @@ class Spectrum:
                 if s_err_plot[order] is not None or self.S_err[order] is not None:
                     err_matrix[np.abs(s_data_plot[order]) < s_err_plot[order]] = 1
 
-                c = ax[order - 2].pcolormesh(x, y, z, cmap=cmap, norm=norm, zorder=1, shading='auto')
+                axis = order - 2
+                c = ax[axis].pcolormesh(x, y, z, cmap=cmap, norm=norm, zorder=1, shading='auto')
                 if s_err_plot[order] is not None or self.S_err[order] is not None:
-                    c1 = ax[order - 2].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
+                    c1 = ax[axis].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
 
                 if contours:
-                    ax[order - 2].contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)
+                    ax[axis].contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)
 
                 if f_max is None:
                     f_max = s_f_plot[order].max()
                 if f_min is None:
                     f_min = s_f_plot[order].min()
-                ax[order - 2].axis([f_min, f_max, f_min, f_max])
+                ax[axis].axis([f_min, f_max, f_min, f_max])
 
-                ax[order - 2].set_xlabel(r"$\omega_1 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
-                ax[order - 2].set_ylabel(r"$\omega_2 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
-                ax[order - 2].tick_params(axis='both', direction='in')
+                ax[axis].set_xlabel(r"$\omega_1 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
+                ax[axis].set_ylabel(r"$\omega_2 / 2 \pi$ (" + unit + r")", fontdict={'fontsize': 14})
+                ax[axis].tick_params(axis='both', direction='in')
 
                 if green_alpha == 0:
-                    ax[order - 2].set_title(
+                    ax[axis].set_title(
                         r'$S^{(' + f'{order}' + r')}_z $ (' + unit + r'$^{-' + f'{order - 1}' + r'}$)',
                         fontdict={'fontsize': 16})
                 else:
-                    ax[order - 2].set_title(
+                    ax[axis].set_title(
                         r'$S^{(' + f'{order}' + r')}_z $ (' + unit + r'$^{-' + f'{order - 1}' + r'}$) (%i$\sigma$ confidence)' % (
                             sigma),
                         fontdict={'fontsize': 16})
-                cbar = fig.colorbar(c, ax=(ax[order - 2]))
+                cbar = fig.colorbar(c, ax=(ax[axis]))
 
                 if broken_lims is not None:
-                    ylims = ax[order - 2].get_ylim()
+                    ylims = ax[axis].get_ylim()
                     for i, diff in enumerate(diffs):
-                        ax[order - 2].vlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1],
+                        ax[axis].vlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1],
                                              linestyles='dashed')
-                        ax[order - 2].hlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1],
+                        ax[axis].hlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1],
                                              linestyles='dashed')
 
-                    ax[order - 2].set_ylim(ylims)
-                    ax[order - 2].set_xlim(ylims)
+                    ax[axis].set_ylim(ylims)
+                    ax[axis].set_xlim(ylims)
 
-                    x_labels = ax[order - 2].get_xticks()
+                    x_labels = ax[axis].get_xticks()
                     x_labels = np.array(x_labels)
                     for i, diff in enumerate(diffs):
                         x_labels[x_labels > broken_lims_scaled[i][-1]] += diff
                     x_labels = [str(np.round(i * 1000) / 1000) for i in x_labels]
-                    ax[order - 2].set_xticklabels(x_labels)
-                    ax[order - 2].set_yticklabels(x_labels)
+                    ax[axis].set_xticklabels(x_labels)
+                    ax[axis].set_yticklabels(x_labels)
 
         plt.show()
 

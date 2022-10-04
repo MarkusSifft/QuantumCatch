@@ -290,8 +290,8 @@ def c4(a_w, a_w_corr, m):
 
 
 @njit
-def find_end_index(data, start_index, window_width, m, frame_number, i):
-    end_time = window_width * (m * frame_number + (i + 1))
+def find_end_index(data, start_index, T_window, m, frame_number, i):
+    end_time = T_window * (m * frame_number + (i + 1))
 
     if data[start_index] > end_time:
         return start_index
@@ -843,7 +843,7 @@ class Spectrum:
         return self.freq[order], self.S[order], self.S_err[order]
 
     def calc_spec_poisson(self, order_in, T_window, f_max, f_lists=None, backend='opencl', m=10, m_var=10,
-                          m_stationarity=None, data=None, full_import=False, scale_data_and_dt=1,
+                          m_stationarity=None, data=None, full_import=False, scale_t=1,
                           sigma_t=0.14, rect_win=False):
         """
 
@@ -853,7 +853,7 @@ class Spectrum:
             number of spectra to calculate the variance from (should be set as high as possible)
         rect_win: bool
             if true no window function will be applied to the window
-        scale_data_and_dt: float
+        scale_t: float
             scaling factor to scale timestamps and dt (not yet implemented, due to type error)
         full_import: bool
             whether to load all data into RAM (should be set true if possible)
@@ -889,7 +889,6 @@ class Spectrum:
             orders = order_in
 
         af.set_backend(backend)
-        self.fs = f_max
         self.T_window = T_window
 
         if f_lists is not None:
@@ -917,10 +916,7 @@ class Spectrum:
             main_data = self.data
             delta_t = self.dt
 
-        if scale_data_and_dt is not None:
-            main_data *= scale_data_and_dt
-            delta_t *= scale_data_and_dt
-
+        delta_t *= scale_t
         self.delta_t = delta_t
         f_min = 1 / T_window
         if f_list is None:
@@ -938,7 +934,7 @@ class Spectrum:
         f_max_ind = len(f_list)
         w_list = 2 * np.pi * f_list
         w_list_gpu = to_gpu(w_list)
-        n_windows = int(main_data[-1] // (T_window * m))
+        n_windows = int(main_data[-1] * scale_t // (T_window * m))
 
         print('number of points:', f_list.shape[0])
         print('delta f:', f_list[1] - f_list[0])
@@ -968,7 +964,7 @@ class Spectrum:
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []
             for i in range(m):
-                end_index = find_end_index(main_data, start_index, T_window, m, frame_number, i)
+                end_index = find_end_index(main_data, start_index, T_window / scale_t, m, frame_number, i)
                 if end_index == -1:
                     enough_data = False
                     break
@@ -984,17 +980,17 @@ class Spectrum:
             a_w_all_gpu = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))
             for i, t_clicks in enumerate(windows):
 
-                t_clicks_minus_start = t_clicks - i * T_window - m * T_window * frame_number
+                t_clicks_minus_start = t_clicks - i * T_window / scale_t - m * T_window / scale_t * frame_number
 
                 if rect_win:
                     t_clicks_windowed = np.ones_like(t_clicks_minus_start)
                 else:
-                    t_clicks_windowed, single_window, N_window_full = apply_window(T_window,
+                    t_clicks_windowed, single_window, N_window_full = apply_window(T_window / scale_t,
                                                                                    t_clicks_minus_start,
                                                                                    1 / delta_t, sigma_t=sigma_t)
 
                 # ------ GPU --------
-                t_clicks_minus_start_gpu = to_gpu(t_clicks_minus_start)
+                t_clicks_minus_start_gpu = to_gpu(t_clicks_minus_start * scale_t)
                 t_clicks_windowed_gpu = to_gpu(t_clicks_windowed).as_type(af.Dtype.c64)
 
                 temp1 = af.exp(1j * af.matmulNT(w_list_gpu, t_clicks_minus_start_gpu))

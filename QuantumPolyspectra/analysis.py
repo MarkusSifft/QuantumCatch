@@ -37,17 +37,12 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
-from brokenaxes import brokenaxes
 
-try:
-    import arrayfire as af
-    from arrayfire.arith import conjg as conj
-    from arrayfire.arith import sqrt
-    from arrayfire.interop import from_ndarray as to_gpu
-    from arrayfire.signal import fft_r2c
-    from arrayfire.statistics import mean
-except:
-    pass
+import arrayfire as af
+from arrayfire.arith import conjg as conj
+from arrayfire.interop import from_ndarray as to_gpu
+from arrayfire.signal import fft_r2c
+from arrayfire.statistics import mean
 
 from matplotlib.colors import LinearSegmentedColormap
 from numba import njit
@@ -103,6 +98,8 @@ def import_data(path, group_key, dataset, full_import=False):
 
     Parameters
     ----------
+    full_import: bool
+        If true all data is loaded in RAM (recommended if possible)
     path : str
         Path for the data to be saved at
     group_key : str
@@ -361,9 +358,6 @@ def apply_window(window_width, t_clicks, fs, sigma_t=0.14):
     # window_full, norm = cgw(N_window_full, 1 / dt_full, ones=ones)
     window_full, norm = cgw(N_window_full, 1 / dt_full)
 
-    x_full = np.linspace(0, N_window_full, N_window_full)
-    arr_full = x_full * dt_full
-
     return window / np.sqrt(norm), window_full, N_window_full
 
 
@@ -394,6 +388,26 @@ def connect_broken_axis(s_f, broken_lims, f_scale):
     return s_f, diffs, broken_lims_scaled
 
 
+def add_random_phase(a_w, order, window_size, delta_t, m):
+    """Adds a random phase proportional to the frequency to deal with ultra coherent signals"""
+    random_factors = np.random.uniform(high=window_size * delta_t, size=m)
+    freq_all_freq = rfftfreq(int(window_size), delta_t)
+    freq_mat = np.tile(np.array([freq_all_freq]).T, m)
+    factors = np.exp(1j * 2 * np.pi * freq_mat * random_factors)
+    factors = factors.reshape(a_w.shape)
+    factors_gpu = to_gpu(factors)
+    a_w_phased = a_w * factors_gpu
+    return a_w_phased
+
+
+def plot_first_frame(chunk, delta_t, window_size):
+    first_frame = chunk[:window_size]
+    t = np.arange(0, len(first_frame) * delta_t, delta_t)
+    plt.figure(figsize=(14, 3))
+    plt.plot(t, first_frame)
+    plt.show()
+
+
 class Spectrum:
     """
     Spectrum class stores signal data, calculated spectra and error of spectral values.
@@ -410,8 +424,8 @@ class Spectrum:
     dt : float
         Inverse sampling rate of signal. Use of signal is provided as numpy array as parameter "data"
     data : array
-        Signal to be analyized as Numpy array
-    coor_data : array
+        Signal to be analyzed as Numpy array
+    corr_data : array
         Second signal used as correlation data as Numpy array
     corr_path : str
         Path to h5 file with stored second signal for correlation
@@ -474,7 +488,8 @@ class Spectrum:
         self.S_stationarity_temp = None
         pickle_save(path, self)
 
-    def stationarity_plot(self, f_unit='Hz', t_unit='s', contours=False, s2_filter=0, arcsinh_plot=False, arcsinh_const=1e-4, f_max=None,
+    def stationarity_plot(self, f_unit='Hz', t_unit='s', contours=False, s2_filter=0, arcsinh_plot=False,
+                          arcsinh_const=1e-4, f_max=None,
                           normalize='area', f_scale=1):
         """Plots the saved spectra versus time to make changes over time visible"""
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(24, 7))
@@ -517,10 +532,10 @@ class Spectrum:
 
         if f_max:
             ax.axis([0, np.max(time_axis), 0, f_max])
-        ax.set_xlabel(r"$"+t_unit+r"$ (s)", fontdict={'fontsize': 14})
+        ax.set_xlabel(r"$" + t_unit + r"$ (s)", fontdict={'fontsize': 14})
         ax.set_ylabel(r"$\omega / 2 \pi$ (" + f_unit + r")", fontdict={'fontsize': 14})
         ax.tick_params(axis='both', direction='in')
-        ax.set_title(r'$S^{(2)}_z $ (' + f_unit + r'$^{-1}$) vs $'+t_unit+r'$',
+        ax.set_title(r'$S^{(2)}_z $ (' + f_unit + r'$^{-1}$) vs $' + t_unit + r'$',
                      fontdict={'fontsize': 16})
         _ = fig.colorbar(c, ax=ax)
 
@@ -538,24 +553,6 @@ class Spectrum:
             y_labels = [str(np.round(i * 1000) / 1000) for i in y_labels]
             ax.set_yticklabels(y_labels)
 
-    def add_random_phase(self, a_w, order, window_size, delta_t, m):
-        """Adds a random phase proportional to the frequency to deal with ultra coherent signals"""
-        random_factors = np.random.uniform(high=window_size * delta_t, size=m)
-        freq_all_freq = rfftfreq(int(window_size), delta_t)
-        freq_mat = np.tile(np.array([freq_all_freq]).T, m)
-        factors = np.exp(1j * 2 * np.pi * freq_mat * random_factors)
-        factors = factors.reshape(a_w.shape)
-        factors_gpu = to_gpu(factors)
-        a_w_phased = a_w * factors_gpu
-        return a_w_phased
-
-    def plot_first_frame(self, chunk, delta_t, window_size):
-        first_frame = chunk[:window_size]
-        t = np.arange(0, len(first_frame) * delta_t, delta_t)
-        plt.figure(figsize=(14, 3))
-        plt.plot(t, first_frame)
-        plt.show()
-
     def store_single_spectrum(self, single_spectrum, order, err_counter, m_var, stationarity_counter, m_stationarity):
 
         if self.S_gpu[order] is None:
@@ -564,16 +561,16 @@ class Spectrum:
             self.S_gpu[order] += single_spectrum
 
         if order == 2:
-            self.S_errs[order][:, err_counter] = single_spectrum  # .to_ndarray()
+            self.S_errs[order][:, err_counter] = single_spectrum
         else:
-            self.S_errs[order][:, :, err_counter] = single_spectrum  # .to_ndarray()
+            self.S_errs[order][:, :, err_counter] = single_spectrum
         err_counter += 1
 
         if m_stationarity is not None:
             if order == 2:
-                self.S_stationarity_temp[order][:, stationarity_counter] = single_spectrum  # .to_ndarray()
+                self.S_stationarity_temp[order][:, stationarity_counter] = single_spectrum
             else:
-                self.S_stationarity_temp[order][:, :, stationarity_counter] = single_spectrum  # .to_ndarray()
+                self.S_stationarity_temp[order][:, :, stationarity_counter] = single_spectrum
             stationarity_counter += 1
 
             if stationarity_counter % m_stationarity == 0:
@@ -634,7 +631,7 @@ class Spectrum:
         if not imag:
             plt.title('real part')
         else:
-            plt.title('imaginalry part')
+            plt.title('imaginary part')
         plt.show()
         return t, t_main, overlap_s2, overlap_s3, overlap_s4
 
@@ -700,7 +697,7 @@ class Spectrum:
             chunk = scaling_factor * main_data[int(i * (window_points * m)): int((i + 1) * (window_points * m))]
 
             if not self.first_frame_plotted:
-                self.plot_first_frame(chunk, delta_t, window_points)
+                plot_first_frame(chunk, delta_t, window_points)
                 self.first_frame_plotted = True
 
             chunk_gpu = to_gpu(chunk.reshape((window_points, 1, m), order='F'))
@@ -774,7 +771,7 @@ class Spectrum:
                     a_w_all = filter_mat * a_w_all
 
                 if random_phase:
-                    a_w_all = self.add_random_phase(a_w_all, order, window_points, delta_t, m)
+                    a_w_all = add_random_phase(a_w_all, order, window_points, delta_t, m)
 
                 a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
 
@@ -806,7 +803,7 @@ class Spectrum:
                     a_w_all = filter_mat * a_w_all
 
                 if random_phase:
-                    a_w_all = self.add_random_phase(a_w_all, order, window_points, delta_t, m)
+                    a_w_all = add_random_phase(a_w_all, order, window_points, delta_t, m)
 
                 if order == 3:
                     a_w1 = af.lookup(a_w_all, af.Array(list(range(f_max_ind // 2))), dim=0)
@@ -824,7 +821,7 @@ class Spectrum:
                     if self.corr_data is not None:
                         a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
                         if random_phase:
-                            a_w_all_corr = self.add_random_phase(a_w_all_corr, order, window_points, delta_t, m)
+                            a_w_all_corr = add_random_phase(a_w_all_corr, order, window_points, delta_t, m)
 
                         a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
                     else:
@@ -892,7 +889,6 @@ class Spectrum:
             orders = order_in
 
         af.set_backend(backend)
-        # T_window = int(T_window)
         self.fs = f_max
         self.T_window = T_window
 
@@ -1056,6 +1052,14 @@ class Spectrum:
 
         Parameters
         ----------
+        coherent: bool
+            set if second moment should be used instead of cumulant
+        verbose: bool
+            set for more prints
+        rect_win: bool
+            set if no window function should be applied
+        bin_width: int
+            number of points in bin
         sigma_t: float
             width of approximate confined gaussian windows
         order: int
@@ -1315,10 +1319,8 @@ class Spectrum:
                 for i in range(0, 5):
                     ax[0].plot(s_f_plot[order], s2_err_p[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
                                linewidth=2, label=r"$%i\sigma$" % (i + 1))
-
-                    for i in range(0, 5):
-                        ax[0].plot(s_f_plot[order], s2_err_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
-                                   linewidth=2, label=r"$%i\sigma$" % (i + 1))
+                    ax[0].plot(s_f_plot[order], s2_err_m[i], color=[0.1 * i + 0.3, 0.1 * i + 0.3, 0.1 * i + 0.3],
+                               linewidth=2, label=r"$%i\sigma$" % (i + 1))
 
             ax[0].plot(s_f_plot[order], s_data_plot[order], color=[0, 0.5, 0.9], linewidth=3)
 
@@ -1359,7 +1361,18 @@ class Spectrum:
         for order in [3, 4]:
             if self.S[order] is not None and not self.S[order].shape[0] == 0:
 
-                s_data_plot[order], s_err_plot[order] = self.import_spec_data_for_plotting(s4_data, s4_err, order,
+                if order == 3:
+                    s_data = s3_data
+                    s_err = s3_err
+                    s_filter = s3_filter
+                    s_f = s3_f
+                elif order == 4:
+                    s_data = s4_data
+                    s_err = s4_err
+                    s_filter = s4_filter
+                    s_f = s4_f
+
+                s_data_plot[order], s_err_plot[order] = self.import_spec_data_for_plotting(s_data, s_err, order,
                                                                                            imag_plot)
 
                 s_data_plot[order] *= f_scale ** (order - 1)
@@ -1372,10 +1385,10 @@ class Spectrum:
                     s_data_plot[order], s_err_plot[order] = arcsinh_scaling(s_data_plot[order], arcsinh_const, order,
                                                                             s_err=s_err_plot[order])
 
-                if s4_f is None:
+                if s_f is None:
                     s_f_plot[order] = self.freq[order].copy() * f_scale
                 else:
-                    s_f_plot[order] = s4_f * f_scale
+                    s_f_plot[order] = s_f * f_scale
 
                 if broken_lims is not None:
                     s_f_plot[order], diffs, broken_lims_scaled = connect_broken_axis(s_f_plot[order], broken_lims,
@@ -1397,7 +1410,7 @@ class Spectrum:
                     c1 = ax[axis].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
 
                 if contours:
-                    ax[axis].contour(x, y, gaussian_filter(z, s4_filter), colors='k', linewidths=0.7)
+                    ax[axis].contour(x, y, gaussian_filter(z, s_filter), colors='k', linewidths=0.7)
 
                 if f_max is None:
                     f_max = s_f_plot[order].max()
@@ -1418,15 +1431,15 @@ class Spectrum:
                         r'$S^{(' + f'{order}' + r')}_z $ (' + unit + r'$^{-' + f'{order - 1}' + r'}$) (%i$\sigma$ confidence)' % (
                             sigma),
                         fontdict={'fontsize': 16})
-                cbar = fig.colorbar(c, ax=(ax[axis]))
+                fig.colorbar(c, ax=(ax[axis]))
 
                 if broken_lims is not None:
                     ylims = ax[axis].get_ylim()
                     for i, diff in enumerate(diffs):
                         ax[axis].vlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1],
-                                             linestyles='dashed')
+                                        linestyles='dashed')
                         ax[axis].hlines(broken_lims_scaled[i][-1] - sum(diffs[:i]), ylims[0], ylims[1],
-                                             linestyles='dashed')
+                                        linestyles='dashed')
 
                     ax[axis].set_ylim(ylims)
                     ax[axis].set_xlim(ylims)

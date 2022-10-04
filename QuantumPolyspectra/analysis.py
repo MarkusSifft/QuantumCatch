@@ -757,24 +757,28 @@ class Spectrum:
                     elif order == 4:
                         self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
 
+
+            if rect_win:
+                ones = to_gpu(
+                    np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_points, 1, m), order='F'))
+                a_w_all_gpu = fft_r2c(ones * chunk_gpu, dim0=0, scale=1)
+            else:
+                a_w_all_gpu = fft_r2c(window * chunk_gpu, dim0=0, scale=1)
+
+            if filter_func:
+                pre_filter = filter_func(self.freq[2])
+                filter_mat = to_gpu(
+                    np.array(m * [1 / pre_filter]).flatten().reshape((a_w_all_gpu.shape[0], 1, m), order='F'))
+                a_w_all_gpu = filter_mat * a_w_all_gpu
+
+            if random_phase:
+                a_w_all_gpu = add_random_phase(a_w_all_gpu, order, window_points, delta_t, m)
+
+
+
             if order == 2:
-                if rect_win:
-                    ones = to_gpu(
-                        np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_points, 1, m), order='F'))
-                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1)
-                else:
-                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1)
 
-                if filter_func:
-                    pre_filter = filter_func(self.freq[2])
-                    filter_mat = to_gpu(
-                        np.array(m * [1 / pre_filter]).flatten().reshape((a_w_all.shape[0], 1, m), order='F'))
-                    a_w_all = filter_mat * a_w_all
-
-                if random_phase:
-                    a_w_all = add_random_phase(a_w_all, order, window_points, delta_t, m)
-
-                a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
+                a_w = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind))), dim=0)
 
                 if self.corr_data is not None:
                     a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
@@ -790,26 +794,11 @@ class Spectrum:
                                                                                m_stationarity)
 
             elif order > 2:
-                if rect_win:
-                    ones = to_gpu(
-                        np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_points, 1, m), order='F'))
-                    a_w_all = fft_r2c(ones * chunk_gpu, dim0=0, scale=1)
-                else:
-                    a_w_all = fft_r2c(window * chunk_gpu, dim0=0, scale=1)
-
-                if filter_func:
-                    pre_filter = filter_func(self.freq[2])
-                    filter_mat = to_gpu(
-                        np.array(m * [1 / pre_filter]).flatten().reshape((a_w_all.shape[0], 1, m), order='F'))
-                    a_w_all = filter_mat * a_w_all
-
-                if random_phase:
-                    a_w_all = add_random_phase(a_w_all, order, window_points, delta_t, m)
 
                 if order == 3:
-                    a_w1 = af.lookup(a_w_all, af.Array(list(range(f_max_ind // 2))), dim=0)
+                    a_w1 = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind // 2))), dim=0)
                     a_w2 = a_w1
-                    a_w3 = to_gpu(calc_a_w3(a_w_all.to_ndarray(), f_max_ind, m))
+                    a_w3 = to_gpu(calc_a_w3(a_w_all_gpu.to_ndarray(), f_max_ind, m))
                     single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
 
                     err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter,
@@ -817,7 +806,7 @@ class Spectrum:
                                                                                    m_stationarity)
 
                 if order == 4:
-                    a_w = af.lookup(a_w_all, af.Array(list(range(f_max_ind))), dim=0)
+                    a_w = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind))), dim=0)
 
                     if self.corr_data is not None:
                         a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)

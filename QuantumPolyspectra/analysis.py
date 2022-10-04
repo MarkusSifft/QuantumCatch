@@ -294,6 +294,7 @@ def find_end_index(data, start_index, T_window, m, frame_number, i):
     end_time = T_window * (m * frame_number + (i + 1))
 
     if data[start_index] > end_time:
+        print('no clicks in window')
         return start_index
 
     if end_time > data[-1]:
@@ -378,8 +379,8 @@ def arcsinh_scaling(s_data, arcsinh_const, order, s_err=None, s_err_p=None, s_er
         return s_data, s_err
 
 
-def connect_broken_axis(s_f, broken_lims, f_scale):
-    broken_lims_scaled = [(f_scale * i, f_scale * j) for i, j in broken_lims]
+def connect_broken_axis(s_f, broken_lims):
+    broken_lims_scaled = [(i, j) for i, j in broken_lims]
     diffs = []
     for i in range(len(broken_lims_scaled) - 1):
         diff = broken_lims_scaled[i + 1][0] - broken_lims_scaled[i][1]
@@ -490,7 +491,7 @@ class Spectrum:
 
     def stationarity_plot(self, f_unit='Hz', t_unit='s', contours=False, s2_filter=0, arcsinh_plot=False,
                           arcsinh_const=1e-4, f_max=None,
-                          normalize='area', f_scale=1):
+                          normalize=False):
         """Plots the saved spectra versus time to make changes over time visible"""
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(24, 7))
         plt.rc('text', usetex=False)
@@ -522,7 +523,7 @@ class Spectrum:
 
         s2_f = self.freq[2].copy()
         if broken_lims is not None:
-            s2_f, diffs, broken_lims_scaled = connect_broken_axis(s2_f, broken_lims, f_scale)
+            s2_f, diffs, broken_lims_scaled = connect_broken_axis(s2_f, broken_lims)
 
         x, y = np.meshgrid(time_axis, s2_f)
 
@@ -532,7 +533,7 @@ class Spectrum:
 
         if f_max:
             ax.axis([0, np.max(time_axis), 0, f_max])
-        ax.set_xlabel(r"$" + t_unit + r"$ (s)", fontdict={'fontsize': 14})
+        ax.set_xlabel(r"$t$ (" + t_unit + r")", fontdict={'fontsize': 14})
         ax.set_ylabel(r"$\omega / 2 \pi$ (" + f_unit + r")", fontdict={'fontsize': 14})
         ax.tick_params(axis='both', direction='in')
         ax.set_title(r'$S^{(2)}_z $ (' + f_unit + r'$^{-1}$) vs $' + t_unit + r'$',
@@ -935,7 +936,6 @@ class Spectrum:
         w_list = 2 * np.pi * f_list
         w_list_gpu = to_gpu(w_list)
         n_windows = int(main_data[-1] * scale_t // (T_window * m))
-
         print('number of points:', f_list.shape[0])
         print('delta f:', f_list[1] - f_list[0])
 
@@ -1257,7 +1257,7 @@ class Spectrum:
 
         return s_data, s_err
 
-    def poly_plot(self, f_max=None, f_min=None, f_scale=1, unit='Hz', sigma=1, green_alpha=0.3, arcsinh_plot=False,
+    def poly_plot(self, f_max=None, f_min=None, unit='Hz', sigma=1, green_alpha=0.3, arcsinh_plot=False,
                   arcsinh_const=0.02,
                   contours=False, s3_filter=0, s4_filter=0, s2_data=None, s2_err=None, s3_data=None, s3_err=None,
                   s4_data=None, s4_err=None, s2_f=None, s3_f=None, s4_f=None, imag_plot=False, plot_error=True,
@@ -1283,27 +1283,25 @@ class Spectrum:
             s_data_plot[order], s_err_plot[order] = self.import_spec_data_for_plotting(s2_data, s2_err, order,
                                                                                        imag_plot)
 
-            s_data_plot[order] *= f_scale ** (order - 1)
-
             s2_err_p = []
             s2_err_m = []
 
             if s_err_plot[order] is not None or self.S_err[2] is not None:
                 for i in range(0, 5):
-                    s2_err_p.append(s_data_plot[order] + (i + 1) * s_err_plot[order] * f_scale)
-                    s2_err_m.append(s_data_plot[order] - (i + 1) * s_err_plot[order] * f_scale)
+                    s2_err_p.append(s_data_plot[order] + (i + 1) * s_err_plot[order])
+                    s2_err_m.append(s_data_plot[order] - (i + 1) * s_err_plot[order])
 
             if arcsinh_plot:
                 s_data_plot[order], s2_err_p, s2_err_m = arcsinh_scaling(s_data_plot[order], arcsinh_const, order,
                                                                          s_err_p=s2_err_p, s_err_m=s2_err_m)
 
             if s2_f is None:
-                s_f_plot[order] = self.freq[2].copy() * f_scale
+                s_f_plot[order] = self.freq[2].copy()
             else:
-                s_f_plot[order] = s2_f * f_scale
+                s_f_plot[order] = s2_f
 
             if broken_lims is not None:
-                s_f_plot[order], diffs, broken_lims_scaled = connect_broken_axis(s_f_plot[order], broken_lims, f_scale)
+                s_f_plot[order], diffs, broken_lims_scaled = connect_broken_axis(s_f_plot[order], broken_lims)
 
             if f_max is None:
                 f_max = s_f_plot[order].max()
@@ -1371,24 +1369,20 @@ class Spectrum:
                 s_data_plot[order], s_err_plot[order] = self.import_spec_data_for_plotting(s_data, s_err, order,
                                                                                            imag_plot)
 
-                s_data_plot[order] *= f_scale ** (order - 1)
-
                 if s_err_plot[order] is not None or self.S_err[order] is not None:
                     s_err_plot[order] *= sigma
-                    s_err_plot[order] *= f_scale ** (order - 1)
 
                 if arcsinh_plot:
                     s_data_plot[order], s_err_plot[order] = arcsinh_scaling(s_data_plot[order], arcsinh_const, order,
                                                                             s_err=s_err_plot[order])
 
                 if s_f is None:
-                    s_f_plot[order] = self.freq[order].copy() * f_scale
+                    s_f_plot[order] = self.freq[order].copy()
                 else:
-                    s_f_plot[order] = s_f * f_scale
+                    s_f_plot[order] = s_f
 
                 if broken_lims is not None:
-                    s_f_plot[order], diffs, broken_lims_scaled = connect_broken_axis(s_f_plot[order], broken_lims,
-                                                                                     f_scale)
+                    s_f_plot[order], diffs, broken_lims_scaled = connect_broken_axis(s_f_plot[order], broken_lims)
 
                 vmin = np.min(s_data_plot[order])
                 vmax = np.max(s_data_plot[order])

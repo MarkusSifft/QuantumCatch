@@ -447,7 +447,7 @@ class Spectrum:
 
     """
 
-    def __init__(self, path=None, group_key=None, dataset=None, dt=None, data=None, corr_data=None,
+    def __init__(self, path=None, group_key=None, dataset=None, delta_t=None, data=None, corr_data=None,
                  corr_path=None, corr_group_key=None, corr_dataset=None):
         self.T_window = None
         self.path = path
@@ -470,13 +470,12 @@ class Spectrum:
         self.m_var = {2: None, 3: None, 4: None}
         self.m_stationarity = {2: None, 3: None, 4: None}
         self.first_frame_plotted = False
-        self.delta_t = 0
+        self.delta_t = delta_t
         self.data = data
         self.corr_data = corr_data
         self.corr_path = corr_path
         self.corr_group_key = corr_group_key
         self.corr_dataset = corr_dataset
-        self.dt = dt
         self.main_data = None
         self.err_counter = {2: 0, 3: 0, 4: 0}
         self.stationarity_counter = {2: 0, 3: 0, 4: 0}
@@ -605,16 +604,16 @@ class Spectrum:
     def calc_overlap(self, unit, imag=False, scale_t=1):
         plt.figure(figsize=(28, 13))
 
-        overlap_s2 = [np.var(self.S_errs[2][:, i] * self.S[2]) for i in range(self.S_errs[2][1, :].shape[0])]
+        overlap_s2 = [np.var(self.S_stationarity[2][:, i] * self.S[2]) for i in range(self.S_stationarity[2].shape[1])]
 
-        overlap_s3 = [np.var(self.S_errs[3][:, :, i] * self.S[3]) for i in
-                      range(self.S_errs[3][1, 1, :].shape[0])]
+        overlap_s3 = [np.var(self.S_stationarity[3][:, :, i] * self.S[3]) for i in
+                      range(self.S_stationarity[3].shape[2])]
 
-        overlap_s4 = [np.var(self.S_errs[4][:, :, i] * self.S[4]) for i in
-                      range(self.S_errs[4][1, 1, :].shape[0])]
+        overlap_s4 = [np.var(self.S_stationarity[4][:, :, i] * self.S[4]) for i in
+                      range(self.S_stationarity[4].shape[2])]
 
-        t = np.linspace(0, self.dt * self.main_data.shape[0], self.S_errs[4][1, 1, :].shape[0]) / scale_t
-        t_main = np.linspace(0, self.dt * self.main_data.shape[0], self.main_data.shape[0]) / scale_t
+        t = np.linspace(0, self.delta_t * self.main_data.shape[0], self.S_stationarity[4][1, 1, :].shape[0]) / scale_t
+        t_main = np.linspace(0, self.delta_t * self.main_data.shape[0], self.main_data.shape[0]) / scale_t
 
         if imag:
             overlap_s2 = np.imag(overlap_s2)
@@ -702,11 +701,9 @@ class Spectrum:
 
     def calc_spec(self, order_in, T_window, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
-                  break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False, dt=None, data=None,
+                  break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False, data=None,
                   rect_win=False, m_stationarity=None):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
-        if dt is not None:
-            self.dt = dt
 
         if data is not None:
             self.data = data
@@ -738,14 +735,12 @@ class Spectrum:
             self.S_errs[order] = []
             self.S_stationarity_temp[order] = []
 
-        single_window = None
-
         # -------data setup---------
         if self.data is None:
             main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
         else:
             main_data = self.data
-            delta_t = self.dt
+            delta_t = self.delta_t
 
         self.main_data = main_data
         self.delta_t = delta_t
@@ -919,7 +914,7 @@ class Spectrum:
             main_data, delta_t = import_data(self.path, self.group_key, self.dataset, full_import=full_import)
         else:
             main_data = self.data
-            delta_t = self.dt
+            delta_t = self.delta_t
 
         delta_t *= scale_t
         self.delta_t = delta_t

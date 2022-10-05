@@ -449,6 +449,7 @@ class Spectrum:
 
     def __init__(self, path=None, group_key=None, dataset=None, delta_t=None, data=None, corr_data=None,
                  corr_path=None, corr_group_key=None, corr_dataset=None):
+        self.corr_data_path = None
         self.T_window = None
         self.path = path
         self.freq = [None, None, None, None, None]
@@ -700,6 +701,8 @@ class Spectrum:
         print('Number of points: ' + str(len(self.freq[order])))
 
     def reset_variables(self, orders, m, m_var, m_stationarity, f_lists=None):
+        self.err_counter = {2: 0, 3: 0, 4: 0}
+        self.stationarity_counter = {2: 0, 3: 0, 4: 0}
         for order in orders:
             self.f_lists[order] = f_lists
             self.m[order] = m
@@ -719,9 +722,6 @@ class Spectrum:
                   rect_win=False, m_stationarity=None):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
 
-        if data is not None:
-            self.data = data
-
         if order_in == 'all':
             orders = [2, 3, 4]
         else:
@@ -729,29 +729,19 @@ class Spectrum:
 
         n_chunks = 0
         af.set_backend(backend)
-        self.fs = None
-        window = None
-        f_max_ind = None
         self.T_window = T_window
         self.f_max = 0
-        self.err_counter = {2: 0, 3: 0, 4: 0}
-        self.stationarity_counter = {2: 0, 3: 0, 4: 0}
 
         self.reset_variables(orders, m, m_var, m_stationarity)
 
         # -------data setup---------
         if self.data is None:
-            main_data, delta_t = import_data(self.path, self.group_key, self.dataset)
-        else:
-            main_data = self.data
-            delta_t = self.delta_t
+            self.data, self.delta_t = import_data(self.path, self.group_key, self.dataset)
 
-        self.main_data = main_data
-        self.delta_t = delta_t
-        corr_shift /= delta_t  # conversion of shift in seconds to shift in dt
+        corr_shift /= self.delta_t  # conversion of shift in seconds to shift in dt
 
-        window_points = int(np.round(T_window / delta_t))
-        print('Actual T_window:', window_points * delta_t)
+        window_points = int(np.round(T_window / self.delta_t))
+        print('Actual T_window:', window_points * self.delta_t)
         self.window_points = window_points
 
         if self.corr_data is None and not corr_default == 'white_noise' and self.corr_path is not None:
@@ -761,13 +751,13 @@ class Spectrum:
         else:
             corr_data = None
 
-        n_data_points = main_data.shape[0]
+        n_data_points = self.data.shape[0]
         n_windows = int(np.floor(n_data_points / (m * window_points)))
         n_windows = int(
             np.floor(n_windows - corr_shift / (m * window_points)))  # number of windows is reduced if corr shifted
 
-        self.fs = 1 / delta_t
-        freq_all_freq = rfftfreq(int(window_points), delta_t)
+        self.fs = 1 / self.delta_t
+        freq_all_freq = rfftfreq(int(window_points), self.delta_t)
         if verbose:
             print('Maximum frequency:', np.max(freq_all_freq))
 
@@ -775,19 +765,16 @@ class Spectrum:
         f_mask = freq_all_freq <= f_max
         f_max_ind = sum(f_mask)
 
-        if f_max > np.max(freq_all_freq):
-            f_max = np.max(freq_all_freq)
-
         single_window, _ = cgw(int(window_points), self.fs)
         window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_points, 1, m), order='F'))
 
         self.prep_f_and_S_arrays(orders, freq_all_freq[f_mask], f_max_ind, m_var, m_stationarity)
 
         for i in tqdm_notebook(np.arange(0, n_windows - 1 + window_shift, window_shift), leave=False):
-            chunk = scaling_factor * main_data[int(i * (window_points * m)): int((i + 1) * (window_points * m))]
+            chunk = scaling_factor * self.data[int(i * (window_points * m)): int((i + 1) * (window_points * m))]
 
             if not self.first_frame_plotted:
-                plot_first_frame(chunk, delta_t, window_points)
+                plot_first_frame(chunk, self.delta_t, window_points)
                 self.first_frame_plotted = True
 
             chunk_gpu = to_gpu(chunk.reshape((window_points, 1, m), order='F'))
@@ -824,10 +811,10 @@ class Spectrum:
                 a_w_all_gpu = filter_mat * a_w_all_gpu
 
             if random_phase:
-                a_w_all_gpu = add_random_phase(a_w_all_gpu, window_points, delta_t, m)
+                a_w_all_gpu = add_random_phase(a_w_all_gpu, window_points, self.delta_t, m)
 
             # --------- calculate spectra ----------
-            self.fourier_coeffs_to_spectra(orders, a_w_all_gpu, f_max_ind, delta_t, m, m_var, m_stationarity,
+            self.fourier_coeffs_to_spectra(orders, a_w_all_gpu, f_max_ind, self.delta_t, m, m_var, m_stationarity,
                                            single_window, window, chunk_corr_gpu=chunk_corr_gpu,
                                            coherent=coherent, random_phase=random_phase,
                                            window_points=window_points)
@@ -889,8 +876,6 @@ class Spectrum:
 
         af.set_backend(backend)
         self.T_window = T_window
-        self.err_counter = {2: 0, 3: 0, 4: 0}
-        self.stationarity_counter = {2: 0, 3: 0, 4: 0}
 
         if f_lists is not None:
             f_list = np.hstack(f_lists)

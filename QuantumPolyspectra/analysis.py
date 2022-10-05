@@ -478,6 +478,8 @@ class Spectrum:
         self.corr_dataset = corr_dataset
         self.dt = dt
         self.main_data = None
+        self.err_counter = {2: 0, 3: 0, 4: 0}
+        self.stationarity_counter = {2: 0, 3: 0, 4: 0}
 
     def save_spec(self, path):
         self.S_gpu = None
@@ -554,7 +556,7 @@ class Spectrum:
             y_labels = [str(np.round(i * 1000) / 1000) for i in y_labels]
             ax.set_yticklabels(y_labels)
 
-    def store_single_spectrum(self, single_spectrum, order, err_counter, m_var, stationarity_counter, m_stationarity):
+    def store_single_spectrum(self, single_spectrum, order, m_var, m_stationarity):
 
         if self.S_gpu[order] is None:
             self.S_gpu[order] = single_spectrum
@@ -562,26 +564,26 @@ class Spectrum:
             self.S_gpu[order] += single_spectrum
 
         if order == 2:
-            self.S_errs[order][:, err_counter] = single_spectrum
+            self.S_errs[order][:, self.err_counter[order]] = single_spectrum
         else:
-            self.S_errs[order][:, :, err_counter] = single_spectrum
-        err_counter += 1
+            self.S_errs[order][:, :, self.err_counter[order]] = single_spectrum
+        self.err_counter[order] += 1
 
         if m_stationarity is not None:
             if order == 2:
-                self.S_stationarity_temp[order][:, stationarity_counter] = single_spectrum
+                self.S_stationarity_temp[order][:, self.stationarity_counter[order]] = single_spectrum
             else:
-                self.S_stationarity_temp[order][:, :, stationarity_counter] = single_spectrum
-            stationarity_counter += 1
+                self.S_stationarity_temp[order][:, :, self.stationarity_counter[order]] = single_spectrum
+            self.stationarity_counter[order] += 1
 
-            if stationarity_counter % m_stationarity == 0:
+            if self.stationarity_counter[order] % m_stationarity == 0:
                 if order == 2:
                     self.S_stationarity[order].append(af.mean(self.S_stationarity_temp[order], dim=1).to_ndarray())
                 else:
                     self.S_stationarity[order].append(af.mean(self.S_stationarity_temp[order], dim=2).to_ndarray())
-                stationarity_counter = 0
+                self.stationarity_counter[order] = 0
 
-        if err_counter % m_var == 0:
+        if self.err_counter[order] % m_var == 0:
             if order == 2:
                 self.S_err_gpu = af.sqrt(
                     m_var / (m_var - 1) * (af.mean(self.S_errs[order] * af.conjg(self.S_errs[order]), dim=1) -
@@ -598,9 +600,7 @@ class Spectrum:
             else:
                 self.S_err[order] += self.S_err_gpu.to_ndarray()
 
-            err_counter = 0
-
-        return err_counter, stationarity_counter
+            self.err_counter[order] = 0
 
     def calc_overlap(self, unit, imag=False, scale_t=1):
         plt.figure(figsize=(28, 13))
@@ -636,7 +636,47 @@ class Spectrum:
         plt.show()
         return t, t_main, overlap_s2, overlap_s3, overlap_s4
 
-    def calc_spec(self, order, T_window, f_max, backend='opencl', scaling_factor=1,
+    def fourier_coeffs_to_spectra(self, orders, a_w_all_gpu, f_max_ind, delta_t, m, m_var, m_stationarity,
+                                  window, single_window, chunk_corr_gpu=None,
+                                  coherent=False, random_phase=False,
+                                  window_points=None):
+
+        for order in orders:
+            if order == 2:
+                a_w = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind))), dim=0)
+
+                if self.corr_data is not None:
+                    a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
+                    a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
+                    single_spectrum = c2(a_w, a_w_corr, m, coherent=coherent) / (
+                            delta_t * (single_window ** order).sum())
+
+                else:
+                    single_spectrum = c2(a_w, a_w, m, coherent=coherent) / (delta_t * (single_window ** order).sum())
+
+            elif order == 3:
+                a_w1 = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind // 2))), dim=0)
+                a_w2 = a_w1
+                a_w3 = to_gpu(calc_a_w3(a_w_all_gpu.to_ndarray(), f_max_ind, m))
+                single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
+
+            elif order == 4:
+                a_w = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind))), dim=0)
+
+                if self.corr_data is not None:
+                    a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
+                    if random_phase:
+                        a_w_all_corr = add_random_phase(a_w_all_corr, order, window_points, delta_t, m)
+
+                    a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
+                else:
+                    a_w_corr = a_w
+
+                single_spectrum = c4(a_w, a_w_corr, m) / (delta_t * (single_window ** order).sum())
+
+            self.store_single_spectrum(single_spectrum, order, m_var, m_stationarity)
+
+    def calc_spec(self, order_in, T_window, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
                   break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False, dt=None, data=None,
                   rect_win=False, m_stationarity=None):
@@ -647,27 +687,34 @@ class Spectrum:
         if data is not None:
             self.data = data
 
+        if order_in == 'all':
+            orders = [2, 3, 4]
+        else:
+            orders = order_in
+
         n_chunks = 0
         af.set_backend(backend)
-        self.T_window = T_window
-        self.m[order] = m
-        self.m_var[order] = m_var
-        self.m_stationarity[order] = m_stationarity
         self.fs = None
         window = None
         f_max_ind = None
-        self.freq[order] = None
+        self.T_window = T_window
         self.f_max = 0
-        self.S[order] = None
-        self.S_gpu[order] = None
-        self.S_err_gpu = None
-        self.S_err[order] = None
-        self.S_errs[order] = []
-        self.S_stationarity_temp[order] = []
+        self.err_counter = {2: 0, 3: 0, 4: 0}
+        self.stationarity_counter = {2: 0, 3: 0, 4: 0}
+
+        for order in orders:
+            self.m[order] = m
+            self.m_var[order] = m_var
+            self.m_stationarity[order] = m_stationarity
+            self.freq[order] = None
+            self.S[order] = None
+            self.S_gpu[order] = None
+            self.S_err_gpu = None
+            self.S_err[order] = None
+            self.S_errs[order] = []
+            self.S_stationarity_temp[order] = []
 
         single_window = None
-        err_counter = 0
-        stationarity_counter = 0
 
         # -------data setup---------
         if self.data is None:
@@ -694,6 +741,45 @@ class Spectrum:
         n_windows = int(
             np.floor(n_windows - corr_shift / (m * window_points)))  # number of windows is reduced if corr shifted
 
+        self.fs = 1 / delta_t
+        freq_all_freq = rfftfreq(int(window_points), delta_t)
+        if verbose:
+            print('Maximum frequency:', np.max(freq_all_freq))
+
+        # ------ Check if f_max is too high ---------
+        f_mask = freq_all_freq <= f_max
+        f_max_ind = sum(f_mask)
+
+        if f_max > np.max(freq_all_freq):
+            f_max = np.max(freq_all_freq)
+
+        for order in orders:
+            if order == 3:
+                self.freq[order] = freq_all_freq[f_mask][:int(f_max_ind // 2)]
+            else:
+                self.freq[order] = freq_all_freq[f_mask]
+            if verbose:
+                print('Number of points: ' + str(len(self.freq[order])))
+            single_window, _ = cgw(int(window_points), self.fs)
+
+            window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_points, 1, m), order='F'))
+
+            if order == 2:
+                self.S_errs[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
+            elif order == 3:
+                self.S_errs[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
+            elif order == 4:
+                self.S_errs[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
+
+            if m_stationarity is not None:
+                if order == 2:
+                    self.S_stationarity_temp[2] = to_gpu(1j * np.empty((f_max_ind, m_stationarity)))
+                elif order == 3:
+                    self.S_stationarity_temp[3] = to_gpu(
+                        1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_stationarity)))
+                elif order == 4:
+                    self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
+
         for i in tqdm_notebook(np.arange(0, n_windows - 1 + window_shift, window_shift), leave=False):
             chunk = scaling_factor * main_data[int(i * (window_points * m)): int((i + 1) * (window_points * m))]
 
@@ -717,47 +803,6 @@ class Spectrum:
             # ---------count windows-----------
             n_chunks += 1
 
-            # --------- Calculate sampling rate and window function-----------
-            if self.fs is None:
-                self.fs = 1 / delta_t
-                freq_all_freq = rfftfreq(int(window_points), delta_t)
-                if verbose:
-                    print('Maximum frequency:', np.max(freq_all_freq))
-
-                # ------ Check if f_max is too high ---------
-                f_mask = freq_all_freq <= f_max
-                f_max_ind = sum(f_mask)
-
-                if f_max > np.max(freq_all_freq):
-                    f_max = np.max(freq_all_freq)
-
-                if order == 3:
-                    self.freq[order] = freq_all_freq[f_mask][:int(f_max_ind // 2)]
-                else:
-                    self.freq[order] = freq_all_freq[f_mask]
-                if verbose:
-                    print('Number of points: ' + str(len(self.freq[order])))
-                single_window, _ = cgw(int(window_points), self.fs)
-
-                window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_points, 1, m), order='F'))
-
-                if order == 2:
-                    self.S_errs[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
-                elif order == 3:
-                    self.S_errs[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
-                elif order == 4:
-                    self.S_errs[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
-
-                if m_stationarity is not None:
-                    if order == 2:
-                        self.S_stationarity_temp[2] = to_gpu(1j * np.empty((f_max_ind, m_stationarity)))
-                    elif order == 3:
-                        self.S_stationarity_temp[3] = to_gpu(
-                            1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_stationarity)))
-                    elif order == 4:
-                        self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
-
-
             if rect_win:
                 ones = to_gpu(
                     np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_points, 1, m), order='F'))
@@ -774,63 +819,21 @@ class Spectrum:
             if random_phase:
                 a_w_all_gpu = add_random_phase(a_w_all_gpu, order, window_points, delta_t, m)
 
-
-
-            if order == 2:
-
-                a_w = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind))), dim=0)
-
-                if self.corr_data is not None:
-                    a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
-                    a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
-                    single_spectrum = c2(a_w, a_w_corr, m, coherent=coherent) / (
-                            delta_t * (single_window ** order).sum())
-
-                else:
-                    single_spectrum = c2(a_w, a_w, m, coherent=coherent) / (delta_t * (single_window ** order).sum())
-
-                err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter,
-                                                                               m_var, stationarity_counter,
-                                                                               m_stationarity)
-
-            elif order > 2:
-
-                if order == 3:
-                    a_w1 = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind // 2))), dim=0)
-                    a_w2 = a_w1
-                    a_w3 = to_gpu(calc_a_w3(a_w_all_gpu.to_ndarray(), f_max_ind, m))
-                    single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
-
-                    err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter,
-                                                                                   m_var, stationarity_counter,
-                                                                                   m_stationarity)
-
-                if order == 4:
-                    a_w = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind))), dim=0)
-
-                    if self.corr_data is not None:
-                        a_w_all_corr = fft_r2c(window * chunk_corr_gpu, dim0=0, scale=1)
-                        if random_phase:
-                            a_w_all_corr = add_random_phase(a_w_all_corr, order, window_points, delta_t, m)
-
-                        a_w_corr = af.lookup(a_w_all_corr, af.Array(list(range(f_max_ind))), dim=0)
-                    else:
-                        a_w_corr = a_w
-
-                    single_spectrum = c4(a_w, a_w_corr, m) / (delta_t * (single_window ** order).sum())
-                    err_counter, stationarity_counter = self.store_single_spectrum(single_spectrum, order, err_counter,
-                                                                                   m_var, stationarity_counter,
-                                                                                   m_stationarity)
+            self.fourier_coeffs_to_spectra(orders, a_w_all_gpu, f_max_ind, delta_t, m, m_var, m_stationarity,
+                                           window, single_window)
 
             if n_chunks == break_after:
                 break
+        for order in orders:
+            self.S_gpu[order] /= n_chunks
+            self.S[order] = self.S_gpu[order].to_ndarray()
 
-        self.S_gpu[order] /= n_chunks
-        self.S[order] = self.S_gpu[order].to_ndarray()
+            self.S_err[order] /= n_windows // m_var * np.sqrt(n_windows)
 
-        self.S_err[order] /= n_windows // m_var * np.sqrt(n_windows)
-
-        return self.freq[order], self.S[order], self.S_err[order]
+        if order_in == 'all':
+            return self.freq, self.S, self.S_err
+        else:
+            return self.freq[order], self.S[order], self.S_err[order]
 
     def calc_spec_poisson(self, order_in, T_window, f_max, f_lists=None, backend='opencl', m=10, m_var=10,
                           m_stationarity=None, data=None, full_import=False, scale_t=1,

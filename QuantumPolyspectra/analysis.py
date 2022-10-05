@@ -683,8 +683,6 @@ class Spectrum:
             else:
                 self.freq[order] = f_all_in
 
-            print('Number of points: ' + str(len(self.freq[order])))
-
             if order == 2:
                 self.S_errs[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
             elif order == 3:
@@ -700,6 +698,7 @@ class Spectrum:
                         1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_stationarity)))
                 elif order == 4:
                     self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
+        print('Number of points: ' + str(len(self.freq[order])))
 
     def calc_spec(self, order_in, T_window, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
@@ -939,27 +938,7 @@ class Spectrum:
         print('number of points:', f_list.shape[0])
         print('delta f:', f_list[1] - f_list[0])
 
-        for order in orders:
-            if order == 3:
-                self.freq[order] = f_list[:int(f_max_ind // 2)]
-            else:
-                self.freq[order] = f_list
-
-            if order == 2:
-                self.S_errs[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
-            elif order == 3:
-                self.S_errs[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
-            elif order == 4:
-                self.S_errs[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
-
-            if m_stationarity is not None:
-                if order == 2:
-                    self.S_stationarity_temp[2] = to_gpu(1j * np.empty((f_max_ind, m_stationarity)))
-                elif order == 3:
-                    self.S_stationarity_temp[3] = to_gpu(
-                        1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_stationarity)))
-                elif order == 4:
-                    self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
+        self.prep_f_and_S_arrays(orders, f_list, f_max_ind, m_var, m_stationarity)
 
         for frame_number in tqdm_notebook(range(n_windows)):
             windows = []

@@ -718,25 +718,28 @@ class Spectrum:
 
     def calc_spec(self, order_in, T_window, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
-                  break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False, data=None,
+                  break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False,
                   rect_win=False, m_stationarity=None):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
+
+        af.set_backend(backend)
 
         if order_in == 'all':
             orders = [2, 3, 4]
         else:
             orders = order_in
 
-        n_chunks = 0
-        af.set_backend(backend)
-        self.T_window = T_window
-        self.f_max = 0
-
         self.reset_variables(orders, m, m_var, m_stationarity)
 
         # -------data setup---------
         if self.data is None:
             self.data, self.delta_t = import_data(self.path, self.group_key, self.dataset)
+
+        n_chunks = 0
+        self.T_window = T_window
+
+
+
 
         corr_shift /= self.delta_t  # conversion of shift in seconds to shift in dt
 
@@ -869,24 +872,30 @@ class Spectrum:
 
         """
 
+        af.set_backend(backend)
+
         if order_in == 'all':
             orders = [2, 3, 4]
         else:
             orders = order_in
-
-        af.set_backend(backend)
-        self.T_window = T_window
-
-        if f_lists is not None:
-            f_list = np.hstack(f_lists)
-        else:
-            f_list = None
 
         self.reset_variables(orders, m, m_var, m_stationarity, f_lists)
 
         # -------data setup---------
         if self.data is None:
             self.data, self.delta_t = import_data(self.path, self.group_key, self.dataset, full_import=full_import)
+
+        n_chunks = 0
+        self.T_window = T_window
+
+
+
+
+
+        if f_lists is not None:
+            f_list = np.hstack(f_lists)
+        else:
+            f_list = None
 
         self.delta_t *= scale_t
         f_min = 1 / T_window
@@ -896,7 +905,6 @@ class Spectrum:
         start_index = 0
 
         enough_data = True
-        n_chunks = 0
         f_max_ind = len(f_list)
         w_list = 2 * np.pi * f_list
         w_list_gpu = to_gpu(w_list)
@@ -941,7 +949,6 @@ class Spectrum:
                 temp1 = af.exp(1j * af.matmulNT(w_list_gpu, t_clicks_minus_start_gpu))
                 # temp2 = af.tile(t_clicks_windowed_gpu.T, w_list_gpu.shape[0])
                 # a_w_all_gpu[:, 0, i] = af.sum(temp1 * temp2, dim=1)
-
                 a_w_all_gpu[:, 0, i] = af.matmul(temp1, t_clicks_windowed_gpu)
 
             self.delta_t = T_window / N_window_full

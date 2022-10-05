@@ -637,7 +637,7 @@ class Spectrum:
         return t, t_main, overlap_s2, overlap_s3, overlap_s4
 
     def fourier_coeffs_to_spectra(self, orders, a_w_all_gpu, f_max_ind, delta_t, m, m_var, m_stationarity,
-                                  window, single_window, chunk_corr_gpu=None,
+                                  single_window, window=None, chunk_corr_gpu=None,
                                   coherent=False, random_phase=False,
                                   window_points=None):
 
@@ -803,6 +803,7 @@ class Spectrum:
             # ---------count windows-----------
             n_chunks += 1
 
+            # -------- perform fourier transform ----------
             if rect_win:
                 ones = to_gpu(
                     np.array(m * [np.ones_like(single_window)]).flatten().reshape((window_points, 1, m), order='F'))
@@ -810,6 +811,7 @@ class Spectrum:
             else:
                 a_w_all_gpu = fft_r2c(window * chunk_gpu, dim0=0, scale=1)
 
+            # --------- modify data ---------
             if filter_func:
                 pre_filter = filter_func(self.freq[2])
                 filter_mat = to_gpu(
@@ -819,11 +821,15 @@ class Spectrum:
             if random_phase:
                 a_w_all_gpu = add_random_phase(a_w_all_gpu, order, window_points, delta_t, m)
 
+            # --------- calculate spectra ----------
             self.fourier_coeffs_to_spectra(orders, a_w_all_gpu, f_max_ind, delta_t, m, m_var, m_stationarity,
-                                           window, single_window)
+                                           window, single_window, chunk_corr_gpu=chunk_corr_gpu,
+                                           coherent=coherent, random_phase=random_phase,
+                                           window_points=window_points)
 
             if n_chunks == break_after:
                 break
+
         for order in orders:
             self.S_gpu[order] /= n_chunks
             self.S[order] = self.S_gpu[order].to_ndarray()
@@ -883,6 +889,8 @@ class Spectrum:
 
         af.set_backend(backend)
         self.T_window = T_window
+        self.err_counter = {2: 0, 3: 0, 4: 0}
+        self.stationarity_counter = {2: 0, 3: 0, 4: 0}
 
         if f_lists is not None:
             f_list = np.hstack(f_lists)
@@ -916,12 +924,7 @@ class Spectrum:
             f_list = np.arange(0, f_max + f_min, f_min)
 
         start_index = 0
-        err_counter_2 = 0
-        err_counter_3 = 0
-        err_counter_4 = 0
-        stationarity_counter_2 = 0
-        stationarity_counter_3 = 0
-        stationarity_counter_4 = 0
+
         enough_data = True
         n_chunks = 0
         f_max_ind = len(f_list)
@@ -993,33 +996,8 @@ class Spectrum:
 
             delta_t = T_window / N_window_full
 
-            for order in orders:
-                if order == 2:
-                    a_w = a_w_all_gpu
-                    single_spectrum = c2(a_w, a_w, m, coherent=False) / (delta_t * (single_window ** order).sum())
-                    err_counter_2, stationarity_counter_2 = self.store_single_spectrum(single_spectrum, order,
-                                                                                       err_counter_2, m_var,
-                                                                                       stationarity_counter_2,
-                                                                                       m_stationarity)
-
-                elif order == 3:
-                    a_w1 = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind // 2))), dim=0)
-                    a_w2 = a_w1
-                    a_w3 = to_gpu(calc_a_w3(a_w_all_gpu.to_ndarray(), f_max_ind, m))
-                    single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
-                    err_counter_3, stationarity_counter_3 = self.store_single_spectrum(single_spectrum, order,
-                                                                                       err_counter_3, m_var,
-                                                                                       stationarity_counter_3,
-                                                                                       m_stationarity)
-
-                elif order == 4:
-                    a_w = a_w_all_gpu
-                    a_w_corr = a_w
-                    single_spectrum = c4(a_w, a_w_corr, m) / (delta_t * (single_window ** order).sum())
-                    err_counter_4, stationarity_counter_4 = self.store_single_spectrum(single_spectrum, order,
-                                                                                       err_counter_4, m_var,
-                                                                                       stationarity_counter_4,
-                                                                                       m_stationarity)
+            self.fourier_coeffs_to_spectra(orders, a_w_all_gpu, f_max_ind, delta_t, m, m_var, m_stationarity,
+                                      single_window)
 
         assert n_windows == n_chunks, 'n_windows not equal to n_chunks'
 

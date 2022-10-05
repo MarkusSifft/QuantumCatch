@@ -723,10 +723,22 @@ class Spectrum:
 
             self.S_err[order] /= n_windows // m_var * np.sqrt(n_windows)
 
+    def find_datapoints_in_windows(self, data, m, start_index, T_window, frame_number, enough_data):
+        windows = []
+        for i in range(m):
+            end_index = find_end_index(data, start_index, T_window, m, frame_number, i)
+            if end_index == -1:
+                enough_data = False
+                break
+            else:
+                windows.append(self.data[start_index:end_index])
+                start_index = end_index
+        return windows, start_index, enough_data
+
     def calc_spec(self, order_in, T_window, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
                   break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False,
-                  rect_win=False, m_stationarity=None):
+                  rect_win=False, m_stationarity=None, T_bin=None):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
 
         af.set_backend(backend)
@@ -908,15 +920,9 @@ class Spectrum:
         self.prep_f_and_S_arrays(orders, f_list, f_max_ind, m_var, m_stationarity)
 
         for frame_number in tqdm_notebook(range(n_windows)):
-            windows = []
-            for i in range(m):
-                end_index = find_end_index(self.data, start_index, T_window / scale_t, m, frame_number, i)
-                if end_index == -1:
-                    enough_data = False
-                    break
-                else:
-                    windows.append(self.data[start_index:end_index])
-                    start_index = end_index
+
+            windows, start_index, enough_data = self.find_datapoints_in_windows(self.data, m, start_index, T_window / scale_t,
+                                                                                frame_number, enough_data)
             if not enough_data:
                 break
 
@@ -956,7 +962,7 @@ class Spectrum:
         return self.freq, self.S, self.S_err
 
     def calc_spec_mini_bins(self, order_in, T_window, T_bin, f_max, backend='opencl', coherent=False,
-                            m=10, m_var=10, m_stationarity=None, sigma_t=0.14, rect_win=False, verbose=False):
+                            m=10, m_var=10, m_stationarity=None, rect_win=False, verbose=False):
         """
 
         Parameters
@@ -981,8 +987,6 @@ class Spectrum:
             backend for arrayfire
         m: int
             spectra for m windows of window_points is calculated
-        data: array
-            timestamps of clicks
         Returns
         -------
 
@@ -1024,15 +1028,8 @@ class Spectrum:
 
         print('calculating spectrum')
         for frame_number in tqdm_notebook(range(n_windows)):
-            windows = []
-            for i in range(m):
-                end_index = find_end_index(self.data, start_index, T_window, m, frame_number, i)
-                if end_index == -1:
-                    enough_data = False
-                    break
-                else:
-                    windows.append(self.data[start_index:end_index])
-                    start_index = end_index
+
+            windows, start_index, enough_data = self.find_datapoints_in_windows(self.data, m, start_index, T_window, frame_number, enough_data)
             if not enough_data:
                 break
 

@@ -676,6 +676,31 @@ class Spectrum:
 
             self.store_single_spectrum(single_spectrum, order, m_var, m_stationarity)
 
+    def prep_f_and_S_arrays(self, orders, f_all_in, f_max_ind, m_var, m_stationarity):
+        for order in orders:
+            if order == 3:
+                self.freq[order] = f_all_in[:int(f_max_ind // 2)]
+            else:
+                self.freq[order] = f_all_in
+
+            print('Number of points: ' + str(len(self.freq[order])))
+
+            if order == 2:
+                self.S_errs[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
+            elif order == 3:
+                self.S_errs[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
+            elif order == 4:
+                self.S_errs[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
+
+            if m_stationarity is not None:
+                if order == 2:
+                    self.S_stationarity_temp[2] = to_gpu(1j * np.empty((f_max_ind, m_stationarity)))
+                elif order == 3:
+                    self.S_stationarity_temp[3] = to_gpu(
+                        1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_stationarity)))
+                elif order == 4:
+                    self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
+
     def calc_spec(self, order_in, T_window, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
                   break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False, dt=None, data=None,
@@ -753,32 +778,10 @@ class Spectrum:
         if f_max > np.max(freq_all_freq):
             f_max = np.max(freq_all_freq)
 
-        for order in orders:
-            if order == 3:
-                self.freq[order] = freq_all_freq[f_mask][:int(f_max_ind // 2)]
-            else:
-                self.freq[order] = freq_all_freq[f_mask]
-            if verbose:
-                print('Number of points: ' + str(len(self.freq[order])))
-            single_window, _ = cgw(int(window_points), self.fs)
+        single_window, _ = cgw(int(window_points), self.fs)
+        window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_points, 1, m), order='F'))
 
-            window = to_gpu(np.array(m * [single_window]).flatten().reshape((window_points, 1, m), order='F'))
-
-            if order == 2:
-                self.S_errs[2] = to_gpu(1j * np.empty((f_max_ind, m_var)))
-            elif order == 3:
-                self.S_errs[3] = to_gpu(1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_var)))
-            elif order == 4:
-                self.S_errs[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_var)))
-
-            if m_stationarity is not None:
-                if order == 2:
-                    self.S_stationarity_temp[2] = to_gpu(1j * np.empty((f_max_ind, m_stationarity)))
-                elif order == 3:
-                    self.S_stationarity_temp[3] = to_gpu(
-                        1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_stationarity)))
-                elif order == 4:
-                    self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
+        self.prep_f_and_S_arrays(orders, freq_all_freq[f_mask], f_max_ind, m_var, m_stationarity)
 
         for i in tqdm_notebook(np.arange(0, n_windows - 1 + window_shift, window_shift), leave=False):
             chunk = scaling_factor * main_data[int(i * (window_points * m)): int((i + 1) * (window_points * m))]
@@ -795,6 +798,8 @@ class Spectrum:
                 chunk_corr = scaling_factor * corr_data[int(i * (window_points * m) + corr_shift): int(
                     (i + 1) * (window_points * m) + corr_shift)]
                 chunk_corr_gpu = to_gpu(chunk_corr.reshape((window_points, 1, m), order='F'))
+            else:
+                chunk_corr_gpu = None
 
             if n_chunks == 0:
                 if verbose:
@@ -823,7 +828,7 @@ class Spectrum:
 
             # --------- calculate spectra ----------
             self.fourier_coeffs_to_spectra(orders, a_w_all_gpu, f_max_ind, delta_t, m, m_var, m_stationarity,
-                                           window, single_window, chunk_corr_gpu=chunk_corr_gpu,
+                                           single_window, window, chunk_corr_gpu=chunk_corr_gpu,
                                            coherent=coherent, random_phase=random_phase,
                                            window_points=window_points)
 

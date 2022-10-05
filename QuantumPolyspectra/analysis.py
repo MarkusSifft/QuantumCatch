@@ -109,7 +109,7 @@ def import_data(path, group_key, dataset, full_import=False):
 
     Returns
     -------
-    Returns simulation result and inversampling rate
+    Returns simulation result and inverse sampling rate
     """
 
     main = h5py.File(path, 'r')
@@ -132,7 +132,7 @@ def calc_a_w3(a_w_all, f_max_ind, m):
     a_w_all : array
         Fourier coefficients of the signal
     f_max_ind : int
-        Index of the maximum frequency to be used for the calculatioin of the spectra
+        Index of the maximum frequency to be used for the calculation of the spectra
     m : int
         Number of windows per spectrum
 
@@ -149,7 +149,7 @@ def calc_a_w3(a_w_all, f_max_ind, m):
 
 
 def c2(a_w, a_w_corr, m, coherent):
-    """calculation of c2 for powerspectrum"""
+    """calculation of c2 for power spectrum"""
     # ---------calculate spectrum-----------
     # C_2 = m / (m - 1) * (< a_w * a_w* > - < a_w > < a_w* >)
     #                          sum_1         sum_2   sum_3
@@ -422,8 +422,6 @@ class Spectrum:
         Group key for h5 file
     dataset : str
         Name of the dataset in h5 file
-    dt : float
-        Inverse sampling rate of signal. Use of signal is provided as numpy array as parameter "data"
     data : array
         Signal to be analyzed as Numpy array
     corr_data : array
@@ -465,7 +463,6 @@ class Spectrum:
         self.S_stationarity = [[], [], [], [], []]
         self.group_key = group_key
         self.dataset = dataset
-        self.S_intergral = []
         self.window_points = None
         self.m = {2: None, 3: None, 4: None}
         self.m_var = {2: None, 3: None, 4: None}
@@ -504,6 +501,8 @@ class Spectrum:
             broken_lims = []
             for part in self.f_lists[2]:
                 broken_lims.append((part[0], part[-1]))
+        else:
+            broken_lims = None
 
         s2_array = np.real(self.S_stationarity[2]).T.copy()
         s2_array = gaussian_filter(s2_array, sigma=[0, s2_filter])
@@ -526,6 +525,9 @@ class Spectrum:
         s2_f = self.freq[2].copy()
         if broken_lims is not None:
             s2_f, diffs, broken_lims_scaled = connect_broken_axis(s2_f, broken_lims)
+        else:
+            diffs = None
+            broken_lims_scaled = None
 
         x, y = np.meshgrid(time_axis, s2_f)
 
@@ -660,7 +662,7 @@ class Spectrum:
                 a_w3 = to_gpu(calc_a_w3(a_w_all_gpu.to_ndarray(), f_max_ind, m))
                 single_spectrum = c3(a_w1, a_w2, a_w3, m) / (delta_t * (single_window ** order).sum())
 
-            elif order == 4:
+            else:  # order 4
                 a_w = af.lookup(a_w_all_gpu, af.Array(list(range(f_max_ind))), dim=0)
 
                 if self.corr_data is not None:
@@ -698,7 +700,7 @@ class Spectrum:
                         1j * np.empty((f_max_ind // 2, f_max_ind // 2, m_stationarity)))
                 elif order == 4:
                     self.S_stationarity_temp[4] = to_gpu(1j * np.empty((f_max_ind, f_max_ind, m_stationarity)))
-        print('Number of points: ' + str(len(self.freq[order])))
+        print('Number of points: ' + str(len(self.freq[orders[0]])))
 
     def reset_variables(self, orders, m, m_var, m_stationarity, f_lists=None):
         self.err_counter = {2: 0, 3: 0, 4: 0}
@@ -738,7 +740,7 @@ class Spectrum:
     def calc_spec(self, order_in, T_window, f_max, backend='opencl', scaling_factor=1,
                   corr_shift=0, filter_func=False, verbose=True, coherent=False, corr_default=None,
                   break_after=1e6, m=10, m_var=10, window_shift=1, random_phase=False,
-                  rect_win=False, m_stationarity=None, T_bin=None):
+                  rect_win=False, m_stationarity=None):
         """Calculation of spectra of orders 2 to 4 with the arrayfire library."""
 
         af.set_backend(backend)
@@ -967,6 +969,10 @@ class Spectrum:
 
         Parameters
         ----------
+        m_stationarity: int
+            number of spectra after which their mean is stored to varify stationarity of the data
+        m_var: int
+            number of spectra to calculate the variance from (should be set as high as possible)
         coherent: bool
             set if second moment should be used instead of cumulant
         verbose: bool
@@ -975,10 +981,8 @@ class Spectrum:
             set if no window function should be applied
         T_bin: int
             number of points in bin
-        sigma_t: float
-            width of approximate confined gaussian windows
-        order: int
-            order of the calculated spectrum
+        order_in: array of int, str ('all')
+            orders of the spectra to be calculated, e.g., [2,4]
         T_window: int
             spectra for m windows of window_points is calculated
         f_max: float
@@ -1132,6 +1136,9 @@ class Spectrum:
 
             if broken_lims is not None:
                 s_f_plot[order], diffs, broken_lims_scaled = connect_broken_axis(s_f_plot[order], broken_lims)
+            else:
+                diffs = None
+                broken_lims_scaled = None
 
             if f_max is None:
                 f_max = s_f_plot[order].max()
@@ -1172,16 +1179,6 @@ class Spectrum:
         color_array = np.array([[0., 0., 0., 0.], [0., 0.5, 0., green_alpha]])
         cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 
-        class MidpointNormalize(colors.Normalize):
-
-            def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-                self.midpoint = midpoint
-                colors.Normalize.__init__(self, vmin, vmax, clip)
-
-            def __call__(self, value, clip=None):
-                x_, y_ = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-                return np.ma.masked_array(np.interp(value, x_, y_), np.isnan(value))
-
         for order in [3, 4]:
             if self.S[order] is not None and not self.S[order].shape[0] == 0:
 
@@ -1190,7 +1187,7 @@ class Spectrum:
                     s_err = s3_err
                     s_filter = s3_filter
                     s_f = s3_f
-                elif order == 4:
+                else:  # order 4
                     s_data = s4_data
                     s_err = s4_err
                     s_filter = s4_filter
@@ -1213,6 +1210,9 @@ class Spectrum:
 
                 if broken_lims is not None:
                     s_f_plot[order], diffs, broken_lims_scaled = connect_broken_axis(s_f_plot[order], broken_lims)
+                else:
+                    diffs = None
+                    broken_lims_scaled = None
 
                 vmin = np.min(s_data_plot[order])
                 vmax = np.max(s_data_plot[order])
@@ -1232,7 +1232,7 @@ class Spectrum:
                 axis = order - 2
                 c = ax[axis].pcolormesh(x, y, z, cmap=cmap, norm=norm, zorder=1, shading='auto')
                 if s_err_plot[order] is not None or self.S_err[order] is not None:
-                    c1 = ax[axis].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
+                    ax[axis].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
 
                 if contours:
                     ax[axis].contour(x, y, gaussian_filter(z, s_filter), colors='k', linewidths=0.7)

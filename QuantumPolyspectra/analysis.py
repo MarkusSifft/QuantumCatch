@@ -51,6 +51,11 @@ from scipy.ndimage.filters import gaussian_filter
 from tqdm import tqdm_notebook
 
 
+class MissingValueError(Exception):
+    """Base class for missing value exceptions"""
+    pass
+
+
 def pickle_save(path, obj):
     """
     Helper function to pickle system objects
@@ -755,6 +760,8 @@ class Spectrum:
         # -------data setup---------
         if self.data is None:
             self.data, self.delta_t = import_data(self.path, self.group_key, self.dataset)
+        if self.delta_t is None:
+            raise MissingValueError('Missing value for delta_t')
 
         n_chunks = 0
         self.T_window = T_window
@@ -895,6 +902,8 @@ class Spectrum:
         # -------data setup---------
         if self.data is None:
             self.data, self.delta_t = import_data(self.path, self.group_key, self.dataset, full_import=full_import)
+        if self.delta_t is None:
+            raise MissingValueError('Missing value for delta_t')
 
         n_chunks = 0
         self.T_window = T_window
@@ -923,7 +932,8 @@ class Spectrum:
 
         for frame_number in tqdm_notebook(range(n_windows)):
 
-            windows, start_index, enough_data = self.find_datapoints_in_windows(self.data, m, start_index, T_window / scale_t,
+            windows, start_index, enough_data = self.find_datapoints_in_windows(self.data, m, start_index,
+                                                                                T_window / scale_t,
                                                                                 frame_number, enough_data)
             if not enough_data:
                 break
@@ -1007,6 +1017,8 @@ class Spectrum:
         # -------data setup---------
         if self.data is None:
             self.data, self.delta_t = import_data(self.path, self.group_key, self.dataset)
+        if self.delta_t is None:
+            raise MissingValueError('Missing value for delta_t')
 
         start_index = 0
         enough_data = True
@@ -1033,7 +1045,8 @@ class Spectrum:
         print('calculating spectrum')
         for frame_number in tqdm_notebook(range(n_windows)):
 
-            windows, start_index, enough_data = self.find_datapoints_in_windows(self.data, m, start_index, T_window, frame_number, enough_data)
+            windows, start_index, enough_data = self.find_datapoints_in_windows(self.data, m, start_index, T_window,
+                                                                                frame_number, enough_data)
             if not enough_data:
                 break
 

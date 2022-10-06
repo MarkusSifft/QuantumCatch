@@ -299,7 +299,6 @@ def find_end_index(data, start_index, T_window, m, frame_number, i):
     end_time = T_window * (m * frame_number + (i + 1))
 
     if data[start_index] > end_time:
-        print('no clicks in window')
         return start_index
 
     if end_time > data[-1]:
@@ -738,7 +737,10 @@ class Spectrum:
                 enough_data = False
                 break
             else:
-                windows.append(self.data[start_index:end_index])
+                if start_index == end_index:
+                    windows.append(None)
+                else:
+                    windows.append(self.data[start_index:end_index])
                 start_index = end_index
         return windows, start_index, enough_data
 
@@ -944,23 +946,28 @@ class Spectrum:
             a_w_all_gpu = to_gpu(a_w_all.reshape((len(f_list), 1, m), order='F'))
             for i, t_clicks in enumerate(windows):
 
-                t_clicks_minus_start = t_clicks - i * T_window / scale_t - m * T_window / scale_t * frame_number
+                if t_clicks is not None:
 
-                if rect_win:
-                    t_clicks_windowed = np.ones_like(t_clicks_minus_start)
+                    t_clicks_minus_start = t_clicks - i * T_window / scale_t - m * T_window / scale_t * frame_number
+
+                    if rect_win:
+                        t_clicks_windowed = np.ones_like(t_clicks_minus_start)
+                    else:
+                        t_clicks_windowed, single_window, N_window_full = apply_window(T_window / scale_t,
+                                                                                       t_clicks_minus_start,
+                                                                                       1 / self.delta_t, sigma_t=sigma_t)
+
+                    # ------ GPU --------
+                    t_clicks_minus_start_gpu = to_gpu(t_clicks_minus_start * scale_t)
+                    t_clicks_windowed_gpu = to_gpu(t_clicks_windowed).as_type(af.Dtype.c64)
+
+                    temp1 = af.exp(1j * af.matmulNT(w_list_gpu, t_clicks_minus_start_gpu))
+                    # temp2 = af.tile(t_clicks_windowed_gpu.T, w_list_gpu.shape[0])
+                    # a_w_all_gpu[:, 0, i] = af.sum(temp1 * temp2, dim=1)
+                    a_w_all_gpu[:, 0, i] = af.matmul(temp1, t_clicks_windowed_gpu)
+
                 else:
-                    t_clicks_windowed, single_window, N_window_full = apply_window(T_window / scale_t,
-                                                                                   t_clicks_minus_start,
-                                                                                   1 / self.delta_t, sigma_t=sigma_t)
-
-                # ------ GPU --------
-                t_clicks_minus_start_gpu = to_gpu(t_clicks_minus_start * scale_t)
-                t_clicks_windowed_gpu = to_gpu(t_clicks_windowed).as_type(af.Dtype.c64)
-
-                temp1 = af.exp(1j * af.matmulNT(w_list_gpu, t_clicks_minus_start_gpu))
-                # temp2 = af.tile(t_clicks_windowed_gpu.T, w_list_gpu.shape[0])
-                # a_w_all_gpu[:, 0, i] = af.sum(temp1 * temp2, dim=1)
-                a_w_all_gpu[:, 0, i] = af.matmul(temp1, t_clicks_windowed_gpu)
+                    a_w_all_gpu[:, 0, i] = to_gpu(1j*np.zeros_like(w_list))
 
             self.delta_t = T_window / N_window_full
 

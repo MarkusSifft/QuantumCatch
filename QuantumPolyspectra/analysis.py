@@ -609,9 +609,53 @@ class Spectrum:
     f_lists: dict
         Used for the calculation of Poisson spectra. Stores all frequency values for the calculation of the
         non-uniform discreet Fourier transformation. (Also used for plotting with broken frequency axis.)
-    S : list
-        Stores spectra values
-
+    S : dict
+        Stores spectra values (final storage at the end of the calculation)
+    S_gpu : dict
+        Temporarily stores spectra values during calculation on the GPU
+    S_err : dict
+        Stores errors of spectra values (final storage at the end of the calculation)
+    S_err_gpu : dict
+        Temporarily stores errors of spectra values during calculation on the GPU
+    S_errs : dict
+        Temporarily stores m_var spectra used for the calculation of the errors
+    S_stationarity_temp : dict
+        Stores m_stationarity spectra which are then averaged and used for the stationarity plot
+    S_stationarity : dict
+        Stores the m_stationarity averaged spectra used for the stationarity plot
+    group_key : str
+        Group key of the dataset within the h5 file
+    dataset : str
+        Name of the dataset in the h5 file
+    window_points : int
+        Number of points in a window
+    m : int
+        Number of windows for the estimation of the cumulant
+    m_var : int
+        m_var single spectra are used at a time for the calculation of the spectral errors
+    m_stationarity : int
+        Number of spectra which are then averaged and used for the stationarity plot
+    first_frame_plotted : bool
+        If true the first frame is plotted during the calculation of the spectra
+    delta_t : float
+        Inverse of the sampling rate of the signal
+    data : array / pointer
+        Stores the full dataset or is a pointer to the data in the h5 file (recommended of the dataset
+        is larger than your RAM)
+    corr_data : array / pointer
+        Stores the full second dataset or is a pointer to the data in the h5 file (recommended of the dataset
+        is larger than your RAM)
+    corr_group_key : str
+        Group key of the second dataset within the h5 file
+    corr_dataset : str
+        Name of the second dataset in the h5 file
+    main_data : array / pointer
+        (outdated / for old methods) Stores the full dataset or is a pointer to the data in the h5 file (recommended of the dataset
+        is larger than your RAM)
+    err_counter : dict
+        Counts the number single spectra already stored for the calculation of errors
+     stationarity_counter : dict
+        Counts the number single spectra already stored for the averaging for the stationarity plot
     """
 
     def __init__(self, path=None, group_key=None, dataset=None, delta_t=None, data=None, corr_data=None,

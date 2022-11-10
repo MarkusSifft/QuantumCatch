@@ -79,7 +79,7 @@ def to_hdf(dt, data, path, group_name, dataset_name):
     Parameters
     ----------
     dt : float
-        Inverse sampling rate of the signal
+        Inverse sampling rate of the signal (is saved as attribute "dt" to the dataset)
     data : array
         E.g. simulation results
     path : str
@@ -295,8 +295,29 @@ def c4(a_w, a_w_corr, m):
 
 
 @njit
-def find_end_index(data, start_index, T_window, m, frame_number, i):
-    end_time = T_window * (m * frame_number + (i + 1))
+def find_end_index(data, start_index, T_window, m, frame_number, j):
+    """
+
+    Parameters
+    ----------
+    data : array
+        timestamps of detector clicks
+    start_index : int
+        index of the last timestamp in the whole dataset that fitted into the prior window (zero in case of first window)
+    T_window : float
+        window length in seconds (or unit of choice)
+    m : int
+        number of windows to calculate the cumulant estimator from
+    frame_number : int
+        keeps track of the current frame (1 frame = m windows)
+    j : int
+        number of the current window in the frame
+
+    Returns
+    -------
+
+    """
+    end_time = T_window * (m * frame_number + (j + 1))
 
     if data[start_index] > end_time:
         return start_index
@@ -313,11 +334,47 @@ def find_end_index(data, start_index, T_window, m, frame_number, i):
 
 @njit
 def g(x_, N_window, L, sigma_t):
+    """
+    Helper function to calculate the approx. confined gaussian window as defined in https://doi.org/10.1016/j.sigpro.2014.03.033
+
+    Parameters
+    ----------
+    x_ : array
+        points at which to calculate the function
+    N_window : int
+        length of window in points
+    L : int
+        N_window + 1
+    sigma_t : float
+        parameter of the approx. confined gaussian window (here chosen to be 0.14)
+
+    Returns
+    -------
+
+    """
     return np.exp(-((x_ - N_window / 2) / (2 * L * sigma_t)) ** 2)
 
 
 @njit
 def calc_window(x, N_window, L, sigma_t):
+    """
+    Helper function to calculate the approx. confined gaussian window as defined in https://doi.org/10.1016/j.sigpro.2014.03.033
+
+    Parameters
+    ----------
+    x : array
+        points at which to calculate the function
+    N_window : int
+        length of window in points
+    L : int
+        N_window + 1
+    sigma_t : float
+        parameter of the approx. confined gaussian window (here chosen to be 0.14)
+
+    Returns
+    -------
+
+    """
     return g(x, N_window, L, sigma_t) - (g(-0.5, N_window, L, sigma_t) * (
             g(x + L, N_window, L, sigma_t) + g(x - L, N_window, L, sigma_t))) / (
                    g(-0.5 + L, N_window, L, sigma_t) + g(-0.5 - L, N_window, L, sigma_t))
@@ -325,8 +382,22 @@ def calc_window(x, N_window, L, sigma_t):
 
 @njit
 def cgw(N_window, fs=None, ones=False):
-    """Calculation of the approximate gaussian confined window"""
+    """
+    Helper function to calculate the approx. confined gaussian window as defined in https://doi.org/10.1016/j.sigpro.2014.03.033
 
+    Parameters
+    ----------
+    ones : bool
+        if true, the window is simply set to one resulting in a rectangular window
+    fs : float
+        sampling rate of the signal
+    N_window : int
+        length of window in points
+
+    Returns
+    -------
+
+    """
     x = np.linspace(0, N_window, N_window)
     L = N_window + 1
     sigma_t = 0.14
@@ -341,7 +412,25 @@ def cgw(N_window, fs=None, ones=False):
 
 @njit
 def apply_window(window_width, t_clicks, fs, sigma_t=0.14):
-    """Calculation of the approximate gaussian confined window"""
+    """
+    This function take the timestamps of the detector and applies the window function as an envelope treating the
+    clicks as steps with height one.
+
+    Parameters
+    ----------
+    window_width : float
+        timely width of the window in unit of choice
+    t_clicks : array
+        timestamps of the dataset that lie within the current window
+    fs : float
+        sampling rate of the signal
+    sigma_t : float
+        parameter of the approx. confined gaussian window (here chosen to be 0.14)
+
+    Returns
+    -------
+
+    """
 
     # ----- Calculation of g_k -------
 
@@ -367,6 +456,28 @@ def apply_window(window_width, t_clicks, fs, sigma_t=0.14):
 
 
 def arcsinh_scaling(s_data, arcsinh_const, order, s_err=None, s_err_p=None, s_err_m=None):
+    """
+    Helper function to improve visibility in plotting (similar to a log scale but also works for negative values)
+
+    Parameters
+    ----------
+    s_data : array
+        spectral values of any order
+    arcsinh_const : float
+        these parameters sets the rescaling amount (the smaller, the stronger the rescaling)
+    order : int
+        important since the error arrays are called differently in the second-order case
+    s_err : array
+        spectral errors of order 3 or 4
+    s_err_p : array
+        spectral values + error of order 2
+    s_err_m : array
+        spectral values - error of order 2
+
+    Returns
+    -------
+
+    """
     x_max = np.max(np.abs(s_data))
     alpha = 1 / (x_max * arcsinh_const)
     s_data = np.arcsinh(alpha * s_data) / alpha
@@ -384,6 +495,20 @@ def arcsinh_scaling(s_data, arcsinh_const, order, s_err=None, s_err_p=None, s_er
 
 
 def connect_broken_axis(s_f, broken_lims):
+    """
+    Helper function to enable broken axis during plotting
+
+    Parameters
+    ----------
+    s_f : array
+        frequencies at with the spectra had been calculated
+    broken_lims : list
+        list of arrays containing the endpoints of the disconnected frequency regions
+
+    Returns
+    -------
+
+    """
     broken_lims_scaled = [(i, j) for i, j in broken_lims]
     diffs = []
     for i in range(len(broken_lims_scaled) - 1):
@@ -394,7 +519,21 @@ def connect_broken_axis(s_f, broken_lims):
 
 
 def add_random_phase(a_w, window_size, delta_t, m):
-    """Adds a random phase proportional to the frequency to deal with ultra coherent signals"""
+    """(Experimental function) Adds a random phase proportional to the frequency to deal with ultra coherent signals
+
+    Parameters
+    ----------
+    m : int
+        number of windows per frame
+    delta_t : float
+        inverse of the sampling rate of the signal
+    window_size : int
+        size of the window in points
+    a_w : array
+        Fourier coefficients pf the window
+
+    """
+
     random_factors = np.random.uniform(high=window_size * delta_t, size=m)
     freq_all_freq = rfftfreq(int(window_size), delta_t)
     freq_mat = np.tile(np.array([freq_all_freq]).T, m)
@@ -406,6 +545,20 @@ def add_random_phase(a_w, window_size, delta_t, m):
 
 
 def plot_first_frame(chunk, delta_t, window_size):
+    """
+    Helper function for plotting one window during the calculation of the spectra for checking data and correct
+    window length
+
+    Parameters
+    ----------
+    chunk : array
+        one frame of the dataset
+    delta_t : float
+        inverse sampling rate of the signal
+    window_size : int
+        size of window in points
+
+    """
     first_frame = chunk[:window_size]
     t = np.arange(0, len(first_frame) * delta_t, delta_t)
     plt.figure(figsize=(14, 3))
@@ -416,7 +569,8 @@ def plot_first_frame(chunk, delta_t, window_size):
 class Spectrum:
     """
     Spectrum class stores signal data, calculated spectra and error of spectral values.
-    Allows for the calculation of the polyspectra of the signal and their visualization
+    Allows for the calculation of the polyspectra of the signal and their visualization.
+    Also hold methods for saving spectrum objects.
 
     Parameters
     ----------
@@ -439,13 +593,24 @@ class Spectrum:
 
     Attributes
     ----------
+    corr_data_path: str
+        Path to h5 file with a second stored signal to be correlated with the first on (see path)
     T_window : float
-        (Experimental) Length of window in second used for the calculation of
-        the Poisson spectra and mini binned spectra
+        Length of window in seconds (or unit of choice) used for the calculation of
+        any spectra
     path : str
         Path to h5 file with stored signal
     freq : array
-
+        Stores frequencies at with the spectra are calculated
+    f_max : float
+        Used to limit the upper frequency to calculate spectral values at (especially important for high sampling rates)
+    fs : float
+        Stores the sampling rate of the signal
+    f_lists: dict
+        Used for the calculation of Poisson spectra. Stores all frequency values for the calculation of the
+        non-uniform discreet Fourier transformation. (Also used for plotting with broken frequency axis.)
+    S : list
+        Stores spectra values
 
     """
 

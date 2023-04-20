@@ -58,12 +58,12 @@ class FitTelegraph(Spectrum):
         ax.set_title(r'$\gamma$ vs $t$',
                      fontdict={'fontsize': 16})
 
-    def fit_stationarity_plot(self, starting_gammas, with_s4=False, filter=0, plot=True):
-        s2_array = np.real(self.S_errs[2])
+    def fit_stationarity_plot(self, starting_gammas, beta, c, with_s4=False, with_err=False, filter=0, plot=True):
+        s2_array = np.real(self.S_stationarity[2]).T.copy()
         s2_array = gaussian_filter(s2_array, sigma=[0, filter])
-        s3_array = np.real(self.S_errs[3])
+        s3_array = np.real(self.S_stationarity[3]).T.copy()
         s3_array = gaussian_filter(s3_array, sigma=[0, 0, filter])
-        s4_array = np.real(self.S_errs[4])
+        s4_array = np.real(self.S_stationarity[4]).T.copy()
         s4_array = gaussian_filter(s4_array, sigma=[0, 0, filter])
 
         s2_f = self.freq[2]
@@ -76,7 +76,7 @@ class FitTelegraph(Spectrum):
         gamma_outs_err = []
         betas = []
 
-        iterator = list(range(s2_array.shape[1]))[::filter]
+        iterator = list(range(s2_array.shape[1]))[::(filter+1)]
 
         for i in tqdm_notebook(iterator):
             beta, gamma_in, gamma_in_err, gamma_out, gamma_out_err = self.find_best_fit(s2_f, s3_f, s4_f,
@@ -84,8 +84,11 @@ class FitTelegraph(Spectrum):
                                                                                         s3_array[:, :, i],
                                                                                         s4_array[:, :, i],
                                                                                         starting_gammas,
+                                                                                        beta,
+                                                                                        c,
                                                                                         plot=plot,
-                                                                                        with_s4=with_s4)
+                                                                                        with_s4=with_s4,
+                                                                                        with_err=with_err)
             gamma_ins.append(gamma_in)
             gamma_ins_err.append(gamma_in_err)
             gamma_outs.append(gamma_out)
@@ -94,43 +97,53 @@ class FitTelegraph(Spectrum):
 
         return betas, gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err
 
-    def find_best_fit(self, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, starting_gammas, plot=False, with_s4=True):
+    def find_best_fit(self, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, starting_gammas, beta, c, plot=False, with_s4=True, with_err=False):
 
         gamma_range = starting_gammas
 
-        err_sum = 1e20
+        err_sum = 1e200
 
         for gamma_in, gamma_out in gamma_range:
 
-            out = self.fit_telegraph(s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, plot=plot,
-                                     with_s4=with_s4)
+            out = self.fit_telegraph(s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, beta, c, plot=plot,
+                                     with_s4=with_s4, with_err=with_err)
+            # print(out.params)
+            # if (out.params['gOut']).stderr is None or (out.params['gIn']).stderr is None:
+            #     continue
+            #
+            # new_err_sum = (out.params['beta']).stderr
+            #
+            # print(new_err_sum)
+            #
+            # if new_err_sum < err_sum:
+            #     err_sum = new_err_sum
+            #     best_fit = out
 
-            if (out.params['gOut_1']).stderr is None or (out.params['gIn_1']).stderr is None:
-                continue
-
-            new_err_sum = (out.params['beta_1']).stderr + (out.params['beta_2']).stderr + (
-                out.params['beta_3']).stderr
-
-            if new_err_sum < err_sum:
-                err_sum = new_err_sum
-                best_fit = out
-
-        beta = best_fit.params['beta_1'].value
-        gamma_in = best_fit.params['gIn_1'].value
-        gamma_in_err = best_fit.params['gIn_1'].stderr
-        gamma_out = best_fit.params['gOut_1'].value
-        gamma_out_err = best_fit.params['gOut_1'].stderr
+        beta = out.params['beta'].value
+        gamma_in = out.params['gIn'].value
+        gamma_in_err = out.params['gIn'].stderr
+        gamma_out = out.params['gOut'].value
+        gamma_out_err = out.params['gOut'].stderr
 
         return beta, gamma_in, gamma_in_err, gamma_out, gamma_out_err
 
-    def fit_telegraph(self, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, err=None,
+    def fit_telegraph(self, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, beta, c, with_err=False,
                       plot=False, with_s4=True):
 
-        data = np.array([np.real(s2_data), np.real(s3_data), np.real(s4_data)])
+        data = [np.real(s2_data), np.real(s3_data), np.real(s4_data)]
 
-        if err is None:
-            err = np.concatenate([np.real(self.S_err[2]).flatten(), np.real(self.S_err[3]).flatten(),
-                                  np.real(self.S_err[4]).flatten()])
+        if with_err:
+            if with_s4:
+                err = np.hstack((np.real(self.S_err[2]).flatten(), np.real(self.S_err[3]).flatten(),
+                                 np.real(self.S_err[4]).flatten()))
+            else:
+                err = np.hstack((np.real(self.S_err[2]).flatten(), np.real(self.S_err[3]).flatten()))
+        else:
+            if with_s4:
+                err = np.hstack((np.ones_like(data[0]).flatten(), np.ones_like(data[1]).flatten(),
+                                np.ones_like(data[2]).flatten()))
+            else:
+                err = np.hstack((np.ones_like(data[0]).flatten(), np.ones_like(data[1]).flatten()))
 
         omega_list = [s2_f, s3_f, s4_f]
 
@@ -150,7 +163,7 @@ class FitTelegraph(Spectrum):
                    (gIn ** 2 + 2 * gIn * gOut + gOut ** 2 + w2 ** 2) *
                    (gIn ** 2 + 2 * gIn * gOut + gOut ** 2 + (w1 + w2) ** 2))
 
-            return a ** 6 * s3_ + c
+            return a ** 6 * s3_
 
         def s4(a, c, gIn, gOut, omega1, omega2):
             w1 = np.outer(np.ones_like(omega1), omega1)  # varies horizontally
@@ -198,13 +211,13 @@ class FitTelegraph(Spectrum):
                    (gIn ** 2 + 2 * gIn * gOut + gOut ** 2 + w2 ** 2) ** 2 *
                    (gIn ** 2 + 2 * gIn * gOut + gOut ** 2 + (w1 + w2) ** 2))
 
-            return a ** 8 * s4_ + c
+            return a ** 8 * s4_
 
         def calc_spec(params, order, omega1):
-            a = params['beta_%i' % (order - 1)]
-            c = params['beta_off_%i' % (order - 1)]
-            gIn = params['gIn_%i' % (order - 1)]
-            gOut = params['gOut_%i' % (order - 1)]
+            a = params['beta']
+            c = params['beta_off']
+            gIn = params['gIn']
+            gOut = params['gOut']
 
             if order == 2:
                 out = s2(a, c, gIn, gOut, 2 * np.pi * omega1)
@@ -225,24 +238,18 @@ class FitTelegraph(Spectrum):
 
             for i, order in enumerate(range(2, max_order)):
                 #  resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max())
-                resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max() / (i+1))
+                resid.append((data[i] - calc_spec(params, order, omega_list[i])).flatten())
 
             resid = np.concatenate(resid)
             weighted = np.sqrt(resid ** 2 / err ** 2)
             return weighted
 
         fit_params = Parameters()
-        for iy, y in enumerate(data):
-            fit_params.add('beta_%i' % (iy + 1), value=2, min=0, max=1e3)
-            fit_params.add('beta_off_%i' % (iy + 1), value=0.05, min=0, max=1e4)
-            fit_params.add('gOut_%i' % (iy + 1), value=gamma_out, min=0, max=1e4)
-            fit_params.add('gIn_%i' % (iy + 1), value=gamma_in, min=0, max=1e4)
 
-        for iy in (2, 3):
-            fit_params['gIn_%i' % iy].expr = 'gIn_1'
-            fit_params['gOut_%i' % iy].expr = 'gOut_1'
-            fit_params['beta_%i' % iy].expr = 'beta_1'
-            #fit_params['beta_off_%i' % iy].expr = 'beta_off_1'
+        fit_params.add('beta', value=beta, min=0)
+        fit_params.add('gOut', value=gamma_out, min=0)
+        fit_params.add('gIn', value=gamma_in, min=0)
+        fit_params.add('beta_off', value=c, min=0)
 
         out = minimize(objective, fit_params, args=(omega_list, data))
 
@@ -257,9 +264,9 @@ class FitTelegraph(Spectrum):
                     plt.plot(omega_list[i], y_fit / np.abs(data[i]).max(), '-', color=colors2[i],
                              label='s' + str(order), lw=3)
                 else:
-                    plt.plot(omega_list[i], data[i][(data[i].shape[1] - 1) // 2, :] / np.abs(data[i]).max(),
+                    plt.plot(omega_list[i], data[i][(data[i].shape[1] - 1) // 2, :] / np.abs(data[i])[0,0],
                              colors[i] + 'o')
-                    plt.plot(omega_list[i], y_fit[(y_fit.shape[1] - 1) // 2, :] / np.abs(data[i]).max(), '-',
+                    plt.plot(omega_list[i], y_fit[(y_fit.shape[1] - 1) // 2, :] / np.abs(data[i])[0,0], '-',
                              color=colors2[i], label='s' + str(order), lw=3)
             # plt.xlim([-1, 1])
             # plt.ylim([-700,700])

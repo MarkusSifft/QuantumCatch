@@ -56,7 +56,7 @@ import pickle
 import arrayfire as af
 from arrayfire.interop import from_ndarray as to_gpu
 
-from QuantumPolyspectra.analysis import Spectrum
+from signalsnap.analysis import Spectrum
 
 
 #  from pympler import asizeof
@@ -765,10 +765,18 @@ def calc_liou(rho_, h, c_ops_):
         -------
         Commutator [a,b]
         """
+        a = np.ascontiguousarray(a)
+        b = np.ascontiguousarray(b)
+
         return a @ b - b @ a
 
+    rho_ = np.ascontiguousarray(rho_)
+
     liou = 1j * cmtr(rho_, h)
+
     for c_op in c_ops_:
+        c_op = np.ascontiguousarray(c_op)
+
         liou += c_op @ rho_ @ c_op.conj().T - \
                 1 / 2 * (c_op.conj().T @ c_op @ rho_ + rho_ @ c_op.conj().T @ c_op)
     return liou
@@ -1005,8 +1013,8 @@ class System(Spectrum):
         return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
                             self.enable_gpu, self.zero_ind, self.gpu_0)
 
-    def calc_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True, beta=None,
-                      correction_only=False, beta_offset=True, enable_gpu=False, cache_trispec=True):
+    def calc_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True, verbose=False,
+                      beta=None, correction_only=False, beta_offset=True, enable_gpu=False, cache_trispec=True):
         """
         Calculates analytic polyspectra (order 2 to 4) as described in 10.1103/PhysRevB.98.205143
         and 10.1103/PhysRevB.102.119901
@@ -1026,6 +1034,8 @@ class System(Spectrum):
             But unnecessary for standard polyspectra
         bar : bool
             Set if progress bars should be shown during calculation
+        verbose : bool
+            Set if more details about the current state of the calculation are needed
         beta : float
             Measurement strength used for the calculation. If not set beta is the prefactor
             in sc_measure_strength[measure_op]
@@ -1078,9 +1088,11 @@ class System(Spectrum):
         if self.L is None:
             L = calc_super_liou(H, c_ops_m)
             self.L = L
-            print('Diagonalizing L')
+            if verbose:
+                print('Diagonalizing L')
             self.eigvals, self.eigvecs = eig(L)
-            print('L has been diagonalized')
+            if verbose:
+                print('L has been diagonalized')
 
             # self.eigvals, self.eigvecs = eig(L.full())
             # self.eigvals -= np.max(self.eigvals)
@@ -1094,7 +1106,7 @@ class System(Spectrum):
             self.rho_steady = rho_steady
 
         if order == 2:
-            spec_data = np.ones_like(omegas)
+            spec_data = 1j * np.ones_like(omegas)
         else:
             spec_data = 1j * np.zeros((len(omegas), len(omegas)))
 
@@ -1194,7 +1206,7 @@ class System(Spectrum):
 
             spec_data[(spec_data == 0).nonzero()] = spec_data.T[(spec_data == 0).nonzero()]
 
-            if np.max(np.abs(np.imag(np.real_if_close(_full_bispec(spec_data))))) > 0:
+            if np.max(np.abs(np.imag(np.real_if_close(_full_bispec(spec_data))))) > 0 and verbose:
                 print('Bispectrum might have an imaginary part')
             # self.S[order] = np.real(_full_bispec(spec_data)) * beta ** 6
             self.S[order] = _full_bispec(spec_data) * beta ** 6
@@ -1206,7 +1218,8 @@ class System(Spectrum):
             else:
                 counter = enumerate(omegas)
 
-            print('Calculating small s')
+            if verbose:
+                print('Calculating small s')
             if enable_gpu:
                 gpu_zero_mat = to_gpu(np.zeros_like(self.eigvecs))  # Generate the zero array only ones
             else:
@@ -1214,7 +1227,10 @@ class System(Spectrum):
             #  gpu_ones_arr = to_gpu(0*1j + np.ones(len(self.eigvecs[0])))
             s_k = small_s(self.rho_steady, self.A_prim, self.eigvecs, self.eigvecs_inv, reshape_ind,
                           enable_gpu, self.zero_ind, gpu_zero_mat)
-            print('Done')
+
+            if verbose:
+                print('Done')
+
             self.s_k = s_k
 
             for ind_1, omega_1 in counter:
@@ -1313,7 +1329,7 @@ class System(Spectrum):
         """
         if f_max is None:
             f_max = self.freq[2].max()
-        fig = self.poly_plot(f_max, s2_data=self.S[2], s3_data=self.S[3], s4_data=self.S[4], s2_f=self.freq[2],
+        fig = self.plot(order_in=(2,3,4), f_max=f_max, s2_data=self.S[2], s3_data=self.S[3], s4_data=self.S[4], s2_f=self.freq[2],
                              s3_f=self.freq[3], s4_f=self.freq[4])
         return fig
 

@@ -181,7 +181,8 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
         diagonal[zero_ind] = 0
         Fourier_G = eigvecs @ np.diag(diagonal) @ eigvecs_inv
 
-    set_cache_size(cache_fourier_g_prim, Fourier_G, enable_gpu)
+    global cache_fourier_g_prim
+    cache_fourier_g_prim = set_cache_size(cache_fourier_g_prim, Fourier_G, enable_gpu)
 
     return Fourier_G
 
@@ -216,6 +217,8 @@ def set_cache_size(cache, out, enable_gpu):
 
     else:
         print('Something went wrong when setting cachesize.')
+
+    return cache_fourier_g_prim
 
 
 def _g_prim(t, eigvecs, eigvals, eigvecs_inv):

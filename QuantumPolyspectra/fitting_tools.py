@@ -220,12 +220,7 @@ class FitSystem:
 
             # ---------- S3 and S4 ------------
 
-            if plus_S4:
-                iterator = range(1, 3)
-            else:
-                iterator = range(1, 2)
-
-            for i in iterator:
+            for i in np.array(fit_orders)-1:
                 y, x = np.meshgrid(self.measurement_spec.freq[i + 2], self.measurement_spec.freq[i + 2])
 
                 z = np.real(self.measurement_spec.S[i + 2])
@@ -261,9 +256,7 @@ class FitSystem:
             cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
             fit_list = []
-            for i in range(2, 5):
-                if not plus_S4 and i == 4:
-                    break
+            for i in fit_orders:
                 fit_list.append(self.calc_spec(params, i, self.measurement_spec.freq[i]))
 
             # ---------- S2 ------------
@@ -296,12 +289,7 @@ class FitSystem:
 
             # ---------- S3 and S4 ------------
 
-            if plus_S4:
-                iterator = range(1, 3)
-            else:
-                iterator = range(1, 2)
-
-            for i in iterator:
+            for i in np.array(fit_orders)-1:
                 y, x = np.meshgrid(self.measurement_spec.freq[i + 2], self.measurement_spec.freq[i + 2])
 
                 z = np.real(self.measurement_spec.S[i + 2])

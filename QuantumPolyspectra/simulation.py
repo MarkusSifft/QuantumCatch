@@ -295,7 +295,7 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
 
-    update_cache_size('cache_first_matrix_step', out, enable_gpu)
+    # update_cache_size('cache_first_matrix_step', out, enable_gpu)
 
     return out
 
@@ -346,7 +346,7 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
 
-    update_cache_size('cache_second_matrix_step', out, enable_gpu)
+    # update_cache_size('cache_second_matrix_step', out, enable_gpu)
 
     return out
 
@@ -396,7 +396,7 @@ def _third_matrix_step(rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eig
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
 
-    update_cache_size('cache_third_matrix_step', out, enable_gpu)
+    # update_cache_size('cache_third_matrix_step', out, enable_gpu)
 
     return out
 
@@ -566,7 +566,7 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
                 out_sum += s_k[k] * s_k[l] * 1 / ((eigvals[l] + 1j * nu1) * (eigvals[k] + 1j * nu3)
                                                   * (eigvals[k] + eigvals[l] + 1j * nu2))
 
-    update_cache_size('cache_second_term', out_sum, enable_gpu)
+    # update_cache_size('cache_second_term', out_sum, enable_gpu)
 
     return out_sum
 
@@ -632,7 +632,7 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
                 out += s_k[k] * s_k[l] * 1 / ((eigvals[k] + 1j * nu1) * (eigvals[k] + 1j * nu3)
                                               * (eigvals[k] + eigvals[l] + 1j * nu2))
 
-    update_cache_size('cache_third_term', out, enable_gpu)
+    # update_cache_size('cache_third_term', out, enable_gpu)
 
     return out
 

@@ -95,7 +95,7 @@ class FitSystem:
 
         return out
 
-    def objective(self, m_op, params, f_list, s_list, err_list, plus_S4):
+    def objective(self, params, f_list, s_list, err_list, plus_S4):
 
         resid = []
 

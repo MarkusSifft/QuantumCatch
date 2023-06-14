@@ -185,8 +185,8 @@ class FitSystem:
         if (iter_ + 1) % 10 == 0:
             print(iter_ + 1)
 
-            for key in params.key():
-                print('key:', params['key'])
+            for key in params.keys():
+                print('key:', params[key])
 
             print('Iterations:', iter_)
             print('Current Error:', np.mean(np.abs(resid)))

@@ -87,7 +87,9 @@ def conditional_decorator(dec, condition):
 initial_max_cache_size = 1  # Set to 1 to allow the first item to be cached
 
 # Create a cache with initial maxsize
-cache_fourier_g_prim = LRUCache(maxsize=initial_max_cache_size)
+#cache_fourier_g_prim = LRUCache(maxsize=initial_max_cache_size)
+cache_dict = {'cache_fourier_g_prim': LRUCache(maxsize=initial_max_cache_size)}
+
 cache_first_matrix_step = LRUCache(maxsize=initial_max_cache_size)
 cache_second_matrix_step = LRUCache(maxsize=initial_max_cache_size)
 cache_third_matrix_step = LRUCache(maxsize=initial_max_cache_size)
@@ -140,7 +142,7 @@ def calc_super_A(op):
 
 # @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-@cached(cache=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
+@cached(cache=cache_dict['cache_fourier_g_prim'], key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
     nu))
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
@@ -182,39 +184,42 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
         diagonal[zero_ind] = 0
         Fourier_G = eigvecs @ np.diag(diagonal) @ eigvecs_inv
 
-    if cache_fourier_g_prim.currsize == 1 and cache_fourier_g_prim.maxsize == 1:
-        global cache_fourier_g_prim
-        cache_fourier_g_prim = set_cache_size(cache_fourier_g_prim, Fourier_G, enable_gpu)
+    update_cache_size('cache_fourier_g_prim', Fourier_G, enable_gpu)
 
     return Fourier_G
 
 
-def set_cache_size(cache, out, enable_gpu):
-    if enable_gpu:
-        # Calculate the size of the array in bytes
-        # object_size = Fourier_G.elements() * Fourier_G.dtype_size()
+def update_cache_size(cachename, out, enable_gpu):
 
-        dims = out.dims()
-        dtype_size = out.dtype_size()
-        object_size = dims[0] * dims[1] * dtype_size  # For a 2D array
+    cache = cache_dict[cachename]
 
-        # Calculate max GPU memory to use (90% of total GPU memory)
-        max_gpu_memory = get_free_gpu_memory() * 0.9 / 6
+    if cache.currsize == 1 and cache.maxsize == 1:
 
-        # Update the cache maxsize
-        new_max_size = int(max_gpu_memory / object_size)
+        if enable_gpu:
+            # Calculate the size of the array in bytes
+            # object_size = Fourier_G.elements() * Fourier_G.dtype_size()
 
-    else:
-        # Calculate the size of the numpy array in bytes
-        object_size = out.nbytes
+            dims = out.dims()
+            dtype_size = out.dtype_size()
+            object_size = dims[0] * dims[1] * dtype_size  # For a 2D array
 
-        # Calculate max system memory to use (90% of available memory)
-        max_system_memory = get_free_system_memory() * 0.9
+            # Calculate max GPU memory to use (90% of total GPU memory)
+            max_gpu_memory = get_free_gpu_memory() * 0.9 / 6
 
-        # Update the cache maxsize
-        new_max_size = int(max_system_memory / object_size)
+            # Update the cache maxsize
+            new_max_size = int(max_gpu_memory / object_size)
 
-    return LRUCache(maxsize=new_max_size)
+        else:
+            # Calculate the size of the numpy array in bytes
+            object_size = out.nbytes
+
+            # Calculate max system memory to use (90% of available memory)
+            max_system_memory = get_free_system_memory() * 0.9
+
+            # Update the cache maxsize
+            new_max_size = int(max_system_memory / object_size)
+
+        cache_dict[cachename] = LRUCache(maxsize=new_max_size)
 
 
 def _g_prim(t, eigvecs, eigvals, eigvecs_inv):

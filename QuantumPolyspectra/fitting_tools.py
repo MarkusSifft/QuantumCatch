@@ -43,7 +43,7 @@ import matplotlib.colors as colors
 from signalsnap.analysis import load_spec
 
 
-class FitSystem():
+class FitSystem:
 
     def __init__(self, set_system, m_op):
         self.set_system = set_system
@@ -159,7 +159,7 @@ class FitSystem():
 
         print('Fitting S2, S3')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, plus_S4, f_max),
-                               iter_cb=self.plot_fit)
+                         iter_cb=self.plot_fit)
         out = mini.minimize(method='least_squares')
 
         for p in out.params:
@@ -172,7 +172,7 @@ class FitSystem():
 
         print('Fitting S2, S3, S4')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, plus_S4, f_max),
-                               iter_cb=self.plot_fit)
+                         iter_cb=self.plot_fit)
         out = mini.minimize()
 
         print('plotting last fit')
@@ -212,7 +212,8 @@ class FitSystem():
                 fit_list.append(self.calc_spec(params, i, self.measurement_spec.freq[i]))
 
             # ---------- S2 ------------
-            c = ax[0].plot(self.measurement_spec.freq[2], np.real(self.measurement_spec.S[2]), lw=3, color=[0, 0.5, 0.9], label='meas.')
+            c = ax[0].plot(self.measurement_spec.freq[2], np.real(self.measurement_spec.S[2]), lw=3,
+                           color=[0, 0.5, 0.9], label='meas.')
             c = ax[0].plot(self.measurement_spec.freq[2], fit_list[0], '--k', alpha=0.8, label='fit')
 
             ax[0].set_xlim([0, f_max])
@@ -273,7 +274,8 @@ class FitSystem():
                 fit_list.append(self.calc_spec(params, i, self.measurement_spec.freq[i]))
 
             # ---------- S2 ------------
-            c = ax[0, 0].plot(self.measurement_spec.freq[2], np.real(self.measurement_spec.S[2]), lw=3, color=[0, 0.5, 0.9], label='meas.')
+            c = ax[0, 0].plot(self.measurement_spec.freq[2], np.real(self.measurement_spec.S[2]), lw=3,
+                              color=[0, 0.5, 0.9], label='meas.')
             c = ax[0, 0].plot(self.measurement_spec.freq[2], fit_list[0], '--k', alpha=0.8, label='fit')
 
             ax[0, 0].set_xlim([0, f_max])
@@ -285,7 +287,9 @@ class FitSystem():
             ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
             ax[0, 0].legend()
 
-            c = ax[1, 0].plot(self.measurement_spec.freq[2], (np.real(self.measurement_spec.S[2]) - fit_list[0]) / np.real(self.measurement_spec.S[2]), lw=3,
+            c = ax[1, 0].plot(self.measurement_spec.freq[2],
+                              (np.real(self.measurement_spec.S[2]) - fit_list[0]) / np.real(self.measurement_spec.S[2]),
+                              lw=3,
                               color=[0, 0.5, 0.9], label='rel. err.')
 
             ax[1, 0].set_xlim([0, f_max])
@@ -332,7 +336,9 @@ class FitSystem():
 
                 # ------ rel. err. -------
 
-                z_both = gaussian_filter((np.real(self.measurement_spec.S[i + 2]) - fit_list[i]) / np.real(self.measurement_spec.S[i + 2]), 3)
+                z_both = gaussian_filter(
+                    (np.real(self.measurement_spec.S[i + 2]) - fit_list[i]) / np.real(self.measurement_spec.S[i + 2]),
+                    3)
 
                 vmin = np.min(z_both)
                 vmax = np.max(z_both)

@@ -51,7 +51,7 @@ class FitSystem:
         self.out = None
         self.measurement_spec = None
 
-    def s2(self, params, c, omegas):
+    def s2(self, params, omegas):
 
         system, sc_ops, measure_strength = self.set_system(params)
 

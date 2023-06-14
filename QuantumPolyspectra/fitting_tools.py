@@ -191,11 +191,9 @@ class FitSystem:
             print('Iterations:', iter_)
             print('Current Error:', np.mean(np.abs(resid)))
 
-            self.comp_plot(f_max, plus_S4, with_relative_errs=True)
+            self.comp_plot(params, f_max, plus_S4, with_relative_errs=True)
 
-    def comp_plot(self, f_max, plus_S4=True, with_relative_errs=True):
-
-        params = self.out.params
+    def comp_plot(self, params, f_max, plus_S4=True, with_relative_errs=True):
 
         if not with_relative_errs:
             fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(21, 6), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})

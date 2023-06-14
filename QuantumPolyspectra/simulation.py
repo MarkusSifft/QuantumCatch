@@ -186,15 +186,13 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
         diagonal[zero_ind] = 0
         Fourier_G = eigvecs @ np.diag(diagonal) @ eigvecs_inv
 
-    # update_cache_size('cache_fourier_g_prim', Fourier_G, enable_gpu)
-
     return Fourier_G
 
 
 def update_cache_size(cachename, out, enable_gpu):
 
     cache = cache_dict[cachename]
-    print(cache.maxsize)
+
     if cache.maxsize == 1:
 
         if enable_gpu:
@@ -222,8 +220,6 @@ def update_cache_size(cachename, out, enable_gpu):
             new_max_size = int(max_system_memory / object_size)
 
         cache_dict[cachename] = LRUCache(maxsize=new_max_size)
-
-        print(cachename, new_max_size, 'one element:', object_size, 'shape:', out.shape)
 
 
 def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
@@ -295,8 +291,6 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
 
-    # update_cache_size('cache_first_matrix_step', out, enable_gpu)
-
     return out
 
 
@@ -346,8 +340,6 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
 
-    # update_cache_size('cache_second_matrix_step', out, enable_gpu)
-
     return out
 
 
@@ -395,8 +387,6 @@ def _third_matrix_step(rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eig
     else:
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
-
-    # update_cache_size('cache_third_matrix_step', out, enable_gpu)
 
     return out
 
@@ -566,8 +556,6 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
                 out_sum += s_k[k] * s_k[l] * 1 / ((eigvals[l] + 1j * nu1) * (eigvals[k] + 1j * nu3)
                                                   * (eigvals[k] + eigvals[l] + 1j * nu2))
 
-    # update_cache_size('cache_second_term', out_sum, enable_gpu)
-
     return out_sum
 
 
@@ -631,8 +619,6 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
             for l in iterator:
                 out += s_k[k] * s_k[l] * 1 / ((eigvals[k] + 1j * nu1) * (eigvals[k] + 1j * nu3)
                                               * (eigvals[k] + eigvals[l] + 1j * nu2))
-
-    # update_cache_size('cache_third_term', out, enable_gpu)
 
     return out
 
@@ -1221,14 +1207,12 @@ class System(Spectrum):
             self.gpu_0 = 0
 
         # estimate necessary cachesize (TODO: Anteile könnten noch anders gewählt werden)
-        print('estimating cache size')
         update_cache_size('cache_fourier_g_prim', self.A_prim, enable_gpu)
         update_cache_size('cache_first_matrix_step', rho, enable_gpu)
         update_cache_size('cache_second_matrix_step', rho, enable_gpu)
         update_cache_size('cache_third_matrix_step', rho, enable_gpu)
         update_cache_size('cache_second_term', rho[0], enable_gpu)
         update_cache_size('cache_third_term', rho[0], enable_gpu)
-        print('done estimating cache size')
 
         if order == 2:
             if bar:

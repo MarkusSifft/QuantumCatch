@@ -95,18 +95,13 @@ class FitSystem:
 
         return out
 
-    def objective(self, params, f_list, s_list, err_list, plus_S4, f_max):
+    def objective(self, params, f_list, s_list, err_list, fit_orders, f_max):
 
         resid = []
 
-        if plus_S4:
-            orders = 5
-        else:
-            orders = 4
-
         general_weight = [1, 0.1, 0.01]
 
-        for i, order in enumerate(range(2, orders)):
+        for i, order in enumerate(fit_orders):
             # resid.append(((s_list[i] - calc_spec(params, order, f_list[i]))).flatten()/ np.abs(s_list[i]).max())
             resid.append(
                 ((s_list[i] - self.calc_spec(params, order, f_list[i])) * general_weight[i] / err_list[i]).flatten())
@@ -143,14 +138,24 @@ class FitSystem:
         for i, name in enumerate(params_in):
             fit_params.add(name, value=params_in[name][0], min=params_in[name][1], max=params_in[name][2], vary=params_in[name][3])
 
-        plus_S4 = False
+        fit_orders = [2, 3, 4]
 
         print('plotting initial fit')
-        self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, plus_S4, f_max)
+        self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, fit_orders, f_max)
         print('done')
 
+        fit_orders = [2]
         print('Fitting S2, S3')
-        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, plus_S4, f_max),
+        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
+                         iter_cb=self.plot_fit)
+        out = mini.minimize(method='least_squares')
+
+        for p in out.params:
+            fit_params[p].value = out.params[p].value
+
+        fit_orders = [2, 3]
+        print('Fitting S2, S3')
+        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                          iter_cb=self.plot_fit)
         out = mini.minimize(method='least_squares')
 
@@ -160,15 +165,15 @@ class FitSystem:
         # fit_params['gamma_in_1'].vary = True
         # fit_params['gamma_out_1'].vary = True
 
-        plus_S4 = True
+        fit_orders = [2,3,4]
 
         print('Fitting S2, S3, S4')
-        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, plus_S4, f_max),
+        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                          iter_cb=self.plot_fit)
-        out = mini.minimize()
+        out = mini.minimize(method='least_squares')
 
         print('plotting last fit')
-        self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, plus_S4, f_max)
+        self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders, f_max)
         print('done')
 
         return out, self.measurement_spec, f_list

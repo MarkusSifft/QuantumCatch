@@ -186,7 +186,7 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
         diagonal[zero_ind] = 0
         Fourier_G = eigvecs @ np.diag(diagonal) @ eigvecs_inv
 
-    update_cache_size('cache_fourier_g_prim', Fourier_G, enable_gpu)
+    # update_cache_size('cache_fourier_g_prim', Fourier_G, enable_gpu)
 
     return Fourier_G
 

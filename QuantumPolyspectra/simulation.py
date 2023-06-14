@@ -195,7 +195,7 @@ def update_cache_size(cachename, out, enable_gpu):
 
     cache = cache_dict[cachename]
 
-    if cache.currsize == 1 and cache.maxsize == 1:
+    if cache.currsize == 1:
 
         if enable_gpu:
             # Calculate the size of the array in bytes

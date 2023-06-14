@@ -87,15 +87,17 @@ def conditional_decorator(dec, condition):
 initial_max_cache_size = 1  # Set to 1 to allow the first item to be cached
 
 # Create a cache with initial maxsize
-#cache_fourier_g_prim = LRUCache(maxsize=initial_max_cache_size)
-cache_dict = {'cache_fourier_g_prim': LRUCache(maxsize=initial_max_cache_size)}
+cache_dict = {'cache_fourier_g_prim': LRUCache(maxsize=initial_max_cache_size),
+              'cache_first_matrix_step': LRUCache(maxsize=initial_max_cache_size),
+              'cache_second_matrix_step': LRUCache(maxsize=initial_max_cache_size),
+              'cache_third_matrix_step': LRUCache(maxsize=initial_max_cache_size),
+              'cache_second_term': LRUCache(maxsize=initial_max_cache_size),
+              'cache_third_term': LRUCache(maxsize=initial_max_cache_size)}
 
-cache_first_matrix_step = LRUCache(maxsize=initial_max_cache_size)
-cache_second_matrix_step = LRUCache(maxsize=initial_max_cache_size)
-cache_third_matrix_step = LRUCache(maxsize=initial_max_cache_size)
-cache_second_term = LRUCache(maxsize=initial_max_cache_size)
-cache_third_term = LRUCache(maxsize=initial_max_cache_size)
 
+def clear_cache_dict():
+    for key in cache_dict.keys():
+        cache_dict[key].clear()
 
 # Function to get available GPU memory in bytes
 def get_free_gpu_memory():
@@ -214,7 +216,7 @@ def update_cache_size(cachename, out, enable_gpu):
             object_size = out.nbytes
 
             # Calculate max system memory to use (90% of available memory)
-            max_system_memory = get_free_system_memory() * 0.9
+            max_system_memory = get_free_system_memory() * 0.9 / 6
 
             # Update the cache maxsize
             new_max_size = int(max_system_memory / object_size)
@@ -250,7 +252,7 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     return G_prim
 
 
-@cached(cache=cache_first_matrix_step,
+@cached(cache=cache_dict['cache_first_matrix_step'],
         key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
@@ -290,11 +292,14 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
     else:
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
+
+    update_cache_size('cache_first_matrix_step', out, enable_gpu)
+
     return out
 
 
 # ------ can be cached for large systems --------
-@cached(cache=cache_second_matrix_step,
+@cached(cache=cache_dict['cache_second_matrix_step'],
         key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
             omega, omega2))
 def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
@@ -338,10 +343,13 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
     else:
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
+
+    update_cache_size('cache_second_matrix_step', out, enable_gpu)
+
     return out
 
 
-@cached(cache=cache_third_matrix_step,
+@cached(cache=cache_dict['cache_third_matrix_step'],
         key=lambda rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind,
                    gpu_0: hashkey(omega, omega2))
 def _third_matrix_step(rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
@@ -385,6 +393,9 @@ def _third_matrix_step(rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eig
     else:
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
+
+    update_cache_size('cache_third_matrix_step', out, enable_gpu)
+
     return out
 
 
@@ -490,7 +501,7 @@ def small_s(rho_steady, a_prim, eigvecs, eigvec_inv, reshape_ind, enable_gpu, ze
 
 
 #  @njit(fastmath=True)
-@cached(cache=cache_second_term,
+@cached(cache=cache_dict['cache_second_term'],
         key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
@@ -553,11 +564,13 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
                 out_sum += s_k[k] * s_k[l] * 1 / ((eigvals[l] + 1j * nu1) * (eigvals[k] + 1j * nu3)
                                                   * (eigvals[k] + eigvals[l] + 1j * nu2))
 
+    update_cache_size('cache_second_term', out_sum, enable_gpu)
+
     return out_sum
 
 
 # @njit(fastmath=True)
-@cached(cache=cache_third_term,
+@cached(cache=cache_dict['cache_third_term'],
         key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
@@ -616,6 +629,8 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
             for l in iterator:
                 out += s_k[k] * s_k[l] * 1 / ((eigvals[k] + 1j * nu1) * (eigvals[k] + 1j * nu3)
                                               * (eigvals[k] + eigvals[l] + 1j * nu2))
+
+    update_cache_size('cache_third_term', out, enable_gpu)
 
     return out
 
@@ -1113,11 +1128,7 @@ class System(Spectrum):
 
         self.enable_gpu = enable_gpu
         af.device_gc()
-        cache_fourier_g_prim.clear()
-        cache_first_matrix_step.clear()
-        cache_second_matrix_step.clear()
-        cache_second_term.clear()
-        cache_third_term.clear()
+        clear_cache_dict()
 
         if mathcal_a is None:
             mathcal_a = calc_super_A(self.sc_ops[measure_op].full()).T
@@ -1361,12 +1372,7 @@ class System(Spectrum):
             # self.S[order] = np.real(_full_trispec(spec_data)) * beta ** 8
             self.S[order] = _full_trispec(spec_data) * beta ** 8
 
-        # Delete cache_fourier_g_prim
-        cache_fourier_g_prim.clear()
-        cache_first_matrix_step.clear()
-        cache_second_matrix_step.clear()
-        cache_second_term.clear()
-        cache_third_term.clear()
+        clear_cache_dict()
         return self.S[order]
 
     def plot_all(self, f_max=None):

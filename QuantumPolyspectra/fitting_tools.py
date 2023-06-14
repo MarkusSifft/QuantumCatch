@@ -121,7 +121,7 @@ class FitSystem:
 
         return np.concatenate(resid)
 
-    def complete_fit(self, path, param_names, params_start, params_min, params_max, params_vary, f_max=None):
+    def complete_fit(self, path, params_in, f_max=None):
 
         self.measurement_spec = load_spec(path)
         f_list = [self.measurement_spec.freq[i] for i in range(2, 5)]
@@ -148,8 +148,8 @@ class FitSystem:
 
         fit_params = Parameters()
 
-        for i, name in enumerate(param_names):
-            fit_params.add(name, value=params_start[i], min=params_min[i], max=params_max[i], vary=params_vary[i])
+        for i, name in enumerate(params_in):
+            fit_params.add(name, value=params_in[name][0], min=params_in[name][1], max=params_in[name][2], vary=params_in[name][3])
 
         plus_S4 = False
 

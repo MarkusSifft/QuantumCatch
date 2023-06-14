@@ -88,7 +88,7 @@ class FitSystem:
 
         params = []
 
-        for key in lmfit_params.key():
+        for key in lmfit_params.keys():
             if key == 'c':
                 c = lmfit_params[key]
             else:

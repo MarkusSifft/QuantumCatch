@@ -1221,12 +1221,14 @@ class System(Spectrum):
             self.gpu_0 = 0
 
         # estimate necessary cachesize (TODO: Anteile könnten noch anders gewählt werden)
+        print('estimating cache size')
         update_cache_size('cache_fourier_g_prim', self.A_prim, enable_gpu)
         update_cache_size('cache_first_matrix_step', rho, enable_gpu)
         update_cache_size('cache_second_matrix_step', rho, enable_gpu)
         update_cache_size('cache_third_matrix_step', rho, enable_gpu)
         update_cache_size('cache_second_term', rho[0], enable_gpu)
         update_cache_size('cache_third_term', rho[0], enable_gpu)
+        print('done estimating cache size')
 
         if order == 2:
             if bar:

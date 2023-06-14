@@ -84,7 +84,7 @@ def conditional_decorator(dec, condition):
 
 # ------ new cache_fourier_g_prim implementation -------
 # Initial maxsize
-initial_max_cache_size = 1  # Set to 1 to allow the first item to be cached
+initial_max_cache_size = 1e6  # Set to 1 to allow the first item to be cached
 
 # Create a cache with initial maxsize
 cache_dict = {'cache_fourier_g_prim': LRUCache(maxsize=initial_max_cache_size),

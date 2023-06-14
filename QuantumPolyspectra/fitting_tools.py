@@ -138,7 +138,7 @@ class FitSystem:
         for i, name in enumerate(params_in):
             fit_params.add(name, value=params_in[name][0], min=params_in[name][1], max=params_in[name][2], vary=params_in[name][3])
 
-        fit_orders = [2, 3, 4]
+        fit_orders = [2, 3]
 
         print('plotting initial fit')
         self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, fit_orders, f_max)

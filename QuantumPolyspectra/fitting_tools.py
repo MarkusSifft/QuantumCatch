@@ -95,7 +95,7 @@ class FitSystem:
 
         return out
 
-    def objective(self, params, f_list, s_list, err_list, plus_S4):
+    def objective(self, params, f_list, s_list, err_list, plus_S4, f_max):
 
         resid = []
 
@@ -150,7 +150,7 @@ class FitSystem:
         print('done')
 
         print('Fitting S2, S3')
-        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, plus_S4),
+        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, plus_S4, f_max),
                          iter_cb=self.plot_fit)
         out = mini.minimize(method='least_squares')
 
@@ -163,7 +163,7 @@ class FitSystem:
         plus_S4 = True
 
         print('Fitting S2, S3, S4')
-        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, plus_S4),
+        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, plus_S4, f_max),
                          iter_cb=self.plot_fit)
         out = mini.minimize()
 

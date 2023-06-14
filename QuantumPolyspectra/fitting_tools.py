@@ -146,10 +146,16 @@ class FitSystem:
         plus_S4 = False
 
         print('plotting initial fit')
+        print('++++++++++++')
+        print(fit_params)
+        print('++++++++++++')
         self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, plus_S4, f_max)
         print('done')
 
         print('Fitting S2, S3')
+        print('++++++++++++')
+        print(fit_params)
+        print('++++++++++++')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, plus_S4, f_max),
                          iter_cb=self.plot_fit)
         out = mini.minimize(method='least_squares')

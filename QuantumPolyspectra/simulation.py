@@ -73,19 +73,32 @@ def conditional_decorator(dec, condition):
 
 
 # ------ setup caches for a speed up when summing over all permutations -------
-cache_fourier_g_prim = LRUCache(maxsize=int(200))
-cache_first_matrix_step = LRUCache(maxsize=int(10e3))
-cache_second_matrix_step = LRUCache(maxsize=int(10e3))
-cache_third_matrix_step = LRUCache(maxsize=int(10e3))
-cache_second_term = LRUCache(maxsize=int(20e5))
-cache_third_term = LRUCache(maxsize=int(20e5))
+# cache_fourier_g_prim = LRUCache(maxsize=int(200))
+# cache_first_matrix_step = LRUCache(maxsize=int(10e3))
+# cache_second_matrix_step = LRUCache(maxsize=int(10e3))
+# cache_third_matrix_step = LRUCache(maxsize=int(10e3))
+# cache_second_term = LRUCache(maxsize=int(20e5))
+# cache_third_term = LRUCache(maxsize=int(20e5))
 
 
 # ------ new cache_fourier_g_prim implementation -------
-# GB = 1024**3
-# cache_fourier_g_prim = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
-# cache_second_term = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
-# cache_third_term = LRUCache(2 * GB, getsizeof=asizeof.asizeof)
+# Initial maxsize
+initial_max_cache_size = 1  # Set to 1 to allow the first item to be cached
+
+# Create a cache with initial maxsize
+cache_fourier_g_prim = LRUCache(maxsize=initial_max_cache_size)
+cache_first_matrix_step = LRUCache(maxsize=initial_max_cache_size)
+cache_second_matrix_step = LRUCache(maxsize=initial_max_cache_size)
+cache_third_matrix_step = LRUCache(maxsize=initial_max_cache_size)
+cache_second_term = LRUCache(maxsize=initial_max_cache_size)
+cache_third_term = LRUCache(maxsize=initial_max_cache_size)
+
+
+# Function to get available GPU memory in bytes
+def get_free_gpu_memory():
+    device_props = af.device_info()
+    return device_props['device_memory'] * 1024 * 1024
+
 
 def calc_super_A(op):
     """
@@ -163,6 +176,17 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
         diagonal = 1 / (-eigvals - 1j * nu)
         diagonal[zero_ind] = 0
         Fourier_G = eigvecs @ np.diag(diagonal) @ eigvecs_inv
+
+    # Check if this is the first call
+    if cache_fourier_g_prim.currsize == 1 and cache_fourier_g_prim.maxsize == 1:
+        # Calculate the size of the array in bytes
+        object_size = Fourier_G.elements() * Fourier_G.dtype_size()
+
+        # Calculate max GPU memory to use (90% of total GPU memory)
+        max_gpu_memory = get_free_gpu_memory() * 0.9 / 6
+
+        # Update the cache maxsize
+        cache_fourier_g_prim.maxsize = int(max_gpu_memory / object_size)
 
     return Fourier_G
 
@@ -1329,8 +1353,9 @@ class System(Spectrum):
         """
         if f_max is None:
             f_max = self.freq[2].max()
-        fig = self.plot(order_in=(2,3,4), f_max=f_max, s2_data=self.S[2], s3_data=self.S[3], s4_data=self.S[4], s2_f=self.freq[2],
-                             s3_f=self.freq[3], s4_f=self.freq[4])
+        fig = self.plot(order_in=(2, 3, 4), f_max=f_max, s2_data=self.S[2], s3_data=self.S[3], s4_data=self.S[4],
+                        s2_f=self.freq[2],
+                        s3_f=self.freq[3], s4_f=self.freq[4])
         return fig
 
     def plot_spectrum(self, order, title=None, log=False, x_range=False, imag_plot=False):

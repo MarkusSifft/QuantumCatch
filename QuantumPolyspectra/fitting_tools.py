@@ -53,18 +53,18 @@ class FitSystem:
 
     def s2(self, params, c, omegas):
 
-        system, sc_ops, measure_strength = self.set_system(*params)
+        system, sc_ops, measure_strength = self.set_system(params)
 
         A = calc_super_A(sc_ops[self.m_op].full())
 
         spec = system.calc_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op, beta_offset=True,
                                     enable_gpu=False, bar=False, verbose=False)
 
-        return spec + c
+        return spec + params['c']
 
     def s3(self, params, omegas):
 
-        system, sc_ops, measure_strength = self.set_system(*params)
+        system, sc_ops, measure_strength = self.set_system(params)
 
         A = calc_super_A(sc_ops[self.m_op].full())
 
@@ -75,7 +75,7 @@ class FitSystem:
 
     def s4(self, params, omegas):
 
-        system, sc_ops, measure_strength = self.set_system(*params)
+        system, sc_ops, measure_strength = self.set_system(params)
 
         A = calc_super_A(sc_ops[self.m_op].full())
 
@@ -86,20 +86,20 @@ class FitSystem:
 
     def calc_spec(self, lmfit_params, order, fs):
 
-        params = []
-
-        for key in lmfit_params.keys():
-            if key == 'c':
-                c = lmfit_params[key]
-            else:
-                params.append([lmfit_params[key]])
+        # params = []
+        #
+        # for key in lmfit_params.keys():
+        #     if key == 'c':
+        #         c = lmfit_params[key]
+        #     else:
+        #         params.append([lmfit_params[key]])
 
         if order == 2:
-            out = self.s2(params, c, fs)
+            out = self.s2(lmfit_params, fs)
         if order == 3:
-            out = self.s3(params, fs)
+            out = self.s3(lmfit_params, fs)
         if order == 4:
-            out = self.s4(params, fs)
+            out = self.s4(lmfit_params, fs)
 
         return out
 

@@ -223,7 +223,7 @@ def update_cache_size(cachename, out, enable_gpu):
 
         cache_dict[cachename] = LRUCache(maxsize=new_max_size)
 
-        print(cachename, new_max_size)
+        print(cachename, new_max_size, 'one element:', object_size)
 
 
 def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
@@ -1220,6 +1220,12 @@ class System(Spectrum):
         else:
             self.gpu_0 = 0
 
+        # estimate neccesarry cachesize
+        #for key in cache_dict.keys():
+        #    update_cache_size(key, out, enable_gpu)
+
+
+
         if order == 2:
             if bar:
                 print('Calculating power spectrum')
@@ -1357,11 +1363,7 @@ class System(Spectrum):
                             spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum + trace_sum
                             spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
 
-                # cache_fourier_g_prim.clear()
-                # cache_first_matrix_step.clear()
-                # cache_second_matrix_step.clear()
-                # cache_second_term.clear()
-                # cache_third_term.clear()
+
             if enable_gpu:
                 spec_data = af.algorithm.sum(rho_prim_sum, dim=2).to_ndarray()
                 spec_data += af.algorithm.sum(af.algorithm.sum(second_term_mat + third_term_mat, dim=3),

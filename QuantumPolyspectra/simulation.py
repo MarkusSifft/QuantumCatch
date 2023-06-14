@@ -1225,8 +1225,8 @@ class System(Spectrum):
         update_cache_size('cache_first_matrix_step', rho, enable_gpu)
         update_cache_size('cache_second_matrix_step', rho, enable_gpu)
         update_cache_size('cache_third_matrix_step', rho, enable_gpu)
-        update_cache_size('cache_second_term', rho[0,0], enable_gpu)
-        update_cache_size('cache_third_term', rho[0,0], enable_gpu)
+        update_cache_size('cache_second_term', rho[0], enable_gpu)
+        update_cache_size('cache_third_term', rho[0], enable_gpu)
 
         if order == 2:
             if bar:

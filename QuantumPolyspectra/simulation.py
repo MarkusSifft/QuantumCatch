@@ -180,7 +180,10 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
     # Check if this is the first call
     if cache_fourier_g_prim.currsize == 1 and cache_fourier_g_prim.maxsize == 1:
         # Calculate the size of the array in bytes
-        object_size = Fourier_G.elements() * Fourier_G.dtype_size()
+        #object_size = Fourier_G.elements() * Fourier_G.dtype_size()
+        dims = Fourier_G.dims()
+        dtype_size = Fourier_G.dtype_size()
+        object_size = dims[0] * dims[1] * dtype_size  # For a 2D array
 
         # Calculate max GPU memory to use (90% of total GPU memory)
         max_gpu_memory = get_free_gpu_memory() * 0.9 / 6

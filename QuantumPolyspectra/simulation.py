@@ -223,6 +223,8 @@ def update_cache_size(cachename, out, enable_gpu):
 
         cache_dict[cachename] = LRUCache(maxsize=new_max_size)
 
+        print(cachename, new_max_size)
+
 
 def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     """

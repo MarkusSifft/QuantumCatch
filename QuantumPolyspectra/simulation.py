@@ -49,6 +49,7 @@ from itertools import permutations
 from cachetools import cached
 from cachetools import LRUCache
 from cachetools.keys import hashkey
+import psutil
 from tqdm import tqdm_notebook
 from IPython.display import clear_output
 import pickle
@@ -98,6 +99,9 @@ cache_third_term = LRUCache(maxsize=initial_max_cache_size)
 def get_free_gpu_memory():
     device_props = af.device_info()
     return device_props['device_memory'] * 1024 * 1024
+
+def get_free_system_memory():
+    return psutil.virtual_memory().available
 
 
 def calc_super_A(op):
@@ -180,7 +184,7 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
     # Check if this is the first call
     if cache_fourier_g_prim.currsize == 1 and cache_fourier_g_prim.maxsize == 1:
         # Calculate the size of the array in bytes
-        #object_size = Fourier_G.elements() * Fourier_G.dtype_size()
+        # object_size = Fourier_G.elements() * Fourier_G.dtype_size()
         dims = Fourier_G.dims()
         dtype_size = Fourier_G.dtype_size()
         object_size = dims[0] * dims[1] * dtype_size  # For a 2D array
@@ -192,6 +196,38 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
         cache_fourier_g_prim.maxsize = int(max_gpu_memory / object_size)
 
     return Fourier_G
+
+
+def set_cache_size(cache, out, enable_gpu):
+
+    if cache.currsize == 1 and cache.maxsize == 1:
+
+        if enable_gpu:
+            # Calculate the size of the array in bytes
+            # object_size = Fourier_G.elements() * Fourier_G.dtype_size()
+
+            dims = out.dims()
+            dtype_size = out.dtype_size()
+            object_size = dims[0] * dims[1] * dtype_size  # For a 2D array
+
+            # Calculate max GPU memory to use (90% of total GPU memory)
+            max_gpu_memory = get_free_gpu_memory() * 0.9 / 6
+
+            # Update the cache maxsize
+            cache.maxsize = int(max_gpu_memory / object_size)
+
+        else:
+            # Calculate the size of the numpy array in bytes
+            object_size = out.nbytes
+
+            # Calculate max system memory to use (90% of available memory)
+            max_system_memory = get_free_system_memory() * 0.9
+
+            # Update the cache maxsize
+            cache.maxsize = int(max_system_memory / object_size)
+
+    else:
+        print('Something went wrong when setting cachesize.')
 
 
 def _g_prim(t, eigvecs, eigvals, eigvecs_inv):

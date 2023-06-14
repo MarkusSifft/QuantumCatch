@@ -178,7 +178,7 @@ class FitSystem:
 
         return out, self.measurement_spec, f_list
 
-    def plot_fit(self, params, iter_, resid, f_list, s_list, err_list, plus_S4, f_max):
+    def plot_fit(self, params, iter_, resid, f_list, s_list, err_list, fit_orders, f_max):
         if (iter_ + 1) % 10 == 0:
             print(iter_ + 1)
 
@@ -188,9 +188,9 @@ class FitSystem:
             print('Iterations:', iter_)
             print('Current Error:', np.mean(np.abs(resid)))
 
-            self.comp_plot(params, f_max, plus_S4, with_relative_errs=True)
+            self.comp_plot(params, f_max, fit_orders, with_relative_errs=True)
 
-    def comp_plot(self, params, f_max, plus_S4=True, with_relative_errs=True):
+    def comp_plot(self, params, f_max, fit_orders, with_relative_errs=True):
 
         if not with_relative_errs:
             fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(21, 6), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
@@ -201,9 +201,7 @@ class FitSystem:
             cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
             fit_list = []
-            for i in range(2, 5):
-                if not plus_S4 and i == 4:
-                    break
+            for i in fit_orders:
                 fit_list.append(self.calc_spec(params, i, self.measurement_spec.freq[i]))
 
             # ---------- S2 ------------

@@ -86,19 +86,11 @@ class FitSystem:
 
     def calc_spec(self, lmfit_params, order, fs):
 
-        # params = []
-        #
-        # for key in lmfit_params.keys():
-        #     if key == 'c':
-        #         c = lmfit_params[key]
-        #     else:
-        #         params.append([lmfit_params[key]])
-
         if order == 2:
             out = self.s2(lmfit_params, fs)
-        if order == 3:
+        elif order == 3:
             out = self.s3(lmfit_params, fs)
-        if order == 4:
+        else:
             out = self.s4(lmfit_params, fs)
 
         return out

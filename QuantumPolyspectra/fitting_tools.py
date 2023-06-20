@@ -292,8 +292,6 @@ class FitSystem:
 
             for j, i in enumerate(fit_orders):
 
-                j += 1
-
                 if fit_list[i] is not None and i > 2:
 
                     y, x = np.meshgrid(self.measurement_spec.freq[i], self.measurement_spec.freq[i])

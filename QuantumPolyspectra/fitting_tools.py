@@ -149,7 +149,7 @@ class FitSystem:
         print('Fitting S2')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                          iter_cb=self.plot_fit)
-        out = mini.minimize(method='least_squares', xtol=1e-9)
+        out = mini.minimize(method='least_squares', xtol=1e-3)
 
         for p in out.params:
             fit_params[p].value = out.params[p].value

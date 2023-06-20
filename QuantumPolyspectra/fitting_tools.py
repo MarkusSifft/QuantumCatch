@@ -289,7 +289,7 @@ class FitSystem:
 
             # ---------- S3 and S4 ------------
 
-            if len(fit_orders) == 1:
+            if not len(fit_orders) == 1:
 
                 for i in np.array(fit_orders)-1:
 

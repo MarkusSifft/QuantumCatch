@@ -136,7 +136,8 @@ class FitSystem:
         fit_params = Parameters()
 
         for i, name in enumerate(params_in):
-            fit_params.add(name, value=params_in[name][0], min=params_in[name][1], max=params_in[name][2], vary=params_in[name][3])
+            fit_params.add(name, value=params_in[name][0], min=params_in[name][1], max=params_in[name][2],
+                           vary=params_in[name][3])
 
         fit_orders = [2, 3]
 
@@ -165,7 +166,7 @@ class FitSystem:
         # fit_params['gamma_in_1'].vary = True
         # fit_params['gamma_out_1'].vary = True
 
-        fit_orders = [2,3,4]
+        fit_orders = [2, 3, 4]
 
         print('Fitting S2, S3, S4')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
@@ -220,7 +221,7 @@ class FitSystem:
 
             # ---------- S3 and S4 ------------
 
-            for i in np.array(fit_orders)-1:
+            for i in np.array(fit_orders) - 1:
                 y, x = np.meshgrid(self.measurement_spec.freq[i + 2], self.measurement_spec.freq[i + 2])
 
                 z = np.real(self.measurement_spec.S[i + 2])
@@ -255,14 +256,14 @@ class FitSystem:
 
             cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
-            fit_list = []
+            fit_list = {2: None, 3: None, 4: None}
             for i in fit_orders:
-                fit_list.append(self.calc_spec(params, i, self.measurement_spec.freq[i]))
+                fit_list[i] = self.calc_spec(params, i, self.measurement_spec.freq[i])
 
             # ---------- S2 ------------
             c = ax[0, 0].plot(self.measurement_spec.freq[2], np.real(self.measurement_spec.S[2]), lw=3,
                               color=[0, 0.5, 0.9], label='meas.')
-            c = ax[0, 0].plot(self.measurement_spec.freq[2], fit_list[0], '--k', alpha=0.8, label='fit')
+            c = ax[0, 0].plot(self.measurement_spec.freq[2], fit_list[2], '--k', alpha=0.8, label='fit')
 
             ax[0, 0].set_xlim([0, f_max])
             # ax[0].set_ylim([0, 1.1*y.max()])
@@ -274,7 +275,7 @@ class FitSystem:
             ax[0, 0].legend()
 
             c = ax[1, 0].plot(self.measurement_spec.freq[2],
-                              (np.real(self.measurement_spec.S[2]) - fit_list[0]) / np.real(self.measurement_spec.S[2]),
+                              (np.real(self.measurement_spec.S[2]) - fit_list[2]) / np.real(self.measurement_spec.S[2]),
                               lw=3,
                               color=[0, 0.5, 0.9], label='rel. err.')
 
@@ -289,13 +290,15 @@ class FitSystem:
 
             # ---------- S3 and S4 ------------
 
-            if not len(fit_orders) == 1:
+            for j, i in enumerate(fit_orders):
 
-                for i in np.array(fit_orders)-1:
+                j += 1
 
-                    y, x = np.meshgrid(self.measurement_spec.freq[i + 2], self.measurement_spec.freq[i + 2])
+                if fit_list[i] is not None:
 
-                    z = np.real(self.measurement_spec.S[i + 2])
+                    y, x = np.meshgrid(self.measurement_spec.freq[i], self.measurement_spec.freq[i])
+
+                    z = np.real(self.measurement_spec.S[i])
                     z_fit = fit_list[i]
                     z_both = np.tril(z) + np.triu(z_fit)
 
@@ -321,7 +324,8 @@ class FitSystem:
                     # ------ rel. err. -------
 
                     z_both = gaussian_filter(
-                        (np.real(self.measurement_spec.S[i + 2]) - fit_list[i]) / np.real(self.measurement_spec.S[i + 2]),
+                        (np.real(self.measurement_spec.S[i]) - fit_list[i]) / np.real(
+                            self.measurement_spec.S[i]),
                         3)
 
                     vmin = np.min(z_both)

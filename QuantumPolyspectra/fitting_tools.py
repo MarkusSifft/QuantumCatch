@@ -307,18 +307,18 @@ class FitSystem:
                     abs_max = max(abs(vmin), abs(vmax))
                     norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
-                    c = ax[0, i].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
-                    ax[0, i].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
-                    ax[0, i].axis([0, f_max, 0, f_max])
+                    c = ax[0, j].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
+                    ax[0, j].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
+                    ax[0, j].axis([0, f_max, 0, f_max])
                     # ax[1].set_yticks([0,0.2,0.4])
 
-                    ax[0, i].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                    ax[0, i].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                    ax[0, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
+                    ax[0, j].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
                     # ax[i].grid(True)
-                    ax[0, i].tick_params(axis='both', direction='in', labelsize=14)
-                    ax[0, i].set_title('Fit / Measurement')
+                    ax[0, j].tick_params(axis='both', direction='in', labelsize=14)
+                    ax[0, j].set_title('Fit / Measurement')
 
-                    cbar = fig.colorbar(c, ax=(ax[0, i]))
+                    cbar = fig.colorbar(c, ax=(ax[0, j]))
                     cbar.ax.tick_params(labelsize=14)
 
                     # ------ rel. err. -------
@@ -333,18 +333,18 @@ class FitSystem:
                     abs_max = max(abs(vmin), abs(vmax))
                     norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
-                    c = ax[1, i].pcolormesh(x, y, z_both, cmap=cmap, norm=norm, zorder=1)
+                    c = ax[1, j].pcolormesh(x, y, z_both, cmap=cmap, norm=norm, zorder=1)
                     # ax[1,i].plot([0,f_max], [0,f_max], 'k', alpha=0.4)
-                    ax[1, i].axis([0, f_max, 0, f_max])
+                    ax[1, j].axis([0, f_max, 0, f_max])
                     # ax[1].set_yticks([0,0.2,0.4])
 
-                    ax[1, i].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                    ax[1, i].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                    ax[1, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
+                    ax[1, j].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
                     # ax[i].grid(True)
-                    ax[1, i].tick_params(axis='both', direction='in', labelsize=14)
-                    ax[1, i].set_title('relative error')
+                    ax[1, j].tick_params(axis='both', direction='in', labelsize=14)
+                    ax[1, j].set_title('relative error')
 
-                    cbar = fig.colorbar(c, ax=(ax[1, i]))
+                    cbar = fig.colorbar(c, ax=(ax[1, j]))
                     cbar.ax.tick_params(labelsize=14)
 
         plt.show()

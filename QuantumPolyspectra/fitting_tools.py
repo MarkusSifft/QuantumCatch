@@ -60,7 +60,6 @@ class FitSystem:
         spec = system.calc_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op, beta_offset=True,
                                     enable_gpu=False, bar=False, verbose=False)
 
-        print(params['c'])
         return spec + params['c']
 
     def s3(self, params, omegas):
@@ -147,10 +146,10 @@ class FitSystem:
         print('done')
 
         fit_orders = [2]
-        print('Fitting S2, S3')
+        print('Fitting S2')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                          iter_cb=self.plot_fit)
-        out = mini.minimize(method='least_squares')
+        out = mini.minimize(method='least_squares', xtol=1e-9)
 
         for p in out.params:
             fit_params[p].value = out.params[p].value

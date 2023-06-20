@@ -258,7 +258,7 @@ class FitSystem:
 
             fit_list = {2: None, 3: None, 4: None}
             for i in fit_orders:
-                fit_list[i] = self.calc_spec(params, i, self.measurement_spec.freq[i])
+                fit_list[i] = np.real(self.calc_spec(params, i, self.measurement_spec.freq[i]))
 
             # ---------- S2 ------------
             c = ax[0, 0].plot(self.measurement_spec.freq[2], np.real(self.measurement_spec.S[2]), lw=3,

@@ -323,6 +323,11 @@ class FitSystem:
 
                     # ------ rel. err. -------
 
+                    print('i', i)
+                    print('j', j)
+                    print(self.measurement_spec.S[i].shape)
+                    print(fit_list[i].shape)
+
                     z_both = gaussian_filter(
                         (np.real(self.measurement_spec.S[i]) - fit_list[i]) / np.real(
                             self.measurement_spec.S[i]),

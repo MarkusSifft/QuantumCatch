@@ -60,6 +60,7 @@ class FitSystem:
         spec = system.calc_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op, beta_offset=True,
                                     enable_gpu=False, bar=False, verbose=False)
 
+        print(params['c'])
         return spec + params['c']
 
     def s3(self, params, omegas):
@@ -320,11 +321,6 @@ class FitSystem:
                     cbar.ax.tick_params(labelsize=14)
 
                     # ------ rel. err. -------
-
-                    print('i', i)
-                    print('j', j)
-                    print(self.measurement_spec.S[i].shape)
-                    print(fit_list[i].shape)
 
                     z_both = gaussian_filter(
                         (np.real(self.measurement_spec.S[i]) - fit_list[i]) / np.real(

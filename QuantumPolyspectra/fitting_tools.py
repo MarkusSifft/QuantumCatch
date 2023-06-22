@@ -333,6 +333,8 @@ class FitSystem:
                             self.measurement_spec.S[i]),
                         3)
 
+                    z_both[z_both>0.5] = 0 * z_both[z_both>0.5] + 0.5
+
                     vmin = np.min(z_both)
                     vmax = np.max(z_both)
                     abs_max = max(abs(vmin), abs(vmax))

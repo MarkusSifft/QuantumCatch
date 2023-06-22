@@ -183,7 +183,7 @@ class FitTelegraph(Spectrum):
         fit_params.add('beta', value=beta, min=0)
         fit_params.add('gOut', value=gamma_out, min=0)
         fit_params.add('gIn', value=gamma_in, min=0)
-        fit_params.add('beta_off', value=c)
+        fit_params.add('beta_off', value=c, min=-1e12)
 
         out = minimize(objective, fit_params, args=(omega_list, data), method='least_squares')
 

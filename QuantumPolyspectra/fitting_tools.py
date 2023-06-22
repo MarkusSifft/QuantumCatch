@@ -108,7 +108,7 @@ class FitSystem:
 
         return np.concatenate(resid)
 
-    def complete_fit(self, path, params_in, f_max=None, method=None, start_with_s2_only=True, xtol=1e-5):
+    def complete_fit(self, path, params_in, f_max=None, method='least_squares', start_with_s2_only=True, xtol=1e-5):
 
         self.measurement_spec = load_spec(path)
         f_list = [self.measurement_spec.freq[i] for i in range(2, 5)]

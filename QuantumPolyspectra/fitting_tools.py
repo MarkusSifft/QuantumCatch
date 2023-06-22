@@ -108,7 +108,7 @@ class FitSystem:
 
         return np.concatenate(resid)
 
-    def complete_fit(self, path, params_in, f_max=None, method=None, start_with_s2_only=True):
+    def complete_fit(self, path, params_in, f_max=None, method=None, start_with_s2_only=True, xtol=1e-5):
 
         self.measurement_spec = load_spec(path)
         f_list = [self.measurement_spec.freq[i] for i in range(2, 5)]
@@ -151,7 +151,7 @@ class FitSystem:
             print('Fitting S2')
             mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                              iter_cb=self.plot_fit)
-            out = mini.minimize(method=method, xtol=1e-5)
+            out = mini.minimize(method=method, xtol=xtol)
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
@@ -160,7 +160,7 @@ class FitSystem:
         print('Fitting S2, S3')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                          iter_cb=self.plot_fit)
-        out = mini.minimize(method=method)
+        out = mini.minimize(method=method, xtol=xtol)
 
         for p in out.params:
             fit_params[p].value = out.params[p].value
@@ -177,7 +177,7 @@ class FitSystem:
         print('Fitting S2, S3, S4')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                          iter_cb=self.plot_fit)
-        out = mini.minimize(method=method)
+        out = mini.minimize(method=method, xtol=xtol)
 
         print('plotting last fit')
         self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders, f_max)

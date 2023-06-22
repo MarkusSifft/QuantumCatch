@@ -168,11 +168,12 @@ class FitSystem:
         # fit_params['gamma_in_1'].vary = True
         # fit_params['gamma_out_1'].vary = True
 
+        fit_orders = [2, 3, 4]
+
         print('plotting fit before fitting S4')
         self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, fit_orders, f_max)
         print('done')
 
-        fit_orders = [2, 3, 4]
 
         print('Fitting S2, S3, S4')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),

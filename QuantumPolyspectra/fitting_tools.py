@@ -108,7 +108,7 @@ class FitSystem:
 
         return np.concatenate(resid)
 
-    def complete_fit(self, path, params_in, f_max=None):
+    def complete_fit(self, path, params_in, f_max=None, method=None, start_with_s2_only=True):
 
         self.measurement_spec = load_spec(path)
         f_list = [self.measurement_spec.freq[i] for i in range(2, 5)]
@@ -145,20 +145,22 @@ class FitSystem:
         self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, fit_orders, f_max)
         print('done')
 
-        fit_orders = [2]
-        print('Fitting S2')
-        mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
-                         iter_cb=self.plot_fit)
-        out = mini.minimize(method='least_squares', xtol=1e-5)
+        if start_with_s2_only:
 
-        for p in out.params:
-            fit_params[p].value = out.params[p].value
+            fit_orders = [2]
+            print('Fitting S2')
+            mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
+                             iter_cb=self.plot_fit)
+            out = mini.minimize(method=method, xtol=1e-5)
+
+            for p in out.params:
+                fit_params[p].value = out.params[p].value
 
         fit_orders = [2, 3]
         print('Fitting S2, S3')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                          iter_cb=self.plot_fit)
-        out = mini.minimize(method='least_squares')
+        out = mini.minimize(method=method)
 
         for p in out.params:
             fit_params[p].value = out.params[p].value
@@ -171,7 +173,7 @@ class FitSystem:
         print('Fitting S2, S3, S4')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                          iter_cb=self.plot_fit)
-        out = mini.minimize(method='least_squares')
+        out = mini.minimize(method=method)
 
         print('plotting last fit')
         self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders, f_max)
@@ -193,7 +195,7 @@ class FitSystem:
 
     def comp_plot(self, params, f_max, fit_orders, with_relative_errs=True):
 
-        if not with_relative_errs:
+        if not with_relative_errs: #TODO alle Änderungen vom else-Bereich unten übernehmen
             fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(21, 6), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
             plt.rc('text', usetex=False)
             plt.rc('font', size=10)

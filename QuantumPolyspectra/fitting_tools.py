@@ -174,7 +174,6 @@ class FitSystem:
         self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, fit_orders, f_max)
         print('done')
 
-
         print('Fitting S2, S3, S4')
         mini = Minimizer(self.objective, fit_params, fcn_args=(f_list, s_list, err_list, fit_orders, f_max),
                          iter_cb=self.plot_fit)
@@ -200,7 +199,7 @@ class FitSystem:
 
     def comp_plot(self, params, f_max, fit_orders, with_relative_errs=True):
 
-        if not with_relative_errs: #TODO alle Änderungen vom else-Bereich unten übernehmen
+        if not with_relative_errs:  # TODO alle Änderungen vom else-Bereich unten übernehmen
             fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(21, 6), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
             plt.rc('text', usetex=False)
             plt.rc('font', size=10)
@@ -300,7 +299,6 @@ class FitSystem:
             for j, i in enumerate(fit_orders):
 
                 if fit_list[i] is not None and i > 2:
-
                     y, x = np.meshgrid(self.measurement_spec.freq[i], self.measurement_spec.freq[i])
 
                     z = np.real(self.measurement_spec.S[i])
@@ -333,7 +331,8 @@ class FitSystem:
                             self.measurement_spec.S[i]),
                         3)
 
-                    z_both[z_both>0.5] = 0 * z_both[z_both>0.5] + 0.5
+                    print('sdfghjklö')
+                    z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
 
                     vmin = np.min(z_both)
                     vmax = np.max(z_both)

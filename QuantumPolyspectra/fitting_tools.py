@@ -118,21 +118,21 @@ class FitSystem:
         err_list = [np.real(self.measurement_spec.S_err[i]) for i in range(2, 5)]
 
         if f_max_2 is not None:
-            i = 2
+            i = 0
             f_mask = f_list[i] < f_max_2
             f_list[i] = f_list[i][f_mask]
             s_list[i] = s_list[i][f_mask]
             err_list[i] = err_list[i][f_mask]
 
         if f_max_3 is not None:
-            i = 3
+            i = 1
             f_mask = f_list[i] < f_max_3
             f_list[i] = f_list[i][f_mask]
             s_list[i] = s_list[i][f_mask, f_mask]
             err_list[i] = err_list[i][f_mask, f_mask]
 
         if f_max_4 is not None:
-            i = 4
+            i = 2
             f_mask = f_list[i] < f_max_4
             f_list[i] = f_list[i][f_mask]
             s_list[i] = s_list[i][f_mask, f_mask]

@@ -124,10 +124,14 @@ class FitSystem:
 
         if f_max_3 is not None:
             i = 3
+            plt.matshow(np.real(self.measurement_spec.S[i]))
+
             f_mask = self.measurement_spec.freq[i] < f_max_3
             self.measurement_spec.freq[i] = self.measurement_spec.freq[i][f_mask]
             self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[f_mask, f_mask]
             self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[f_mask, f_mask]
+
+            plt.matshow(np.real(self.measurement_spec.S[i]))
 
         if f_max_4 is not None:
             i = 4

@@ -118,27 +118,26 @@ class FitSystem:
         if f_max_2 is not None:
             i = 2
             f_mask = self.measurement_spec.freq[i] < f_max_2
-            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][f_mask]
-            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[f_mask]
-            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[f_mask]
+            max_ind = f_mask.sum()
+            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][:max_ind]
+            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind]
+            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind]
 
         if f_max_3 is not None:
             i = 3
-            plt.matshow(np.real(self.measurement_spec.S[i]))
-
             f_mask = self.measurement_spec.freq[i] < f_max_3
-            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][f_mask]
-            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[f_mask, f_mask]
-            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[f_mask, f_mask]
-
-            plt.matshow(np.real(self.measurement_spec.S[i]))
+            max_ind = f_mask.sum()
+            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][:max_ind]
+            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind, :max_ind]
+            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind, :max_ind]
 
         if f_max_4 is not None:
             i = 4
             f_mask = self.measurement_spec.freq[i] < f_max_4
-            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][f_mask]
-            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[f_mask, f_mask]
-            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[f_mask, f_mask]
+            max_ind = f_mask.sum()
+            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][:max_ind]
+            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind, :max_ind]
+            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind, :max_ind]
 
         f_list = [self.measurement_spec.freq[i] for i in range(2, 5)]
         s_list = [np.real(self.measurement_spec.S[i]) for i in range(2, 5)]

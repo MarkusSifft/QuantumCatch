@@ -354,7 +354,6 @@ class FitSystem:
                             self.measurement_spec.S[i]),
                         3)
 
-                    print('sdfghjklö')
                     z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
 
                     vmin = np.min(z_both)

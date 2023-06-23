@@ -187,6 +187,27 @@ class FitSystem:
 
         return out, self.measurement_spec, f_list
 
+    def save_fit(self, spec, path, f_list, out):
+        fit_list = []
+        for i in range(2, 5):
+            fit_list.append(self.calc_spec(out.params, i, f_list[i - 2]))
+
+        spec.S[2] = fit_list[0]
+        spec.S[3] = fit_list[1]
+        spec.S[4] = fit_list[2]
+
+        spec.freq[2] = f_list[0]
+        spec.freq[3] = f_list[1]
+        spec.freq[4] = f_list[2]
+
+        for i in range(2, 5):
+            spec.S_err[i] = None
+
+        spec.params = out.params
+        spec.out = out
+
+        spec.save_spec(path)
+
     def plot_fit(self, params, iter_, resid, f_list, s_list, err_list, fit_orders, f_max):
         if (iter_ + 1) % 10 == 0:
             print(iter_ + 1)

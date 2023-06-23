@@ -95,7 +95,7 @@ class FitSystem:
 
         return out
 
-    def objective(self, params, f_list, s_list, err_list, fit_orders, f_max):
+    def objective(self, params, f_list, s_list, err_list, fit_orders):
 
         resid = []
 
@@ -109,34 +109,36 @@ class FitSystem:
 
         return np.concatenate(resid)
 
-    def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares', start_with_s2_only=True,
+    def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
+                     start_with_s2_only=True,
                      xtol=1e-5, max_nfev=500):
 
         self.measurement_spec = load_spec(path)
+
+        if f_max_2 is not None:
+            i = 2
+            f_mask = self.measurement_spec.freq[i] < f_max_2
+            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][f_mask]
+            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[f_mask]
+            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[f_mask]
+
+        if f_max_3 is not None:
+            i = 3
+            f_mask = self.measurement_spec.freq[i] < f_max_3
+            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][f_mask]
+            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[f_mask, f_mask]
+            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[f_mask, f_mask]
+
+        if f_max_4 is not None:
+            i = 4
+            f_mask = self.measurement_spec.freq[i] < f_max_4
+            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][f_mask]
+            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[f_mask, f_mask]
+            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[f_mask, f_mask]
+
         f_list = [self.measurement_spec.freq[i] for i in range(2, 5)]
         s_list = [np.real(self.measurement_spec.S[i]) for i in range(2, 5)]
         err_list = [np.real(self.measurement_spec.S_err[i]) for i in range(2, 5)]
-
-        if f_max_2 is not None:
-            i = 0
-            f_mask = f_list[i] < f_max_2
-            f_list[i] = f_list[i][f_mask]
-            s_list[i] = s_list[i][f_mask]
-            err_list[i] = err_list[i][f_mask]
-
-        if f_max_3 is not None:
-            i = 1
-            f_mask = f_list[i] < f_max_3
-            f_list[i] = f_list[i][f_mask]
-            s_list[i] = s_list[i][f_mask, f_mask]
-            err_list[i] = err_list[i][f_mask, f_mask]
-
-        if f_max_4 is not None:
-            i = 2
-            f_mask = f_list[i] < f_max_4
-            f_list[i] = f_list[i][f_mask]
-            s_list[i] = s_list[i][f_mask, f_mask]
-            err_list[i] = err_list[i][f_mask, f_mask]
 
         fit_params = Parameters()
 
@@ -242,7 +244,7 @@ class FitSystem:
                            color=[0, 0.5, 0.9], label='meas.')
             c = ax[0].plot(self.measurement_spec.freq[2], fit_list[0], '--k', alpha=0.8, label='fit')
 
-            #ax[0].set_xlim([0, f_max])
+            # ax[0].set_xlim([0, f_max])
             # ax[0].set_ylim([0, 1.1*y.max()])
 
             ax[0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
@@ -266,8 +268,8 @@ class FitSystem:
                 norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
                 c = ax[i].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
-                #ax[i].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
-                #ax[i].axis([0, f_max, 0, f_max])
+                # ax[i].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
+                # ax[i].axis([0, f_max, 0, f_max])
                 # ax[1].set_yticks([0,0.2,0.4])
 
                 ax[i].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
@@ -297,7 +299,7 @@ class FitSystem:
                               color=[0, 0.5, 0.9], label='meas.')
             c = ax[0, 0].plot(self.measurement_spec.freq[2], fit_list[2], '--k', alpha=0.8, label='fit')
 
-            #ax[0, 0].set_xlim([0, f_max])
+            # ax[0, 0].set_xlim([0, f_max])
             # ax[0].set_ylim([0, 1.1*y.max()])
 
             ax[0, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
@@ -311,7 +313,7 @@ class FitSystem:
                               lw=3,
                               color=[0, 0.5, 0.9], label='rel. err.')
 
-            #ax[1, 0].set_xlim([0, f_max])
+            # ax[1, 0].set_xlim([0, f_max])
             # ax[0].set_ylim([0, 1.1*y.max()])
 
             ax[1, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
@@ -337,8 +339,8 @@ class FitSystem:
                     norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
                     c = ax[0, j].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
-                    #ax[0, j].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
-                    #ax[0, j].axis([0, f_max, 0, f_max])
+                    # ax[0, j].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
+                    # ax[0, j].axis([0, f_max, 0, f_max])
                     # ax[1].set_yticks([0,0.2,0.4])
 
                     ax[0, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
@@ -367,7 +369,7 @@ class FitSystem:
 
                     c = ax[1, j].pcolormesh(x, y, z_both, cmap=cmap, norm=norm, zorder=1)
                     # ax[1,i].plot([0,f_max], [0,f_max], 'k', alpha=0.4)
-                    #ax[1, j].axis([0, f_max, 0, f_max])
+                    # ax[1, j].axis([0, f_max, 0, f_max])
                     # ax[1].set_yticks([0,0.2,0.4])
 
                     ax[1, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})

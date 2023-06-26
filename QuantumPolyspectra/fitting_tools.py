@@ -217,16 +217,17 @@ class FitSystem:
         spec.save_spec(path)
 
     def plot_fit(self, params, iter_, resid, f_list, s_list, err_list, fit_orders, show_plot):
-        if (iter_ + 1) % 10 == 0:
-            print(iter_ + 1)
+        if show_plot:
+            if (iter_ + 1) % 10 == 0:
+                print(iter_ + 1)
 
-            for key in params.keys():
-                print('key:', params[key])
+                for key in params.keys():
+                    print('key:', params[key])
 
-            print('Iterations:', iter_)
-            print('Current Error:', np.mean(np.abs(resid)))
+                print('Iterations:', iter_)
+                print('Current Error:', np.mean(np.abs(resid)))
 
-            self.comp_plot(params, fit_orders, with_relative_errs=True)
+                self.comp_plot(params, fit_orders, with_relative_errs=True)
 
     def comp_plot(self, params, fit_orders, with_relative_errs=True):
 

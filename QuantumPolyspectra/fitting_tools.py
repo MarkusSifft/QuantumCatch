@@ -100,7 +100,7 @@ class FitSystem:
         resid = []
 
         general_weight = [1, 0.1, 0.01]
-        general_weight = [1, 5, 5]
+        general_weight = [1, 1, 1]
 
         for i, order in enumerate(fit_orders):
             # resid.append(((s_list[i] - calc_spec(params, order, f_list[i]))).flatten()/ np.abs(s_list[i]).max())
@@ -364,8 +364,8 @@ class FitSystem:
                         0)
 
                     z_both = np.real(z_both)
-                    #z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
-                    #z_both[z_both < 0.5] = 0 * z_both[z_both < 0.5] - 0.5
+                    z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
+                    z_both[z_both < -0.5] = 0 * z_both[z_both < -0.5] - 0.5
 
                     vmin = np.min(z_both)
                     vmax = np.max(z_both)

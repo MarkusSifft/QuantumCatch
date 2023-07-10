@@ -361,11 +361,11 @@ class FitSystem:
                     z_both = gaussian_filter(
                         (np.real(self.measurement_spec.S[i]) - fit_list[i]) / np.real(
                             self.measurement_spec.S[i]),
-                        3)
+                        0)
 
                     z_both = np.real(z_both)
-                    z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
-                    z_both[z_both < 0.5] = 0 * z_both[z_both < 0.5] - 0.5
+                    #z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
+                    #z_both[z_both < 0.5] = 0 * z_both[z_both < 0.5] - 0.5
 
                     vmin = np.min(z_both)
                     vmax = np.max(z_both)

@@ -365,6 +365,7 @@ class FitSystem:
 
                     z_both = np.real(z_both)
                     z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
+                    z_both[z_both < 0.5] = 0 * z_both[z_both < 0.5] - 0.5
 
                     vmin = np.min(z_both)
                     vmax = np.max(z_both)

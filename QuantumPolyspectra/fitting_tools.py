@@ -160,7 +160,10 @@ class FitSystem:
             mini = Minimizer(self.objective, fit_params,
                              fcn_args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
                              iter_cb=self.plot_fit)
-            out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
+            if method=='powell':
+                out = mini.minimize(method=method, max_nfev=max_nfev)
+            else:
+                out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
@@ -170,7 +173,10 @@ class FitSystem:
         mini = Minimizer(self.objective, fit_params,
                          fcn_args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
                          iter_cb=self.plot_fit)
-        out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
+        if method == 'powell':
+            out = mini.minimize(method=method, max_nfev=max_nfev)
+        else:
+            out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
 
         for p in out.params:
             fit_params[p].value = out.params[p].value
@@ -189,7 +195,10 @@ class FitSystem:
         mini = Minimizer(self.objective, fit_params,
                          fcn_args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
                          iter_cb=self.plot_fit)
-        out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
+        if method == 'powell':
+            out = mini.minimize(method=method, max_nfev=max_nfev)
+        else:
+            out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
 
         print('plotting last fit')
         self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders, show_plot=True,

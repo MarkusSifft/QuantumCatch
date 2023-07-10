@@ -100,7 +100,7 @@ class FitSystem:
         resid = []
 
         general_weight = [1, 0.1, 0.01]
-        general_weight = [1, 1, 1]
+        general_weight = [1, 5, 5]
 
         for i, order in enumerate(fit_orders):
             # resid.append(((s_list[i] - calc_spec(params, order, f_list[i]))).flatten()/ np.abs(s_list[i]).max())

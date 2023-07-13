@@ -271,11 +271,11 @@ class FitSystem:
 
         c = ax[1, 0].plot(self.measurement_spec.freq[2],
                           (np.real(self.measurement_spec.S[2]) - fit_list[2]) / np.real(self.measurement_spec.S[2]),
-                          lw=3,
+                          lw=2,
                           color=[0, 0.5, 0.9], label='rel. err.')
         relative_measurement_error = self.measurement_spec.S_err[2] / self.measurement_spec.S[2]
         ax[1, 0].fill_between(self.measurement_spec.freq[2], relative_measurement_error,
-                              -relative_measurement_error, alpha=0.2)
+                              -relative_measurement_error, alpha=0.3)
 
         # ax[1, 0].set_xlim([0, f_max])
         # ax[0].set_ylim([0, 1.1*y.max()])
@@ -325,7 +325,7 @@ class FitSystem:
 
                 z_both = np.real(z_both)
 
-                green_alpha = 0.3
+                green_alpha = 1
                 color_array = np.array([[0., 0., 0., 0.], [0., 0.5, 0., green_alpha]])
                 cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 

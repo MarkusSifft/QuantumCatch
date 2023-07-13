@@ -168,7 +168,7 @@ class FitSystem:
                       general_weight=[1, 1, 1])
         print('done')
 
-        if fit_modi=='order_wise':
+        if fit_modi == 'order_wise':
             if start_with_s2_only:
 
                 fit_orders = [2]
@@ -201,11 +201,11 @@ class FitSystem:
             out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
                                         general_weight, method, max_nfev, xtol)
 
-        elif fit_modi=='resolution_wise':
+        elif fit_modi == 'resolution_wise':
 
             print('Low Resolution')
 
-            f_list_sampled = [data[::2**(i+3)] for i, data in enumerate(f_list)]
+            f_list_sampled = [data[::2 ** (i + 3)] for i, data in enumerate(f_list)]
 
             s_list_sampled = []
             for i, data in enumerate(s_list):
@@ -221,7 +221,8 @@ class FitSystem:
                 else:
                     err_list_sampled.append(data[::2 ** (i + 3), ::2 ** (i + 3)])
 
-            out = self.start_minimizing(fit_params, f_list_sampled, s_list_sampled, err_list_sampled, fit_orders, show_plot,
+            out = self.start_minimizing(fit_params, f_list_sampled, s_list_sampled, err_list_sampled, fit_orders,
+                                        show_plot,
                                         general_weight, method, max_nfev, xtol)
 
             for p in out.params:
@@ -308,7 +309,7 @@ class FitSystem:
                           color=[0, 0.5, 0.9], label='rel. err.')
         relative_measurement_error = self.measurement_spec.S_err[2] / self.measurement_spec.S[2]
         ax[1, 0].fill_between(self.measurement_spec.freq[2], relative_measurement_error,
-                              -relative_measurement_error, 'k', alpha=0.3)
+                              -relative_measurement_error, alpha=0.3)
         ax[1, 0].plot(self.measurement_spec.freq[2], relative_measurement_error, 'k', alpha=0.5)
         ax[1, 0].plot(self.measurement_spec.freq[2], -relative_measurement_error, 'k', alpha=0.5)
 

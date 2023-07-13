@@ -107,7 +107,21 @@ class FitSystem:
 
         return np.concatenate(resid)
 
+    def start_minimizing(self, fit_params, f_list, s_list, err_list, fit_orders, show_plot,
+                         general_weight, method, max_nfev, xtol):
+
+        mini = Minimizer(self.objective, fit_params,
+                         fcn_args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
+                         iter_cb=self.plot_fit)
+        if method == 'powell':
+            out = mini.minimize(method=method, max_nfev=max_nfev)
+        else:
+            out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
+
+        return out
+
     def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
+                     fit_modi='order_wise',
                      start_with_s2_only=True, show_plot=True,
                      xtol=1e-5, max_nfev=500, general_weight=(1, 1, 1)):
 
@@ -154,52 +168,44 @@ class FitSystem:
                       general_weight=[1, 1, 1])
         print('done')
 
-        if start_with_s2_only:
+        if fit_modi=='order_wise':
+            if start_with_s2_only:
 
-            fit_orders = [2]
-            print('Fitting S2')
-            mini = Minimizer(self.objective, fit_params,
-                             fcn_args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
-                             iter_cb=self.plot_fit)
-            if method == 'powell':
-                out = mini.minimize(method=method, max_nfev=max_nfev)
-            else:
-                out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
+                fit_orders = [2]
+                print('Fitting S2')
+                out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
+                                            general_weight, method, max_nfev, xtol)
+
+                for p in out.params:
+                    fit_params[p].value = out.params[p].value
+
+            fit_orders = [2, 3]
+            print('Fitting S2, S3')
+            out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
+                                        general_weight, method, max_nfev, xtol)
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
 
-        fit_orders = [2, 3]
-        print('Fitting S2, S3')
-        mini = Minimizer(self.objective, fit_params,
-                         fcn_args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
-                         iter_cb=self.plot_fit)
-        if method == 'powell':
-            out = mini.minimize(method=method, max_nfev=max_nfev)
+            # fit_params['gamma_in_1'].vary = True
+            # fit_params['gamma_out_1'].vary = True
+
+            fit_orders = [2, 3, 4]
+
+            print('plotting fit before fitting S4')
+            self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, fit_orders, show_plot=True,
+                          general_weight=[1, 1, 1])
+            print('done')
+
+            print('Fitting S2, S3, S4')
+            out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
+                                        general_weight, method, max_nfev, xtol)
+
+        elif fit_order=='resolution_wise':
+
+
         else:
-            out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
-
-        for p in out.params:
-            fit_params[p].value = out.params[p].value
-
-        # fit_params['gamma_in_1'].vary = True
-        # fit_params['gamma_out_1'].vary = True
-
-        fit_orders = [2, 3, 4]
-
-        print('plotting fit before fitting S4')
-        self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, fit_orders, show_plot=True,
-                      general_weight=[1, 1, 1])
-        print('done')
-
-        print('Fitting S2, S3, S4')
-        mini = Minimizer(self.objective, fit_params,
-                         fcn_args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
-                         iter_cb=self.plot_fit)
-        if method == 'powell':
-            out = mini.minimize(method=method, max_nfev=max_nfev)
-        else:
-            out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
+            print('Parameter fit_order must be: (order_wise, resolution_wise)')
 
         print('plotting last fit')
         self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders, show_plot=True,
@@ -275,9 +281,9 @@ class FitSystem:
                           color=[0, 0.5, 0.9], label='rel. err.')
         relative_measurement_error = self.measurement_spec.S_err[2] / self.measurement_spec.S[2]
         ax[1, 0].fill_between(self.measurement_spec.freq[2], relative_measurement_error,
-                              -relative_measurement_error, alpha=0.3)
-        ax[1, 0].plot(self.measurement_spec.freq[2], relative_measurement_error, 'k', alpha=0.7)
-        ax[1, 0].plot(self.measurement_spec.freq[2], -relative_measurement_error, 'k', alpha=0.7)
+                              -relative_measurement_error, 'k', alpha=0.3)
+        ax[1, 0].plot(self.measurement_spec.freq[2], relative_measurement_error, 'k', alpha=0.5)
+        ax[1, 0].plot(self.measurement_spec.freq[2], -relative_measurement_error, 'k', alpha=0.5)
 
         # ax[1, 0].set_xlim([0, f_max])
         # ax[0].set_ylim([0, 1.1*y.max()])

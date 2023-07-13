@@ -276,9 +276,9 @@ class FitSystem:
                 print('Iterations:', iter_)
                 print('Current Error:', np.mean(np.abs(resid)))
 
-                self.comp_plot(params, fit_orders)
+                self.comp_plot(params, fit_orders, f_list, s_list, err_list)
 
-    def comp_plot(self, params, fit_orders):
+    def comp_plot(self, params, fit_orders, f_list, s_list, err_list):
 
         fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(21, 12), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
         plt.rc('text', usetex=False)
@@ -292,9 +292,9 @@ class FitSystem:
             fit_list[i] = np.real(self.calc_spec(params, i, self.measurement_spec.freq[i]))
 
         # ---------- S2 ------------
-        c = ax[0, 0].plot(self.measurement_spec.freq[2], np.real(self.measurement_spec.S[2]), lw=3,
+        c = ax[0, 0].plot(f_list[0], np.real(s_list[0]), lw=3,
                           color=[0, 0.5, 0.9], label='meas.')
-        c = ax[0, 0].plot(self.measurement_spec.freq[2], fit_list[2], '--k', alpha=0.8, label='fit')
+        c = ax[0, 0].plot(f_list[0], fit_list[2], '--k', alpha=0.8, label='fit')
 
         # ax[0, 0].set_xlim([0, f_max])
         # ax[0].set_ylim([0, 1.1*y.max()])
@@ -305,15 +305,15 @@ class FitSystem:
         ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
         ax[0, 0].legend()
 
-        c = ax[1, 0].plot(self.measurement_spec.freq[2],
-                          (np.real(self.measurement_spec.S[2]) - fit_list[2]) / np.real(self.measurement_spec.S[2]),
+        c = ax[1, 0].plot(f_list[0],
+                          (np.real(s_list[0]) - fit_list[2]) / np.real(s_list[0]),
                           lw=2,
                           color=[0, 0.5, 0.9], label='rel. err.')
-        relative_measurement_error = self.measurement_spec.S_err[2] / self.measurement_spec.S[2]
-        ax[1, 0].fill_between(self.measurement_spec.freq[2], relative_measurement_error,
+        relative_measurement_error = err_list[0] / s_list[0]
+        ax[1, 0].fill_between(f_list[0], relative_measurement_error,
                               -relative_measurement_error, alpha=0.3)
-        ax[1, 0].plot(self.measurement_spec.freq[2], relative_measurement_error, 'k', alpha=0.5)
-        ax[1, 0].plot(self.measurement_spec.freq[2], -relative_measurement_error, 'k', alpha=0.5)
+        ax[1, 0].plot(f_list[0], relative_measurement_error, 'k', alpha=0.5)
+        ax[1, 0].plot(f_list[0], -relative_measurement_error, 'k', alpha=0.5)
 
         # ax[1, 0].set_xlim([0, f_max])
         # ax[0].set_ylim([0, 1.1*y.max()])
@@ -329,9 +329,9 @@ class FitSystem:
         for j, i in enumerate(fit_orders):
 
             if fit_list[i] is not None and i > 2:
-                y, x = np.meshgrid(self.measurement_spec.freq[i], self.measurement_spec.freq[i])
+                y, x = np.meshgrid(f_list[i-2], f_list[i-2])
 
-                z = np.real(self.measurement_spec.S[i])
+                z = np.real(s_list[i-2])
                 z_fit = fit_list[i]
                 z_both = np.tril(z) + np.triu(z_fit)
 
@@ -357,8 +357,8 @@ class FitSystem:
                 # ------ rel. err. -------
 
                 z_both = gaussian_filter(
-                    (np.real(self.measurement_spec.S[i]) - fit_list[i]) / np.real(
-                        self.measurement_spec.S[i]),
+                    (np.real(s_list[i-2]) - fit_list[i]) / np.real(
+                        s_list[i-2]),
                     0)
 
                 z_both = np.real(z_both)
@@ -368,7 +368,7 @@ class FitSystem:
                 cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 
                 err_matrix = np.zeros_like(z_both)
-                relative_measurement_error = self.measurement_spec.S_err[i] / self.measurement_spec.S[i]
+                relative_measurement_error = err_list[i-2] / s_list[i-2]
                 err_matrix[np.abs(z_both) < relative_measurement_error] = 1
 
                 z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5

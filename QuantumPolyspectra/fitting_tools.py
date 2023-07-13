@@ -41,6 +41,7 @@ from lmfit import Parameters, minimize, Minimizer
 from tqdm import tqdm_notebook
 import matplotlib.colors as colors
 from signalsnap.analysis import load_spec
+from matplotlib.colors import LinearSegmentedColormap
 
 
 class FitSystem:
@@ -160,7 +161,7 @@ class FitSystem:
             mini = Minimizer(self.objective, fit_params,
                              fcn_args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
                              iter_cb=self.plot_fit)
-            if method=='powell':
+            if method == 'powell':
                 out = mini.minimize(method=method, max_nfev=max_nfev)
             else:
                 out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
@@ -272,6 +273,8 @@ class FitSystem:
                           (np.real(self.measurement_spec.S[2]) - fit_list[2]) / np.real(self.measurement_spec.S[2]),
                           lw=3,
                           color=[0, 0.5, 0.9], label='rel. err.')
+        ax[1, 0].fill_between(self.measurement_spec.freq[2], self.measurement_spec.S_err[2],
+                              -self.measurement_spec.S_err[2], alpha=0.2)
 
         # ax[1, 0].set_xlim([0, f_max])
         # ax[0].set_ylim([0, 1.1*y.max()])
@@ -320,6 +323,14 @@ class FitSystem:
                     0)
 
                 z_both = np.real(z_both)
+
+                green_alpha = 0.3
+                color_array = np.array([[0., 0., 0., 0.], [0., 0.5, 0., green_alpha]])
+                cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
+
+                err_matrix = np.zeros_like(z_both)
+                err_matrix[np.abs(z_both) < self.measurement_spec.S_err[i]] = 1
+
                 z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
                 z_both[z_both < -0.5] = 0 * z_both[z_both < -0.5] - 0.5
 
@@ -329,6 +340,7 @@ class FitSystem:
                 norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
                 c = ax[1, j].pcolormesh(x, y, z_both, cmap=cmap, norm=norm, zorder=1)
+                ax[1, j].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
                 # ax[1,i].plot([0,f_max], [0,f_max], 'k', alpha=0.4)
                 # ax[1, j].axis([0, f_max, 0, f_max])
                 # ax[1].set_yticks([0,0.2,0.4])

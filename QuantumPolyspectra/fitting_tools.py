@@ -276,6 +276,8 @@ class FitSystem:
         relative_measurement_error = self.measurement_spec.S_err[2] / self.measurement_spec.S[2]
         ax[1, 0].fill_between(self.measurement_spec.freq[2], relative_measurement_error,
                               -relative_measurement_error, alpha=0.3)
+        ax[1, 0].plot(self.measurement_spec.freq[2], relative_measurement_error, 'k', alpha=0.7)
+        ax[1, 0].plot(self.measurement_spec.freq[2], -relative_measurement_error, 'k', alpha=0.7)
 
         # ax[1, 0].set_xlim([0, f_max])
         # ax[0].set_ylim([0, 1.1*y.max()])

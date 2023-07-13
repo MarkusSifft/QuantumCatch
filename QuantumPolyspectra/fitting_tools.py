@@ -121,7 +121,7 @@ class FitSystem:
         return out
 
     def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
-                     fit_modi='order_wise',
+                     fit_modus='order_based',
                      start_with_s2_only=True, show_plot=True,
                      xtol=1e-5, max_nfev=500, general_weight=(1, 1, 1)):
 
@@ -168,7 +168,7 @@ class FitSystem:
                       general_weight=[1, 1, 1])
         print('done')
 
-        if fit_modi == 'order_wise':
+        if fit_modus == 'order_based':
             if start_with_s2_only:
 
                 fit_orders = [2]
@@ -201,7 +201,9 @@ class FitSystem:
             out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
                                         general_weight, method, max_nfev, xtol)
 
-        elif fit_modi == 'resolution_wise':
+        elif fit_modus == 'resolution_based':
+
+            fit_orders = [2, 3, 4]
 
             print('Low Resolution')
 

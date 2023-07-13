@@ -201,8 +201,35 @@ class FitSystem:
             out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
                                         general_weight, method, max_nfev, xtol)
 
-        elif fit_order=='resolution_wise':
+        elif fit_modi=='resolution_wise':
 
+            print('Low Resolution')
+
+            f_list_sampled = [data[::2**(i+3)] for i, data in enumerate(f_list)]
+
+            s_list_sampled = []
+            for i, data in enumerate(s_list):
+                if i == 0:
+                    s_list_sampled.append(data[::2 ** (i + 3)])
+                else:
+                    s_list_sampled.append(data[::2 ** (i + 3), ::2 ** (i + 3)])
+
+            err_list_sampled = []
+            for i, data in enumerate(err_list):
+                if i == 0:
+                    err_list_sampled.append(data[::2 ** (i + 3)])
+                else:
+                    err_list_sampled.append(data[::2 ** (i + 3), ::2 ** (i + 3)])
+
+            out = self.start_minimizing(fit_params, f_list_sampled, s_list_sampled, err_list_sampled, fit_orders, show_plot,
+                                        general_weight, method, max_nfev, xtol)
+
+            for p in out.params:
+                fit_params[p].value = out.params[p].value
+
+            print('Full Resolution')
+            out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
+                                        general_weight, method, max_nfev, xtol)
 
         else:
             print('Parameter fit_order must be: (order_wise, resolution_wise)')

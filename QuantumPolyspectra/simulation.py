@@ -993,7 +993,7 @@ class System(Spectrum):
         self.time_series_data_empty = time_series_setup(sc_ops, e_ops)
         self.time_series_data = None
         self.freq = {2: np.array([]), 3: np.array([]), 4: np.array([])}
-        self.S = {2: np.array([]), 3: np.array([]), 4: np.array([])}
+        self.S = {1: 0, 2: np.array([]), 3: np.array([]), 4: np.array([])}
 
         self.numeric_f_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
         self.numeric_spec_data = {2: np.array([]), 3: np.array([]), 4: np.array([])}
@@ -1213,6 +1213,14 @@ class System(Spectrum):
         update_cache_size('cache_third_matrix_step', rho, enable_gpu)
         update_cache_size('cache_second_term', rho[0], enable_gpu)
         update_cache_size('cache_third_term', rho[0], enable_gpu)
+
+        if order == 1:
+            if bar:
+                print('Calculating first order')
+            if enable_gpu:
+                self.S[order] = beta ** 2 * af.algorithm.sum(rho[reshape_ind]).to_ndarray()
+            else:
+                self.S[order] = beta ** 2 * rho[reshape_ind].sum()
 
         if order == 2:
             if bar:

@@ -1193,6 +1193,7 @@ class System(Spectrum):
             reshape_ind = to_gpu(self.reshape_ind)
             self.A_prim = to_gpu(self.A_prim)
             rho = to_gpu(rho)
+            mathcal_a = to_gpu(mathcal_a)
 
             if order == 2:
                 rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(self.reshape_ind))))
@@ -1218,8 +1219,10 @@ class System(Spectrum):
             if bar:
                 print('Calculating first order')
             if enable_gpu:
+                rho = af.matmul(mathcal_a, rho_steady)
                 self.S[order] = beta ** 2 * af.algorithm.sum(rho[reshape_ind]).to_ndarray()
             else:
+                rho = mathcal_a @ rho_steady
                 self.S[order] = beta ** 2 * rho[reshape_ind].sum()
 
         if order == 2:

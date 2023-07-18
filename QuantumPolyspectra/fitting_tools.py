@@ -346,37 +346,38 @@ class FitSystem:
         print('relative error:', (s_list[1] - fit_list[1]) / s_list[1])
 
         # ---------- S2 ------------
-        c = ax[0, 0].plot(f_list[2], np.real(s_list[2]), lw=3,
-                          color=[0, 0.5, 0.9], label='meas.')
-        c = ax[0, 0].plot(f_list[2], fit_list[2], '--k', alpha=0.8, label='fit')
+        if fit_list[2] is not None:
+            c = ax[0, 0].plot(f_list[2], np.real(s_list[2]), lw=3,
+                              color=[0, 0.5, 0.9], label='meas.')
+            c = ax[0, 0].plot(f_list[2], fit_list[2], '--k', alpha=0.8, label='fit')
 
-        # ax[0, 0].set_xlim([0, f_max])
-        # ax[0].set_ylim([0, 1.1*y.max()])
+            # ax[0, 0].set_xlim([0, f_max])
+            # ax[0].set_ylim([0, 1.1*y.max()])
 
-        ax[0, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-        ax[0, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-        # ax[0,i].grid(True)
-        ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
-        ax[0, 0].legend()
+            ax[0, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
+            ax[0, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+            # ax[0,i].grid(True)
+            ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
+            ax[0, 0].legend()
 
-        c = ax[1, 0].plot(f_list[2],
-                          (np.real(s_list[2]) - fit_list[2]) / np.real(s_list[2]),
-                          lw=2,
-                          color=[0, 0.5, 0.9], label='rel. err.')
-        relative_measurement_error = err_list[2] / s_list[2]
-        ax[1, 0].fill_between(f_list[2], sigma * relative_measurement_error,
-                              -sigma * relative_measurement_error, alpha=0.3)
-        ax[1, 0].plot(f_list[2], sigma * relative_measurement_error, 'k', alpha=0.5)
-        ax[1, 0].plot(f_list[2], -sigma * relative_measurement_error, 'k', alpha=0.5)
+            c = ax[1, 0].plot(f_list[2],
+                              (np.real(s_list[2]) - fit_list[2]) / np.real(s_list[2]),
+                              lw=2,
+                              color=[0, 0.5, 0.9], label='rel. err.')
+            relative_measurement_error = err_list[2] / s_list[2]
+            ax[1, 0].fill_between(f_list[2], sigma * relative_measurement_error,
+                                  -sigma * relative_measurement_error, alpha=0.3)
+            ax[1, 0].plot(f_list[2], sigma * relative_measurement_error, 'k', alpha=0.5)
+            ax[1, 0].plot(f_list[2], -sigma * relative_measurement_error, 'k', alpha=0.5)
 
-        # ax[1, 0].set_xlim([0, f_max])
-        # ax[0].set_ylim([0, 1.1*y.max()])
+            # ax[1, 0].set_xlim([0, f_max])
+            # ax[0].set_ylim([0, 1.1*y.max()])
 
-        ax[1, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-        ax[1, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-        # ax[0,i].grid(True)
-        ax[1, 0].tick_params(axis='both', direction='in', labelsize=14)
-        ax[1, 0].legend()
+            ax[1, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
+            ax[1, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+            # ax[0,i].grid(True)
+            ax[1, 0].tick_params(axis='both', direction='in', labelsize=14)
+            ax[1, 0].legend()
 
         # ---------- S3 and S4 ------------
 

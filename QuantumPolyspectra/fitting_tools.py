@@ -52,6 +52,17 @@ class FitSystem:
         self.out = None
         self.measurement_spec = None
 
+    def s1(self, params):
+
+        system, sc_ops, measure_strength = self.set_system(params)
+
+        A = calc_super_A(sc_ops[self.m_op].full())
+
+        spec = system.calc_spectrum([0], order=1, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=False,
+                                    bar=False, verbose=False)
+
+        return np.real(spec)
+
     def s2(self, params, omegas):
 
         system, sc_ops, measure_strength = self.set_system(params)
@@ -85,9 +96,11 @@ class FitSystem:
 
         return np.real(spec)
 
-    def calc_spec(self, lmfit_params, order, fs):
+    def calc_spec(self, lmfit_params, order, fs=None):
 
-        if order == 2:
+        if order == 1:
+            out = self.s1(lmfit_params)
+        elif order == 2:
             out = self.s2(lmfit_params, fs)
         elif order == 3:
             out = self.s3(lmfit_params, fs)
@@ -103,7 +116,8 @@ class FitSystem:
         for i, order in enumerate(fit_orders):
             # resid.append(((s_list[i] - calc_spec(params, order, f_list[i]))).flatten()/ np.abs(s_list[i]).max())
             resid.append(
-                ((s_list[order] - self.calc_spec(params, order, f_list[order])) * general_weight[i] / err_list[order]).flatten())
+                ((s_list[order] - self.calc_spec(params, order, f_list[order])) * general_weight[i] / err_list[
+                    order]).flatten())
 
         return np.concatenate(resid)
 
@@ -123,7 +137,7 @@ class FitSystem:
     def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
                      fit_modus='order_based',
                      fit_orders=(1, 2, 3, 4), show_plot=True,
-                     xtol=1e-5, max_nfev=500, general_weight=(1, 1, 1)):
+                     xtol=1e-5, max_nfev=500, general_weight=(1, 1, 1, 1)):
 
         self.measurement_spec = load_spec(path)
 
@@ -151,9 +165,9 @@ class FitSystem:
             self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind, :max_ind]
             self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind, :max_ind]
 
-        f_list = {2: None, 3: None, 4: None}
-        s_list = {2: None, 3: None, 4: None}
-        err_list = {2: None, 3: None, 4: None}
+        f_list = {1:None, 2: None, 3: None, 4: None}
+        s_list = {1:None, 2: None, 3: None, 4: None}
+        err_list = {1:None, 2: None, 3: None, 4: None}
 
         for i in range(2, 5):
             f_list[i] = self.measurement_spec.freq[i]
@@ -168,7 +182,7 @@ class FitSystem:
 
         print('plotting initial fit')
         self.plot_fit(fit_params, -1, np.array([1, 1]), f_list, s_list, err_list, (2, 3), show_plot=True,
-                      general_weight=[1, 1, 1])
+                      general_weight=[1, 1, 1, 1])
 
         if fit_modus == 'order_based':
             for i in range(len(fit_orders)):
@@ -179,7 +193,7 @@ class FitSystem:
 
                 print('plotting current fit state')
                 self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders[:i + 1], show_plot=True,
-                              general_weight=[1, 1, 1])
+                              general_weight=[1, 1, 1, 1])
 
                 for p in out.params:
                     fit_params[p].value = out.params[p].value
@@ -272,24 +286,18 @@ class FitSystem:
 
         print('plotting last fit')
         self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders, show_plot=True,
-                      general_weight=[1, 1, 1])
+                      general_weight=[1, 1, 1, 1])
 
         return out, self.measurement_spec, f_list
 
     def save_fit(self, spec, path, f_list, out):
         fit_list = []
-        for i in range(2, 5):
+        for i in range(1, 5):
             fit_list.append(self.calc_spec(out.params, i, f_list[i]))
 
-        spec.S[2] = fit_list[0]
-        spec.S[3] = fit_list[1]
-        spec.S[4] = fit_list[2]
-
-        spec.freq[2] = f_list[0]
-        spec.freq[3] = f_list[1]
-        spec.freq[4] = f_list[2]
-
-        for i in range(2, 5):
+        for i in range(1, 5):
+            spec.S[i] = fit_list[i]
+            spec.freq[i] = f_list[i]
             spec.S_err[i] = None
 
         spec.params = out.params
@@ -327,9 +335,15 @@ class FitSystem:
 
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
-        fit_list = {2: None, 3: None, 4: None}
+        fit_list = {1: None, 2: None, 3: None, 4: None}
         for i in fit_orders:
             fit_list[i] = np.real(self.calc_spec(params, i, f_list[i]))
+
+        # ---------- S1 ------------
+        print('S1:')
+        print('measurement:', s_list[1], '+/-', sigma * err_list[1])
+        print('fit:', fit_list[1])
+        print('relative error:', (s_list[1] - fit_list[1]) / s_list[1])
 
         # ---------- S2 ------------
         c = ax[0, 0].plot(f_list[2], np.real(s_list[2]), lw=3,

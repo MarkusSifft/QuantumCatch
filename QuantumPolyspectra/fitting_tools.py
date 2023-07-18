@@ -181,7 +181,7 @@ class FitSystem:
                            vary=params_in[name][3])
 
         print('plotting initial fit')
-        self.plot_fit(fit_params, -1, np.array([1, 1]), f_list, s_list, err_list, (2, 3), show_plot=True,
+        self.plot_fit(fit_params, -1, np.array([1, 1]), f_list, s_list, err_list, (1, 2, 3), show_plot=True,
                       general_weight=[1, 1, 1, 1])
 
         if fit_modus == 'order_based':
@@ -200,7 +200,7 @@ class FitSystem:
 
         elif fit_modus == 'resolution_based':
 
-            fit_orders = [2, 3, 4]
+            fit_orders = [1, 2, 3, 4]
 
             print('Low Resolution')
 

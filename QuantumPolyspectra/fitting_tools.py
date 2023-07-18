@@ -318,6 +318,8 @@ class FitSystem:
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
+        sigma = 3
+
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
         fit_list = {2: None, 3: None, 4: None}
@@ -343,10 +345,10 @@ class FitSystem:
                           lw=2,
                           color=[0, 0.5, 0.9], label='rel. err.')
         relative_measurement_error = err_list[0] / s_list[0]
-        ax[1, 0].fill_between(f_list[0], relative_measurement_error,
-                              -relative_measurement_error, alpha=0.3)
-        ax[1, 0].plot(f_list[0], relative_measurement_error, 'k', alpha=0.5)
-        ax[1, 0].plot(f_list[0], -relative_measurement_error, 'k', alpha=0.5)
+        ax[1, 0].fill_between(f_list[0], sigma * relative_measurement_error,
+                              -sigma * relative_measurement_error, alpha=0.3)
+        ax[1, 0].plot(f_list[0], sigma * relative_measurement_error, 'k', alpha=0.5)
+        ax[1, 0].plot(f_list[0], -sigma * relative_measurement_error, 'k', alpha=0.5)
 
         # ax[1, 0].set_xlim([0, f_max])
         # ax[0].set_ylim([0, 1.1*y.max()])
@@ -401,7 +403,7 @@ class FitSystem:
                 cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 
                 err_matrix = np.zeros_like(z_both)
-                relative_measurement_error = err_list[i - 2] / s_list[i - 2]
+                relative_measurement_error = sigma * err_list[i - 2] / s_list[i - 2]
                 err_matrix[np.abs(z_both) < relative_measurement_error] = 1
 
                 z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5

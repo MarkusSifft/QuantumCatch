@@ -320,6 +320,7 @@ class FitSystem:
 
         sigma = 3
 
+
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
         fit_list = {2: None, 3: None, 4: None}

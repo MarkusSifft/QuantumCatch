@@ -58,7 +58,7 @@ class FitSystem:
 
         A = calc_super_A(sc_ops[self.m_op].full())
 
-        spec = system.calc_spectrum([0], order=1, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=False,
+        spec = system.calc_spectrum(np.array([0]), order=1, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=False,
                                     bar=False, verbose=False)
 
         return np.real(spec)

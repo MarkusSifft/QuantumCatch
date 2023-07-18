@@ -343,7 +343,7 @@ class FitSystem:
         print('S1:')
         print('measurement:', s_list[1][0], '+/-', sigma * err_list[1][0])
         print('fit:', fit_list[1])
-        print('relative error:', (s_list[1][0] - fit_list[1][0]) / s_list[1][0])
+        print('relative error:', (s_list[1][0] - fit_list[1]) / s_list[1][0])
 
         # ---------- S2 ------------
         if fit_list[2] is not None:

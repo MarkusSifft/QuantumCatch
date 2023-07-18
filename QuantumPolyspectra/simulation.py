@@ -1121,7 +1121,7 @@ class System(Spectrum):
         if mathcal_a is None:
             mathcal_a = calc_super_A(self.sc_ops[measure_op].full()).T
 
-        if f_data.min() < 0:
+        if f_data[0] < 0:
             print('Only positive frequencies allowed')
             return None
 
@@ -1161,7 +1161,7 @@ class System(Spectrum):
 
         if order == 2:
             spec_data = 1j * np.ones_like(omegas)
-        else:
+        elif order == 3 or order == 4:
             spec_data = 1j * np.zeros((len(omegas), len(omegas)))
 
         # self.A_prim = mathcal_a.full() - np.trace((mathcal_a.full() @ rho_steady).reshape((s, s), order='F'))
@@ -1199,7 +1199,7 @@ class System(Spectrum):
                 rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(self.reshape_ind))))
             elif order == 3:
                 rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(self.reshape_ind))))
-            else:
+            elif order == 4:
                 rho_prim_sum = to_gpu(1j * np.zeros((len(omegas), len(omegas), len(self.reshape_ind))))
                 second_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas))))
                 third_term_mat = to_gpu(1j * np.zeros((len(omegas), len(omegas))))

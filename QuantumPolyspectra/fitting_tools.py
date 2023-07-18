@@ -122,7 +122,7 @@ class FitSystem:
 
     def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
                      fit_modus='order_based',
-                     start_with_s2_only=True, show_plot=True,
+                     fit_orders=(1, 2, 3, 4), show_plot=True,
                      xtol=1e-5, max_nfev=500, general_weight=(1, 1, 1)):
 
         self.measurement_spec = load_spec(path)
@@ -161,45 +161,23 @@ class FitSystem:
             fit_params.add(name, value=params_in[name][0], min=params_in[name][1], max=params_in[name][2],
                            vary=params_in[name][3])
 
-        fit_orders = [2, 3]
-
         print('plotting initial fit')
-        self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, fit_orders, show_plot=True,
+        self.plot_fit(fit_params, -1, np.array([1, 1]), f_list, s_list, err_list, (1, 2, 3), show_plot=True,
                       general_weight=[1, 1, 1])
-        print('done')
 
         if fit_modus == 'order_based':
-            if start_with_s2_only:
+            for i in range(len(fit_orders)):
 
-                fit_orders = [2]
-                print('Fitting S2')
-                out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
+                print('Fitting Orders:', fit_orders[:i + 1])
+                out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders[:i + 1], show_plot,
                                             general_weight, method, max_nfev, xtol)
+
+                print('plotting current fit state')
+                self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders[:i + 1], show_plot=True,
+                              general_weight=[1, 1, 1])
 
                 for p in out.params:
                     fit_params[p].value = out.params[p].value
-
-            fit_orders = [2, 3]
-            print('Fitting S2, S3')
-            out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
-                                        general_weight, method, max_nfev, xtol)
-
-            for p in out.params:
-                fit_params[p].value = out.params[p].value
-
-            # fit_params['gamma_in_1'].vary = True
-            # fit_params['gamma_out_1'].vary = True
-
-            fit_orders = [2, 3, 4]
-
-            print('plotting fit before fitting S4')
-            self.plot_fit(fit_params, 9, np.array([1, 1]), f_list, s_list, err_list, fit_orders, show_plot=True,
-                          general_weight=[1, 1, 1])
-            print('done')
-
-            print('Fitting S2, S3, S4')
-            out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
-                                        general_weight, method, max_nfev, xtol)
 
         elif fit_modus == 'resolution_based':
 
@@ -230,6 +208,8 @@ class FitSystem:
             for p in out.params:
                 fit_params[p].value = out.params[p].value
 
+            print('Medium Resolution')
+
             f_list_sampled = [data[::2 ** (i + 2)] for i, data in enumerate(f_list)]
 
             s_list_sampled = []
@@ -252,6 +232,8 @@ class FitSystem:
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
+
+            print('High Resolution')
 
             f_list_sampled = [data[::2 ** (i + 1)] for i, data in enumerate(f_list)]
 
@@ -286,7 +268,6 @@ class FitSystem:
         print('plotting last fit')
         self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders, show_plot=True,
                       general_weight=[1, 1, 1])
-        print('done')
 
         return out, self.measurement_spec, f_list
 
@@ -324,6 +305,12 @@ class FitSystem:
 
                 self.comp_plot(params, fit_orders, f_list, s_list, err_list)
 
+            elif iter_ == -1:
+                for key in params.keys():
+                    print('key:', params[key])
+
+                self.comp_plot(params, fit_orders, f_list, s_list, err_list)
+
     def comp_plot(self, params, fit_orders, f_list, s_list, err_list):
 
         fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(21, 12), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
@@ -335,7 +322,7 @@ class FitSystem:
 
         fit_list = {2: None, 3: None, 4: None}
         for i in fit_orders:
-            fit_list[i] = np.real(self.calc_spec(params, i, f_list[i-2]))
+            fit_list[i] = np.real(self.calc_spec(params, i, f_list[i - 2]))
 
         # ---------- S2 ------------
         c = ax[0, 0].plot(f_list[0], np.real(s_list[0]), lw=3,
@@ -375,9 +362,9 @@ class FitSystem:
         for j, i in enumerate(fit_orders):
 
             if fit_list[i] is not None and i > 2:
-                y, x = np.meshgrid(f_list[i-2], f_list[i-2])
+                y, x = np.meshgrid(f_list[i - 2], f_list[i - 2])
 
-                z = np.real(s_list[i-2])
+                z = np.real(s_list[i - 2])
                 z_fit = fit_list[i]
                 z_both = np.tril(z) + np.triu(z_fit)
 
@@ -403,8 +390,8 @@ class FitSystem:
                 # ------ rel. err. -------
 
                 z_both = gaussian_filter(
-                    (np.real(s_list[i-2]) - fit_list[i]) / np.real(
-                        s_list[i-2]),
+                    (np.real(s_list[i - 2]) - fit_list[i]) / np.real(
+                        s_list[i - 2]),
                     0)
 
                 z_both = np.real(z_both)
@@ -414,7 +401,7 @@ class FitSystem:
                 cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 
                 err_matrix = np.zeros_like(z_both)
-                relative_measurement_error = err_list[i-2] / s_list[i-2]
+                relative_measurement_error = err_list[i - 2] / s_list[i - 2]
                 err_matrix[np.abs(z_both) < relative_measurement_error] = 1
 
                 z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5

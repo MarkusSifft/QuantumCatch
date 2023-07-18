@@ -169,7 +169,7 @@ class FitSystem:
         s_list = {1:None, 2: None, 3: None, 4: None}
         err_list = {1:None, 2: None, 3: None, 4: None}
 
-        for i in range(2, 5):
+        for i in range(1, 5):
             f_list[i] = self.measurement_spec.freq[i]
             s_list[i] = np.real(self.measurement_spec.S[i])
             err_list[i] = np.real(self.measurement_spec.S_err[i])

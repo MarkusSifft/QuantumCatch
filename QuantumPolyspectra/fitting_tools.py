@@ -117,7 +117,7 @@ class FitSystem:
             # resid.append(((s_list[i] - calc_spec(params, order, f_list[i]))).flatten()/ np.abs(s_list[i]).max())
             resid.append(
                 ((s_list[order] - self.calc_spec(params, order, f_list[order])) * general_weight[i] / err_list[
-                    order]**2).flatten())
+                    order]).flatten())
 
         return np.concatenate(resid)
 

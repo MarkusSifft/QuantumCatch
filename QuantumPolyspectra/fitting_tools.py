@@ -381,9 +381,11 @@ class FitSystem:
 
         # ---------- S3 and S4 ------------
 
-        for j, i in enumerate(fit_orders):
+        for i in fit_orders:
 
             if fit_list[i] is not None and i > 2:
+                j = i - 2
+
                 y, x = np.meshgrid(f_list[i], f_list[i])
 
                 z = np.real(s_list[i])

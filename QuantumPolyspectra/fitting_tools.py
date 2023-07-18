@@ -151,9 +151,14 @@ class FitSystem:
             self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind, :max_ind]
             self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind, :max_ind]
 
-        f_list = [self.measurement_spec.freq[i] for i in range(2, 5)]
-        s_list = [np.real(self.measurement_spec.S[i]) for i in range(2, 5)]
-        err_list = [np.real(self.measurement_spec.S_err[i]) for i in range(2, 5)]
+        f_list = {2: None, 3: None, 4: None}
+        s_list = {2: None, 3: None, 4: None}
+        err_list = {2: None, 3: None, 4: None}
+
+        for i in range(2, 5):
+            f_list[i] = self.measurement_spec.freq[i]
+            s_list[i] = np.real(self.measurement_spec.S[i])
+            err_list[i] = np.real(self.measurement_spec.S_err[i])
 
         fit_params = Parameters()
 
@@ -274,7 +279,7 @@ class FitSystem:
     def save_fit(self, spec, path, f_list, out):
         fit_list = []
         for i in range(2, 5):
-            fit_list.append(self.calc_spec(out.params, i, f_list[i - 2]))
+            fit_list.append(self.calc_spec(out.params, i, f_list[i]))
 
         spec.S[2] = fit_list[0]
         spec.S[3] = fit_list[1]
@@ -320,17 +325,16 @@ class FitSystem:
 
         sigma = 3
 
-
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
         fit_list = {2: None, 3: None, 4: None}
         for i in fit_orders:
-            fit_list[i] = np.real(self.calc_spec(params, i, f_list[i - 2]))
+            fit_list[i] = np.real(self.calc_spec(params, i, f_list[i]))
 
         # ---------- S2 ------------
-        c = ax[0, 0].plot(f_list[0], np.real(s_list[0]), lw=3,
+        c = ax[0, 0].plot(f_list[2], np.real(s_list[2]), lw=3,
                           color=[0, 0.5, 0.9], label='meas.')
-        c = ax[0, 0].plot(f_list[0], fit_list[2], '--k', alpha=0.8, label='fit')
+        c = ax[0, 0].plot(f_list[2], fit_list[2], '--k', alpha=0.8, label='fit')
 
         # ax[0, 0].set_xlim([0, f_max])
         # ax[0].set_ylim([0, 1.1*y.max()])
@@ -341,15 +345,15 @@ class FitSystem:
         ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
         ax[0, 0].legend()
 
-        c = ax[1, 0].plot(f_list[0],
-                          (np.real(s_list[0]) - fit_list[2]) / np.real(s_list[0]),
+        c = ax[1, 0].plot(f_list[2],
+                          (np.real(s_list[2]) - fit_list[2]) / np.real(s_list[2]),
                           lw=2,
                           color=[0, 0.5, 0.9], label='rel. err.')
-        relative_measurement_error = err_list[0] / s_list[0]
-        ax[1, 0].fill_between(f_list[0], sigma * relative_measurement_error,
+        relative_measurement_error = err_list[2] / s_list[2]
+        ax[1, 0].fill_between(f_list[2], sigma * relative_measurement_error,
                               -sigma * relative_measurement_error, alpha=0.3)
-        ax[1, 0].plot(f_list[0], sigma * relative_measurement_error, 'k', alpha=0.5)
-        ax[1, 0].plot(f_list[0], -sigma * relative_measurement_error, 'k', alpha=0.5)
+        ax[1, 0].plot(f_list[2], sigma * relative_measurement_error, 'k', alpha=0.5)
+        ax[1, 0].plot(f_list[2], -sigma * relative_measurement_error, 'k', alpha=0.5)
 
         # ax[1, 0].set_xlim([0, f_max])
         # ax[0].set_ylim([0, 1.1*y.max()])
@@ -365,9 +369,9 @@ class FitSystem:
         for j, i in enumerate(fit_orders):
 
             if fit_list[i] is not None and i > 2:
-                y, x = np.meshgrid(f_list[i - 2], f_list[i - 2])
+                y, x = np.meshgrid(f_list[i], f_list[i])
 
-                z = np.real(s_list[i - 2])
+                z = np.real(s_list[i])
                 z_fit = fit_list[i]
                 z_both = np.tril(z) + np.triu(z_fit)
 
@@ -392,10 +396,7 @@ class FitSystem:
 
                 # ------ rel. err. -------
 
-                z_both = gaussian_filter(
-                    (np.real(s_list[i - 2]) - fit_list[i]) / np.real(
-                        s_list[i - 2]),
-                    0)
+                z_both = gaussian_filter((np.real(s_list[i]) - fit_list[i]) / np.real(s_list[i]), 0)
 
                 z_both = np.real(z_both)
 
@@ -404,7 +405,7 @@ class FitSystem:
                 cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 
                 err_matrix = np.zeros_like(z_both)
-                relative_measurement_error = sigma * err_list[i - 2] / s_list[i - 2]
+                relative_measurement_error = sigma * err_list[i] / s_list[i]
                 err_matrix[np.abs(z_both) < relative_measurement_error] = 1
 
                 z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5

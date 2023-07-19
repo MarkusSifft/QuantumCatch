@@ -326,7 +326,7 @@ class FitSystem:
 
     def comp_plot(self, params, fit_orders, f_list, s_list, err_list):
 
-        fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(21, 12), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
+        fig, ax = plt.subplots(nrows=3, ncols=3, figsize=(21, 16), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
         plt.rc('text', usetex=False)
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
@@ -415,7 +415,6 @@ class FitSystem:
                 # ------ rel. err. -------
 
                 z_both = gaussian_filter((np.real(s_list[i]) - fit_list[i]) / np.real(s_list[i]), 0)
-
                 z_both = np.real(z_both)
 
                 green_alpha = 1
@@ -448,5 +447,26 @@ class FitSystem:
 
                 cbar = fig.colorbar(c, ax=(ax[1, j]))
                 cbar.ax.tick_params(labelsize=14)
+
+                # -------- plotting 1D cut ----------
+
+                c = ax[2, j].plot(f_list[i][0,:],
+                                  (np.real(s_list[i][0,:]) - fit_list[i][0,:]) / np.real(s_list[i][0,:]),
+                                  lw=2,
+                                  color=[0, 0.5, 0.9], label='rel. err.')
+                relative_measurement_error = err_list[i][0,:] / s_list[i][0,:]
+                ax[2, j].fill_between(f_list[i][0,:], sigma * relative_measurement_error,
+                                      -sigma * relative_measurement_error, alpha=0.3)
+                ax[2, j].plot(f_list[i][0,:], sigma * relative_measurement_error, 'k', alpha=0.5)
+                ax[2, j].plot(f_list[i][0,:], -sigma * relative_measurement_error, 'k', alpha=0.5)
+
+                # ax[1, 0].set_xlim([0, f_max])
+                # ax[0].set_ylim([0, 1.1*y.max()])
+
+                ax[2, j].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
+                ax[2, j].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                # ax[0,i].grid(True)
+                ax[2, j].tick_params(axis='both', direction='in', labelsize=14)
+                ax[2, j].legend()
 
         plt.show()

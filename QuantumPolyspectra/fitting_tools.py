@@ -453,14 +453,20 @@ class FitSystem:
 
                 s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(s_list[i][0, :]).copy(), arcsinh_const=0.02,
                                 order=i, s_err=np.real(s_list[i][0, :]).copy() + sigma * err_list[i][0, :].copy())
-                fit_axis, s_err_axis_n = arcsinh_scaling(s_data=fit_list[i][0, :].copy(), arcsinh_const=0.02,
+                _, s_err_axis_n = arcsinh_scaling(s_data=np.real(s_list[i][0, :]).copy(), arcsinh_const=0.02,
                                                   order=i, s_err=np.real(s_list[i][0, :]).copy() - sigma * err_list[i][0, :].copy())
+                _, fit_axis = arcsinh_scaling(s_data=np.real(s_list[i][0, :]).copy(), arcsinh_const=0.02,
+                                                       order=i,
+                                                       s_err=fit_list[i][0, :].copy())
 
                 s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(s_list[i])).copy(), arcsinh_const=0.02,
                                                   order=i, s_err=np.real(np.diag(s_list[i])).copy() + sigma * np.diag(err_list[i]).copy())
-                fit_diag, s_err_diag_n = arcsinh_scaling(s_data=np.diag(fit_list[i]).copy(), arcsinh_const=0.02,
+                _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(s_list[i])).copy(), arcsinh_const=0.02,
                                                        order=i,
                                                        s_err=np.real(np.diag(s_list[i])).copy() - sigma * np.diag(err_list[i]).copy())
+                _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(s_list[i])).copy(), arcsinh_const=0.02,
+                                                         order=i,
+                                                         s_err=np.diag(fit_list[i]).copy())
 
                 c = ax[2, j].plot(f_list[i],
                                   s_axis, '-',
@@ -538,4 +544,6 @@ def arcsinh_scaling(s_data, arcsinh_const, order, s_err=None, s_err_p=None, s_er
     else:
         if s_err is not None:
             s_err = np.arcsinh(alpha * s_err) / alpha
-        return s_data, s_err
+            return s_data, s_err
+        else:
+            return s_data

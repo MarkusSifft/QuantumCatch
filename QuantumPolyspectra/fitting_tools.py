@@ -452,14 +452,14 @@ class FitSystem:
                 # -------- plotting 1D cut ----------
 
                 s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(s_list[i][0, :]), arcsinh_const=0.02,
-                                order=j, s_err=np.real(s_list[i][0, :]) + sigma * err_list[i][0, :])
+                                order=i, s_err=np.real(s_list[i][0, :]) + sigma * err_list[i][0, :])
                 fit_axis, s_err_axis_n = arcsinh_scaling(s_data=fit_list[i][0, :], arcsinh_const=0.02,
-                                                  order=j, s_err=np.real(s_list[i][0, :]) - sigma * err_list[i][0, :])
+                                                  order=i, s_err=np.real(s_list[i][0, :]) - sigma * err_list[i][0, :])
 
                 s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(s_list[i])), arcsinh_const=0.02,
-                                                  order=j, s_err=np.real(np.diag(s_list[i])) + sigma * np.diag(err_list[i]))
+                                                  order=i, s_err=np.real(np.diag(s_list[i])) + sigma * np.diag(err_list[i]))
                 fit_diag, s_err_diag_n = arcsinh_scaling(s_data=np.diag(fit_list[i]), arcsinh_const=0.02,
-                                                       order=j,
+                                                       order=i,
                                                        s_err=np.real(np.diag(s_list[i])) - sigma * np.diag(err_list[i]))
 
                 c = ax[2, j].plot(f_list[i],

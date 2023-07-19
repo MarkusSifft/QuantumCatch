@@ -58,7 +58,8 @@ class FitSystem:
 
         A = calc_super_A(sc_ops[self.m_op].full())
 
-        spec = system.calc_spectrum(np.array([0]), order=1, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=False,
+        spec = system.calc_spectrum(np.array([0]), order=1, mathcal_a=A, g_prim=False, measure_op=self.m_op,
+                                    enable_gpu=False,
                                     bar=False, verbose=False)
 
         return np.real(spec)
@@ -165,9 +166,9 @@ class FitSystem:
             self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind, :max_ind]
             self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind, :max_ind]
 
-        f_list = {1:None, 2: None, 3: None, 4: None}
-        s_list = {1:None, 2: None, 3: None, 4: None}
-        err_list = {1:None, 2: None, 3: None, 4: None}
+        f_list = {1: None, 2: None, 3: None, 4: None}
+        s_list = {1: None, 2: None, 3: None, 4: None}
+        err_list = {1: None, 2: None, 3: None, 4: None}
 
         for i in range(1, 5):
             f_list[i] = self.measurement_spec.freq[i]
@@ -450,35 +451,44 @@ class FitSystem:
 
                 # -------- plotting 1D cut ----------
 
+                s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(s_list[i][0, :]), arcsinh_const=0.02,
+                                order=j, s_err=np.real(s_list[i][0, :]) + sigma * err_list[i][0, :])
+                fit_axis, s_err_axis_n = arcsinh_scaling(s_data=fit_list[i][0, :], arcsinh_const=0.02,
+                                                  order=j, s_err=np.real(s_list[i][0, :]) - sigma * err_list[i][0, :])
+
+                s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(s_list[i])), arcsinh_const=0.02,
+                                                  order=j, s_err=np.real(np.diag(s_list[i])) + sigma * np.diag(err_list[i]))
+                fit_diag, s_err_diag_n = arcsinh_scaling(s_data=np.diag(fit_list[i]), arcsinh_const=0.02,
+                                                       order=j,
+                                                       s_err=np.real(np.diag(s_list[i])) - sigma * np.diag(err_list[i]))
+
                 c = ax[2, j].plot(f_list[i],
-                                  np.real(s_list[i][0,:]), '-',
+                                  s_axis, '-',
                                   lw=2,
                                   color=[0, 0.5, 0.9], label='meas.')
                 c = ax[2, j].plot(f_list[i],
-                                  fit_list[i][0, :], '--',
+                                  fit_axis, '--',
                                   lw=2,
                                   color=[0, 0.5, 0.9], label='fit')
 
                 c = ax[2, j].plot(f_list[i],
-                                  np.real(np.diag(s_list[i])), '-',
+                                  s_diag, '-',
                                   lw=2,
                                   color=[0.2, 0.5, 0.9], label='meas.')
                 c = ax[2, j].plot(f_list[i],
-                                  np.diag(fit_list[i]), '--',
+                                  fit_diag, '--',
                                   lw=2,
                                   color=[0.2, 0.5, 0.9], label='fit')
 
-                measurement_error = sigma * err_list[i][0,:]
-                ax[2, j].fill_between(f_list[i], np.real(s_list[i][0,:]) + measurement_error,
-                                      np.real(s_list[i][0,:]) - measurement_error, alpha=0.3)
-                ax[2, j].plot(f_list[i], np.real(s_list[i][0,:]) + measurement_error, 'k', alpha=0.5)
-                ax[2, j].plot(f_list[i], np.real(s_list[i][0,:]) - measurement_error, 'k', alpha=0.5)
+                ax[2, j].fill_between(f_list[i], s_err_axis_p,
+                                      s_err_axis_n, alpha=0.3)
+                ax[2, j].plot(f_list[i], s_err_axis_p, 'k', alpha=0.5)
+                ax[2, j].plot(f_list[i], s_err_axis_n, 'k', alpha=0.5)
 
-                measurement_error = sigma * err_list[i][0, :]
-                ax[2, j].fill_between(f_list[i], np.real(np.diag(s_list[i])) + measurement_error,
-                                      np.real(np.diag(s_list[i])) - measurement_error, alpha=0.3)
-                ax[2, j].plot(f_list[i], np.real(np.diag(s_list[i])) + measurement_error, 'k', alpha=0.5)
-                ax[2, j].plot(f_list[i], np.real(np.diag(s_list[i])) - measurement_error, 'k', alpha=0.5)
+                ax[2, j].fill_between(f_list[i], s_err_diag_p,
+                                      s_err_diag_n, alpha=0.3)
+                ax[2, j].plot(f_list[i], s_err_diag_p, 'k', alpha=0.5)
+                ax[2, j].plot(f_list[i], s_err_diag_n, 'k', alpha=0.5)
 
                 # ax[1, 0].set_xlim([0, f_max])
                 # ax[0].set_ylim([0, 1.1*y.max()])
@@ -490,3 +500,42 @@ class FitSystem:
                 ax[2, j].legend()
 
         plt.show()
+
+
+def arcsinh_scaling(s_data, arcsinh_const, order, s_err=None, s_err_p=None, s_err_m=None):
+    """
+    Helper function to improve visibility in plotting (similar to a log scale but also works for negative values)
+
+    Parameters
+    ----------
+    s_data : array
+        spectral values of any order
+    arcsinh_const : float
+        these parameters sets the rescaling amount (the smaller, the stronger the rescaling)
+    order : int
+        important since the error arrays are called differently in the second-order case
+    s_err : array
+        spectral errors of order 3 or 4
+    s_err_p : array
+        spectral values + error of order 2
+    s_err_m : array
+        spectral values - error of order 2
+
+    Returns
+    -------
+
+    """
+    x_max = np.max(np.abs(s_data))
+    alpha = 1 / (x_max * arcsinh_const)
+    s_data = np.arcsinh(alpha * s_data) / alpha
+
+    if order == 2:
+        if s_err_p is not None:
+            for i in range(0, 5):
+                s_err_p[i] = np.arcsinh(alpha * s_err_p[i]) / alpha
+                s_err_m[i] = np.arcsinh(alpha * s_err_m[i]) / alpha
+        return s_data, s_err_p, s_err_m
+    else:
+        if s_err is not None:
+            s_err = np.arcsinh(alpha * s_err) / alpha
+        return s_data, s_err

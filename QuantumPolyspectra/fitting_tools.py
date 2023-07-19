@@ -138,7 +138,7 @@ class FitSystem:
     def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
                      fit_modus='order_based',
                      fit_orders=(1, 2, 3, 4), show_plot=True,
-                     xtol=1e-5, max_nfev=500, general_weight=(1, 1, 1, 1)):
+                     xtol=1e-5, max_nfev=500, general_weight=(2, 2, 1, 1)):
 
         self.measurement_spec = load_spec(path)
 
@@ -183,7 +183,7 @@ class FitSystem:
 
         print('plotting initial fit')
         self.plot_fit(fit_params, -1, np.array([1, 1]), f_list, s_list, err_list, (1, 2, 3), show_plot=True,
-                      general_weight=[1, 1, 1, 1])
+                      general_weight=general_weight)
 
         if fit_modus == 'order_based':
             for i in range(len(fit_orders)):
@@ -194,7 +194,7 @@ class FitSystem:
 
                 print('plotting current fit state')
                 self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders[:i + 1], show_plot=True,
-                              general_weight=[1, 1, 1, 1])
+                              general_weight=general_weight)
 
                 for p in out.params:
                     fit_params[p].value = out.params[p].value
@@ -287,7 +287,7 @@ class FitSystem:
 
         print('plotting last fit')
         self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders, show_plot=True,
-                      general_weight=[1, 1, 1, 1])
+                      general_weight=general_weight)
 
         return out, self.measurement_spec, f_list
 

@@ -292,7 +292,7 @@ class FitSystem:
         return out, self.measurement_spec, f_list
 
     def save_fit(self, spec, path, f_list, out):
-        fit_list = []
+        fit_list = {1: None, 2: None, 3: None, 4: None}
         for i in range(1, 5):
             fit_list.append(self.calc_spec(out.params, i, f_list[i]))
 

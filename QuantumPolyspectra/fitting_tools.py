@@ -451,14 +451,34 @@ class FitSystem:
                 # -------- plotting 1D cut ----------
 
                 c = ax[2, j].plot(f_list[i],
-                                  (np.real(s_list[i][0,:]) - fit_list[i][0,:]) / np.real(s_list[i][0,:]),
+                                  np.real(s_list[i][0,:]), '-',
                                   lw=2,
-                                  color=[0, 0.5, 0.9], label='rel. err.')
-                relative_measurement_error = err_list[i][0,:] / s_list[i][0,:]
-                ax[2, j].fill_between(f_list[i], sigma * relative_measurement_error,
-                                      -sigma * relative_measurement_error, alpha=0.3)
-                ax[2, j].plot(f_list[i], sigma * relative_measurement_error, 'k', alpha=0.5)
-                ax[2, j].plot(f_list[i], -sigma * relative_measurement_error, 'k', alpha=0.5)
+                                  color=[0, 0.5, 0.9], label='meas.')
+                c = ax[2, j].plot(f_list[i],
+                                  fit_list[i][0, :], '--',
+                                  lw=2,
+                                  color=[0, 0.5, 0.9], label='fit')
+
+                c = ax[2, j].plot(f_list[i],
+                                  np.real(np.diag(s_list[i])), '-',
+                                  lw=2,
+                                  color=[0.2, 0.5, 0.9], label='meas.')
+                c = ax[2, j].plot(f_list[i],
+                                  np.diag(fit_list[i]), '--',
+                                  lw=2,
+                                  color=[0.2, 0.5, 0.9], label='fit')
+
+                measurement_error = sigma * err_list[i][0,:]
+                ax[2, j].fill_between(f_list[i], np.real(s_list[i][0,:]) + measurement_error,
+                                      np.real(s_list[i][0,:]) - measurement_error, alpha=0.3)
+                ax[2, j].plot(f_list[i], np.real(s_list[i][0,:]) + measurement_error, 'k', alpha=0.5)
+                ax[2, j].plot(f_list[i], np.real(s_list[i][0,:]) - measurement_error, 'k', alpha=0.5)
+
+                measurement_error = sigma * err_list[i][0, :]
+                ax[2, j].fill_between(f_list[i], np.real(np.diag(s_list[i])) + measurement_error,
+                                      np.real(np.diag(s_list[i])) - measurement_error, alpha=0.3)
+                ax[2, j].plot(f_list[i], np.real(np.diag(s_list[i])) + measurement_error, 'k', alpha=0.5)
+                ax[2, j].plot(f_list[i], np.real(np.diag(s_list[i])) - measurement_error, 'k', alpha=0.5)
 
                 # ax[1, 0].set_xlim([0, f_max])
                 # ax[0].set_ylim([0, 1.1*y.max()])

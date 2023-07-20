@@ -126,10 +126,11 @@ class FitSystem:
         for i, order in enumerate(self.fit_orders):
             # resid.append(((s_list[i] - calc_spec(params, order, f_list[i]))).flatten()/ np.abs(s_list[i]).max())
             resid.append(
-                np.abs(((self.s_list[order] - self.calc_spec(params, order, self.f_list[order])) * self.general_weight[i] / self.err_list[
-                    order]).flatten()))
+                np.abs(((self.s_list[order] - self.calc_spec(params, order, self.f_list[order])) * self.general_weight[
+                    i] / self.err_list[
+                            order]).flatten()))
 
-        return np.sum(np.concatenate(resid)**2)
+        return np.sum(np.concatenate(resid) ** 2)
 
     def start_minimizing(self, fit_params, method, max_nfev, xtol):
 
@@ -150,11 +151,11 @@ class FitSystem:
         # If a function to be called at each iteration is needed, it should be defined separately
         callback = self.plot_fit
 
-
         # If method allows for bounds, add them to the function call
         if method in ['L-BFGS-B', 'TNC', 'SLSQP']:
             result = minimize(self.objective, initial_guess,
-                              method=method, bounds=bounds, callback=callback, options={'maxiter': max_nfev, 'xtol': xtol})
+                              method=method, bounds=bounds, callback=callback,
+                              options={'maxiter': max_nfev, 'xtol': xtol})
         else:
             result = minimize(self.objective, initial_guess,
                               method=method, callback=callback, options={'maxiter': max_nfev, 'xtol': xtol})
@@ -210,7 +211,7 @@ class FitSystem:
                            vary=params_in[name][3])
 
         print('plotting initial fit')
-        self.fit_orders = [1,2,3]
+        self.fit_orders = [1, 2, 3]
 
         if use_scipy:
             initial_guess = np.array([p.value for p in fit_params.values()])
@@ -304,7 +305,7 @@ class FitSystem:
                 else:
                     err_list_sampled.append(data[::2 ** (i + 1), ::2 ** (i + 1)])
 
-            out = self.start_minimizing(fit_params, method, max_nfev, xtol) # TODO .._sampled need to be given
+            out = self.start_minimizing(fit_params, method, max_nfev, xtol)  # TODO .._sampled need to be given
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
@@ -336,11 +337,11 @@ class FitSystem:
         spec.save_spec(path)
 
     def plot_fit(self, params, iter_, resid):
-        print('plotting fit')
+
         if self.show_plot:
-            print('plotting fit2')
+
             if (iter_ + 1) % 10 == 0:
-                print('plotting fit3')
+
                 print(iter_ + 1)
 
                 if isinstance(params, np.ndarray):
@@ -493,21 +494,28 @@ class FitSystem:
                 # -------- plotting 1D cut ----------
 
                 s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
-                                order=i, s_err=np.real(self.s_list[i][0, :]).copy() + sigma * self.err_list[i][0, :].copy())
+                                                       order=i, s_err=np.real(self.s_list[i][0, :]).copy() + sigma *
+                                                                      self.err_list[i][0, :].copy())
                 _, s_err_axis_n = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
-                                                  order=i, s_err=np.real(self.s_list[i][0, :]).copy() - sigma * self.err_list[i][0, :].copy())
+                                                  order=i,
+                                                  s_err=np.real(self.s_list[i][0, :]).copy() - sigma * self.err_list[i][
+                                                                                                       0, :].copy())
                 _, fit_axis = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
-                                                       order=i,
-                                                       s_err=fit_list[i][0, :].copy())
+                                              order=i,
+                                              s_err=fit_list[i][0, :].copy())
 
-                s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
-                                                  order=i, s_err=np.real(np.diag(self.s_list[i])).copy() + sigma * np.diag(self.err_list[i]).copy())
-                _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
+                s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(),
+                                                       arcsinh_const=0.02,
                                                        order=i,
-                                                       s_err=np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(self.err_list[i]).copy())
+                                                       s_err=np.real(np.diag(self.s_list[i])).copy() + sigma * np.diag(
+                                                           self.err_list[i]).copy())
+                _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
+                                                  order=i,
+                                                  s_err=np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(
+                                                      self.err_list[i]).copy())
                 _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
-                                                         order=i,
-                                                         s_err=np.diag(fit_list[i]).copy())
+                                              order=i,
+                                              s_err=np.diag(fit_list[i]).copy())
 
                 c = ax[2, j].plot(self.f_list[i],
                                   s_axis, '-',

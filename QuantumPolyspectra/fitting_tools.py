@@ -332,8 +332,11 @@ class FitSystem:
         spec.save_spec(path)
 
     def plot_fit(self, params, iter_, resid):
+        print('plotting fit')
         if self.show_plot:
+            print('plotting fit2')
             if (iter_ + 1) % 10 == 0:
+                print('plotting fit3')
                 print(iter_ + 1)
 
                 if isinstance(params, np.ndarray):

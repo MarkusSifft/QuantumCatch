@@ -232,14 +232,17 @@ class FitSystem:
 
                 if use_scipy:
                     out = self.start_minimizing_scipy(fit_params, method, max_nfev, xtol)
+                    print('plotting current fit state')
+                    self.plot_fit_scipy(out)
+                    fit_params = out
                 else:
                     out = self.start_minimizing(fit_params, method, max_nfev, xtol)
 
-                print('plotting current fit state')
-                self.plot_fit(out.params, 9, out.residual)
+                    print('plotting current fit state')
+                    self.plot_fit(out.params, 9, out.residual)
 
-                for p in out.params:
-                    fit_params[p].value = out.params[p].value
+                    for p in out.params:
+                        fit_params[p].value = out.params[p].value
 
         elif fit_modus == 'resolution_based':
 

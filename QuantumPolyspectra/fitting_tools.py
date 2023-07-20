@@ -48,6 +48,7 @@ from scipy.optimize import minimize, Bounds
 class FitSystem:
 
     def __init__(self, set_system, m_op):
+        self.use_scipy = None
         self.set_system = set_system
         self.m_op = m_op
         self.out = None
@@ -130,7 +131,10 @@ class FitSystem:
                     i] / self.err_list[
                             order]).flatten()))
 
-        return np.concatenate(resid)
+        if self.use_scipy:
+            return np.sum(np.abs(np.concatenate(resid)))
+        else:
+            return np.concatenate(resid)
 
     def start_minimizing(self, fit_params, method, max_nfev, xtol):
 
@@ -170,6 +174,7 @@ class FitSystem:
         self.measurement_spec = load_spec(path)
         self.show_plot = show_plot
         self.general_weight = general_weight
+        self.use_scipy = use_scipy
 
         if f_max_2 is not None:
             i = 2

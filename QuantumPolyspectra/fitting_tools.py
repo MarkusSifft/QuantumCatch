@@ -129,7 +129,7 @@ class FitSystem:
                 np.abs(((self.s_list[order] - self.calc_spec(params, order, self.f_list[order])) * self.general_weight[i] / self.err_list[
                     order]).flatten()))
 
-        return np.concatenate(resid)
+        return np.sum(np.concatenate(resid)**2)
 
     def start_minimizing(self, fit_params, method, max_nfev, xtol):
 

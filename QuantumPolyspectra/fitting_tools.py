@@ -230,13 +230,17 @@ class FitSystem:
                 if use_scipy:
                     out = self.start_minimizing_scipy(fit_params, bounds, method, max_nfev, xtol)
                     print('plotting current fit state')
+                    self.show_plot = True
                     self.plot_fit_scipy(out.x)
+                    self.show_plot = False
                     fit_params = out.x
                 else:
                     out = self.start_minimizing(fit_params, method, max_nfev, xtol)
 
                     print('plotting current fit state')
+                    self.show_plot = True
                     self.plot_fit(out.params, 9, out.residual)
+                    self.show_plot = False
 
                     for p in out.params:
                         fit_params[p].value = out.params[p].value
@@ -636,3 +640,13 @@ def arcsinh_scaling(s_data, arcsinh_const, order, s_err=None, s_err_p=None, s_er
             return s_data, s_err
         else:
             return s_data
+
+
+class Callback:
+    def __init__(self, objective):
+        self.counter = 0
+        self.objective = objective
+
+    def __call__(self, xk):
+        self.counter += 1
+        error = self.objective(xk)

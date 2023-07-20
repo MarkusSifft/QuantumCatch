@@ -233,8 +233,8 @@ class FitSystem:
                 if use_scipy:
                     out = self.start_minimizing_scipy(fit_params, method, max_nfev, xtol)
                     print('plotting current fit state')
-                    self.plot_fit_scipy(out)
-                    fit_params = out
+                    self.plot_fit_scipy(out.x)
+                    fit_params = out.x
                 else:
                     out = self.start_minimizing(fit_params, method, max_nfev, xtol)
 

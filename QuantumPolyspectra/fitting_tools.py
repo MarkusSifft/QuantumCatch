@@ -345,8 +345,12 @@ class FitSystem:
             if (iter_ + 1) % 10 == 0:
                 print(iter_ + 1)
 
-                for key in params.keys():
-                    print('key:', params[key])
+                if isinstance(params, list):
+                    for i in params:
+                        print('i:', i)
+                else:
+                    for key in params.keys():
+                        print('key:', params[key])
 
                 print('Iterations:', iter_)
                 print('Current Error:', np.mean(np.abs(resid)))
@@ -354,8 +358,13 @@ class FitSystem:
                 self.comp_plot(params, fit_orders, f_list, s_list, err_list)
 
             elif iter_ == -1:
-                for key in params.keys():
-                    print('key:', params[key])
+
+                if isinstance(params, list):
+                    for i in params:
+                        print('i:', i)
+                else:
+                    for key in params.keys():
+                        print('key:', params[key])
 
                 self.comp_plot(params, fit_orders, f_list, s_list, err_list)
 

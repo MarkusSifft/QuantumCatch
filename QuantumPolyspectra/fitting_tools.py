@@ -245,6 +245,9 @@ class FitSystem:
                     for p in out.params:
                         fit_params[p].value = out.params[p].value
 
+                    print('plotting last fit')
+                    self.plot_fit(out.params, 9, out.residual)
+
         elif fit_modus == 'resolution_based':
 
             fit_orders = [1, 2, 3, 4]
@@ -325,8 +328,6 @@ class FitSystem:
         else:
             print('Parameter fit_order must be: (order_wise, resolution_wise)')
 
-        print('plotting last fit')
-        self.plot_fit(out.params, 9, out.residual)
 
         return out, self.measurement_spec, self.f_list
 

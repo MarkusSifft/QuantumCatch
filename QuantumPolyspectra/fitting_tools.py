@@ -169,7 +169,6 @@ class FitSystem:
         self.measurement_spec = load_spec(path)
         self.show_plot = show_plot
         self.general_weight = general_weight
-        self.fit_orders = fit_orders
 
         if f_max_2 is not None:
             i = 2
@@ -211,6 +210,8 @@ class FitSystem:
                            vary=params_in[name][3])
 
         print('plotting initial fit')
+        self.fit_orders = [1,2,3]
+
         if use_scipy:
             initial_guess = np.array([p.value for p in fit_params.values()])
             self.plot_fit(initial_guess, -1, np.array([1, 1]))
@@ -221,6 +222,8 @@ class FitSystem:
             for i in range(len(fit_orders)):
 
                 print('Fitting Orders:', fit_orders[:i + 1])
+                self.fit_orders = fit_orders[:i + 1]
+
                 if use_scipy:
                     out = self.start_minimizing_scipy(fit_params, method, max_nfev, xtol)
                 else:
@@ -235,6 +238,7 @@ class FitSystem:
         elif fit_modus == 'resolution_based':
 
             fit_orders = [1, 2, 3, 4]
+            self.fit_orders = fit_orders
 
             print('Low Resolution')
 

@@ -139,7 +139,7 @@ class FitSystem:
         return out
 
     def start_minimizing_scipy(self, fit_params, f_list, s_list, err_list, fit_orders, show_plot,
-                         general_weight, method, options):
+                         general_weight, method, max_nfev, xtol):
 
         # Convert parameters from lmfit format to initial guess values and bounds for scipy
         initial_guess = np.array([p.value for p in fit_params.values()])
@@ -152,11 +152,11 @@ class FitSystem:
         if method in ['L-BFGS-B', 'TNC', 'SLSQP']:
             result = minimize(self.objective, initial_guess,
                               args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
-                              method=method, bounds=bounds, callback=callback, options=options)
+                              method=method, bounds=bounds, callback=callback, options={'maxiter': max_nfev, 'xtol': xtol})
         else:
             result = minimize(self.objective, initial_guess,
                               args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
-                              method=method, callback=callback, options=options)
+                              method=method, callback=callback, options={'maxiter': max_nfev, 'xtol': xtol})
 
         return result
 

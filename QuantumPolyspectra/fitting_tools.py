@@ -345,8 +345,8 @@ class FitSystem:
 
         if self.show_plot:
 
-            params = optim_result['x']
-            iter_ = optim_result['nit']
+            params = optim_result
+            iter_ = 9
             resid = 0
 
             if (iter_ + 1) % 10 == 0:

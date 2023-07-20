@@ -341,6 +341,41 @@ class FitSystem:
 
         spec.save_spec(path)
 
+    def plot_fit_scipy(self, optim_result):
+
+        if self.show_plot:
+
+            params = optim_result.x
+            iter_ = optim_result.nit
+            resid = 0
+
+            if (iter_ + 1) % 10 == 0:
+
+                print(iter_ + 1)
+
+                if isinstance(params, np.ndarray):
+                    for i in params:
+                        print('i:', i)
+                else:
+                    for key in params.keys():
+                        print('key:', params[key])
+
+                print('Iterations:', iter_)
+                print('Current Error:', np.mean(np.abs(resid)))
+
+                self.comp_plot(params)
+
+            elif iter_ == -1:
+
+                if isinstance(params, np.ndarray):
+                    for i in params:
+                        print('i:', i)
+                else:
+                    for key in params.keys():
+                        print('key:', params[key])
+
+                self.comp_plot(params)
+
     def plot_fit(self, params, iter_, resid):
 
         if self.show_plot:

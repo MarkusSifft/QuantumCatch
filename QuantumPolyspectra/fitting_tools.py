@@ -153,7 +153,7 @@ class FitSystem:
         bounds = Bounds([p.min for p in fit_params.values()], [p.max for p in fit_params.values()])
 
         # If a function to be called at each iteration is needed, it should be defined separately
-        callback = self.plot_fit
+        callback = self.plot_fit_scipy
 
         # If method allows for bounds, add them to the function call
         if method in ['L-BFGS-B', 'TNC', 'SLSQP']:

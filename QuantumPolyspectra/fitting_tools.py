@@ -219,8 +219,8 @@ class FitSystem:
         self.fit_orders = [1, 2, 3]
 
         if use_scipy:
-            initial_guess = np.array([p.value for p in fit_params.values()])
-            self.plot_fit(initial_guess, -1, np.array([1, 1]))
+            fit_params = np.array([p.value for p in fit_params.values()])
+            self.plot_fit_scipy(fit_params)
         else:
             self.plot_fit(fit_params, -1, np.array([1, 1]))
 

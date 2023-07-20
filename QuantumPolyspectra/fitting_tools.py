@@ -73,7 +73,7 @@ class FitSystem:
 
         spec = system.calc_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op, beta_offset=True,
                                     enable_gpu=False, bar=False, verbose=False)
-        if isinstance(params, list):
+        if isinstance(params, np.ndarray):
             return spec + params[-1]
         else:
             return spec + params['c']
@@ -345,7 +345,7 @@ class FitSystem:
             if (iter_ + 1) % 10 == 0:
                 print(iter_ + 1)
 
-                if isinstance(params, list):
+                if isinstance(params, np.ndarray):
                     for i in params:
                         print('i:', i)
                 else:
@@ -359,7 +359,7 @@ class FitSystem:
 
             elif iter_ == -1:
 
-                if isinstance(params, list):
+                if isinstance(params, np.ndarray):
                     for i in params:
                         print('i:', i)
                 else:

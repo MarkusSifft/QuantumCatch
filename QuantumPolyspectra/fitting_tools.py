@@ -146,11 +146,7 @@ class FitSystem:
 
         return out
 
-    def start_minimizing_scipy(self, fit_params, method, max_nfev, xtol):
-
-        # Convert parameters from lmfit format to initial guess values and bounds for scipy
-        initial_guess = fit_params
-        #bounds = Bounds([p.min for p in fit_params.values()], [p.max for p in fit_params.values()])
+    def start_minimizing_scipy(self, initial_guess, bounds, method, max_nfev, xtol):
 
         # If a function to be called at each iteration is needed, it should be defined separately
         callback = self.plot_fit_scipy
@@ -158,7 +154,7 @@ class FitSystem:
         # If method allows for bounds, add them to the function call
         if method in ['L-BFGS-B', 'TNC', 'SLSQP']:
             result = minimize(self.objective, initial_guess,
-                              method=method, callback=callback,
+                              method=method, bounds=bounds, callback=callback,
                               options={'maxiter': max_nfev, 'xtol': xtol})
         else:
             result = minimize(self.objective, initial_guess,
@@ -219,6 +215,7 @@ class FitSystem:
         self.fit_orders = [1, 2, 3]
 
         if use_scipy:
+            bounds = Bounds([p.min for p in fit_params.values()], [p.max for p in fit_params.values()])
             fit_params = np.array([p.value for p in fit_params.values()])
             self.plot_fit_scipy(fit_params)
         else:
@@ -231,7 +228,7 @@ class FitSystem:
                 self.fit_orders = fit_orders[:i + 1]
 
                 if use_scipy:
-                    out = self.start_minimizing_scipy(fit_params, method, max_nfev, xtol)
+                    out = self.start_minimizing_scipy(fit_params, bounds, method, max_nfev, xtol)
                     print('plotting current fit state')
                     self.plot_fit_scipy(out.x)
                     fit_params = out.x

@@ -238,9 +238,7 @@ class FitSystem:
                     out = self.start_minimizing(fit_params, method, max_nfev, xtol)
 
                     print('plotting current fit state')
-                    self.show_plot = True
                     self.plot_fit(out.params, 9, out.residual)
-                    self.show_plot = False
 
                     for p in out.params:
                         fit_params[p].value = out.params[p].value

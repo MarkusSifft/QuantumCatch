@@ -73,8 +73,10 @@ class FitSystem:
 
         spec = system.calc_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op, beta_offset=True,
                                     enable_gpu=False, bar=False, verbose=False)
-
-        return spec + params['c']
+        if isinstance(params, list):
+            return spec + params[-1]
+        else:
+            return spec + params['c']
 
     def s3(self, params, omegas):
 
@@ -205,8 +207,13 @@ class FitSystem:
                            vary=params_in[name][3])
 
         print('plotting initial fit')
-        self.plot_fit(fit_params, -1, np.array([1, 1]), f_list, s_list, err_list, (1, 2, 3), show_plot=True,
-                      general_weight=general_weight)
+        if use_scipy:
+            initial_guess = np.array([p.value for p in fit_params.values()])
+            self.plot_fit(initial_guess, -1, np.array([1, 1]), f_list, s_list, err_list, (1, 2, 3), show_plot=True,
+                          general_weight=general_weight)
+        else:
+            self.plot_fit(fit_params, -1, np.array([1, 1]), f_list, s_list, err_list, (1, 2, 3), show_plot=True,
+                          general_weight=general_weight)
 
         if fit_modus == 'order_based':
             for i in range(len(fit_orders)):

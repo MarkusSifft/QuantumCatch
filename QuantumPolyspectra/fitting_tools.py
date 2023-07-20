@@ -42,6 +42,7 @@ from tqdm import tqdm_notebook
 import matplotlib.colors as colors
 from signalsnap.analysis import load_spec
 from matplotlib.colors import LinearSegmentedColormap
+from scipy.optimize import minimize, Bounds
 
 
 class FitSystem:
@@ -135,10 +136,32 @@ class FitSystem:
 
         return out
 
+    def start_minimizing_scipy(self, fit_params, f_list, s_list, err_list, fit_orders, show_plot,
+                         general_weight, method, options):
+
+        # Convert parameters from lmfit format to initial guess values and bounds for scipy
+        initial_guess = np.array([p.value for p in fit_params.values()])
+        bounds = Bounds([p.min for p in fit_params.values()], [p.max for p in fit_params.values()])
+
+        # If a function to be called at each iteration is needed, it should be defined separately
+        callback = self.plot_fit
+
+        # If method allows for bounds, add them to the function call
+        if method in ['L-BFGS-B', 'TNC', 'SLSQP']:
+            result = minimize(self.objective, initial_guess,
+                              args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
+                              method=method, bounds=bounds, callback=callback, options=options)
+        else:
+            result = minimize(self.objective, initial_guess,
+                              args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
+                              method=method, callback=callback, options=options)
+
+        return result
+
     def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
                      fit_modus='order_based',
                      fit_orders=(1, 2, 3, 4), show_plot=True,
-                     xtol=1e-5, max_nfev=500, general_weight=(2, 2, 1, 1)):
+                     xtol=1e-5, max_nfev=500, general_weight=(2, 2, 1, 1), use_scipy=False):
 
         self.measurement_spec = load_spec(path)
 
@@ -189,8 +212,12 @@ class FitSystem:
             for i in range(len(fit_orders)):
 
                 print('Fitting Orders:', fit_orders[:i + 1])
-                out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders[:i + 1], show_plot,
-                                            general_weight, method, max_nfev, xtol)
+                if use_scipy:
+                    out = self.start_minimizing_scipy(fit_params, f_list, s_list, err_list, fit_orders[:i + 1], show_plot,
+                                                general_weight, method, max_nfev, xtol)
+                else:
+                    out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders[:i + 1], show_plot,
+                                                general_weight, method, max_nfev, xtol)
 
                 print('plotting current fit state')
                 self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders[:i + 1], show_plot=True,

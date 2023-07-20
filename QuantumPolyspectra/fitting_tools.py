@@ -52,6 +52,12 @@ class FitSystem:
         self.m_op = m_op
         self.out = None
         self.measurement_spec = None
+        self.f_list = None
+        self.s_list = None
+        self.err_list = None
+        self.fit_orders = None
+        self.show_plot = None
+        self.general_weight = None
 
     def s1(self, params):
 
@@ -113,24 +119,21 @@ class FitSystem:
 
         return out
 
-    def objective(self, params, f_list, s_list, err_list, fit_orders, show_plot, general_weight):
+    def objective(self, params):
 
         resid = []
 
-        for i, order in enumerate(fit_orders):
+        for i, order in enumerate(self.fit_orders):
             # resid.append(((s_list[i] - calc_spec(params, order, f_list[i]))).flatten()/ np.abs(s_list[i]).max())
             resid.append(
-                np.abs(((s_list[order] - self.calc_spec(params, order, f_list[order])) * general_weight[i] / err_list[
+                np.abs(((self.s_list[order] - self.calc_spec(params, order, self.f_list[order])) * self.general_weight[i] / self.err_list[
                     order]).flatten()))
 
         return np.concatenate(resid)
 
-    def start_minimizing(self, fit_params, f_list, s_list, err_list, fit_orders, show_plot,
-                         general_weight, method, max_nfev, xtol):
+    def start_minimizing(self, fit_params, method, max_nfev, xtol):
 
-        mini = Minimizer(self.objective, fit_params,
-                         fcn_args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
-                         iter_cb=self.plot_fit)
+        mini = Minimizer(self.objective, fit_params, iter_cb=self.plot_fit)
         if method == 'powell':
             out = mini.minimize(method=method, max_nfev=max_nfev)
         else:
@@ -138,8 +141,7 @@ class FitSystem:
 
         return out
 
-    def start_minimizing_scipy(self, fit_params, f_list, s_list, err_list, fit_orders, show_plot,
-                         general_weight, method, max_nfev, xtol):
+    def start_minimizing_scipy(self, fit_params, method, max_nfev, xtol):
 
         # Convert parameters from lmfit format to initial guess values and bounds for scipy
         initial_guess = np.array([p.value for p in fit_params.values()])
@@ -151,11 +153,9 @@ class FitSystem:
         # If method allows for bounds, add them to the function call
         if method in ['L-BFGS-B', 'TNC', 'SLSQP']:
             result = minimize(self.objective, initial_guess,
-                              args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
                               method=method, bounds=bounds, callback=callback, options={'maxiter': max_nfev, 'xtol': xtol})
         else:
             result = minimize(self.objective, initial_guess,
-                              args=(f_list, s_list, err_list, fit_orders, show_plot, general_weight),
                               method=method, callback=callback, options={'maxiter': max_nfev, 'xtol': xtol})
 
         return result
@@ -166,6 +166,9 @@ class FitSystem:
                      xtol=1e-5, max_nfev=500, general_weight=(2, 2, 1, 1), use_scipy=False):
 
         self.measurement_spec = load_spec(path)
+        self.show_plot = show_plot
+        self.general_weight = general_weight
+        self.fit_orders = fit_orders
 
         if f_max_2 is not None:
             i = 2
@@ -191,14 +194,14 @@ class FitSystem:
             self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind, :max_ind]
             self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind, :max_ind]
 
-        f_list = {1: None, 2: None, 3: None, 4: None}
-        s_list = {1: None, 2: None, 3: None, 4: None}
-        err_list = {1: None, 2: None, 3: None, 4: None}
+        self.f_list = {1: None, 2: None, 3: None, 4: None}
+        self.s_list = {1: None, 2: None, 3: None, 4: None}
+        self.err_list = {1: None, 2: None, 3: None, 4: None}
 
         for i in range(1, 5):
-            f_list[i] = self.measurement_spec.freq[i]
-            s_list[i] = np.real(self.measurement_spec.S[i])
-            err_list[i] = np.real(self.measurement_spec.S_err[i])
+            self.f_list[i] = self.measurement_spec.freq[i]
+            self.s_list[i] = np.real(self.measurement_spec.S[i])
+            self.err_list[i] = np.real(self.measurement_spec.S_err[i])
 
         fit_params = Parameters()
 
@@ -209,26 +212,21 @@ class FitSystem:
         print('plotting initial fit')
         if use_scipy:
             initial_guess = np.array([p.value for p in fit_params.values()])
-            self.plot_fit(initial_guess, -1, np.array([1, 1]), f_list, s_list, err_list, (1, 2, 3), show_plot=True,
-                          general_weight=general_weight)
+            self.plot_fit(initial_guess, -1, np.array([1, 1]))
         else:
-            self.plot_fit(fit_params, -1, np.array([1, 1]), f_list, s_list, err_list, (1, 2, 3), show_plot=True,
-                          general_weight=general_weight)
+            self.plot_fit(fit_params, -1, np.array([1, 1]))
 
         if fit_modus == 'order_based':
             for i in range(len(fit_orders)):
 
                 print('Fitting Orders:', fit_orders[:i + 1])
                 if use_scipy:
-                    out = self.start_minimizing_scipy(fit_params, f_list, s_list, err_list, fit_orders[:i + 1], show_plot,
-                                                general_weight, method, max_nfev, xtol)
+                    out = self.start_minimizing_scipy(fit_params, method, max_nfev, xtol)
                 else:
-                    out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders[:i + 1], show_plot,
-                                                general_weight, method, max_nfev, xtol)
+                    out = self.start_minimizing(fit_params, method, max_nfev, xtol)
 
                 print('plotting current fit state')
-                self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders[:i + 1], show_plot=True,
-                              general_weight=general_weight)
+                self.plot_fit(out.params, 9, out.residual)
 
                 for p in out.params:
                     fit_params[p].value = out.params[p].value
@@ -239,91 +237,84 @@ class FitSystem:
 
             print('Low Resolution')
 
-            f_list_sampled = [data[::2 ** (i + 3)] for i, data in enumerate(f_list)]
+            f_list_sampled = [data[::2 ** (i + 3)] for i, data in enumerate(self.f_list)]
 
             s_list_sampled = []
-            for i, data in enumerate(s_list):
+            for i, data in enumerate(self.s_list):
                 if i == 0:
                     s_list_sampled.append(data[::2 ** (i + 3)])
                 else:
                     s_list_sampled.append(data[::2 ** (i + 3), ::2 ** (i + 3)])
 
             err_list_sampled = []
-            for i, data in enumerate(err_list):
+            for i, data in enumerate(self.err_list):
                 if i == 0:
                     err_list_sampled.append(data[::2 ** (i + 3)])
                 else:
                     err_list_sampled.append(data[::2 ** (i + 3), ::2 ** (i + 3)])
 
-            out = self.start_minimizing(fit_params, f_list_sampled, s_list_sampled, err_list_sampled, fit_orders,
-                                        show_plot,
-                                        general_weight, method, max_nfev, xtol)
+            out = self.start_minimizing(fit_params, method, max_nfev, xtol)
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
 
             print('Medium Resolution')
 
-            f_list_sampled = [data[::2 ** (i + 2)] for i, data in enumerate(f_list)]
+            f_list_sampled = [data[::2 ** (i + 2)] for i, data in enumerate(self.f_list)]
 
             s_list_sampled = []
-            for i, data in enumerate(s_list):
+            for i, data in enumerate(self.s_list):
                 if i == 0:
                     s_list_sampled.append(data[::2 ** (i + 2)])
                 else:
                     s_list_sampled.append(data[::2 ** (i + 2), ::2 ** (i + 2)])
 
             err_list_sampled = []
-            for i, data in enumerate(err_list):
+            for i, data in enumerate(self.err_list):
                 if i == 0:
                     err_list_sampled.append(data[::2 ** (i + 2)])
                 else:
                     err_list_sampled.append(data[::2 ** (i + 2), ::2 ** (i + 2)])
 
-            out = self.start_minimizing(fit_params, f_list_sampled, s_list_sampled, err_list_sampled, fit_orders,
-                                        show_plot,
-                                        general_weight, method, max_nfev, xtol)
+            out = self.start_minimizing(fit_params, method, max_nfev, xtol)
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
 
             print('High Resolution')
 
-            f_list_sampled = [data[::2 ** (i + 1)] for i, data in enumerate(f_list)]
+            f_list_sampled = [data[::2 ** (i + 1)] for i, data in enumerate(self.f_list)]
 
             s_list_sampled = []
-            for i, data in enumerate(s_list):
+            for i, data in enumerate(self.s_list):
                 if i == 0:
                     s_list_sampled.append(data[::2 ** (i + 1)])
                 else:
                     s_list_sampled.append(data[::2 ** (i + 1), ::2 ** (i + 1)])
 
             err_list_sampled = []
-            for i, data in enumerate(err_list):
+            for i, data in enumerate(self.err_list):
                 if i == 0:
                     err_list_sampled.append(data[::2 ** (i + 1)])
                 else:
                     err_list_sampled.append(data[::2 ** (i + 1), ::2 ** (i + 1)])
 
-            out = self.start_minimizing(fit_params, f_list_sampled, s_list_sampled, err_list_sampled, fit_orders,
-                                        show_plot,
-                                        general_weight, method, max_nfev, xtol)
+            out = self.start_minimizing(fit_params, method, max_nfev, xtol) # TODO .._sampled need to be given
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
 
             print('Full Resolution')
-            out = self.start_minimizing(fit_params, f_list, s_list, err_list, fit_orders, show_plot,
-                                        general_weight, method, max_nfev, xtol)
+            out = self.start_minimizing(fit_params, method, max_nfev, xtol)
 
         else:
             print('Parameter fit_order must be: (order_wise, resolution_wise)')
 
         print('plotting last fit')
-        self.plot_fit(out.params, 9, out.residual, f_list, s_list, err_list, fit_orders, show_plot=True,
-                      general_weight=general_weight)
+        self.plot_fit(out.params, 9, out.residual)
 
-        return out, self.measurement_spec, f_list
+
+        return out, self.measurement_spec, self.f_list
 
     def save_fit(self, spec, path, f_list, out):
         fit_list = {1: None, 2: None, 3: None, 4: None}
@@ -340,8 +331,8 @@ class FitSystem:
 
         spec.save_spec(path)
 
-    def plot_fit(self, params, iter_, resid, f_list, s_list, err_list, fit_orders, show_plot, general_weight):
-        if show_plot:
+    def plot_fit(self, params, iter_, resid):
+        if self.show_plot:
             if (iter_ + 1) % 10 == 0:
                 print(iter_ + 1)
 
@@ -355,7 +346,7 @@ class FitSystem:
                 print('Iterations:', iter_)
                 print('Current Error:', np.mean(np.abs(resid)))
 
-                self.comp_plot(params, fit_orders, f_list, s_list, err_list)
+                self.comp_plot(params)
 
             elif iter_ == -1:
 
@@ -366,9 +357,9 @@ class FitSystem:
                     for key in params.keys():
                         print('key:', params[key])
 
-                self.comp_plot(params, fit_orders, f_list, s_list, err_list)
+                self.comp_plot(params)
 
-    def comp_plot(self, params, fit_orders, f_list, s_list, err_list):
+    def comp_plot(self, params):
 
         fig, ax = plt.subplots(nrows=3, ncols=3, figsize=(21, 16), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
         plt.rc('text', usetex=False)
@@ -380,21 +371,21 @@ class FitSystem:
         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
         fit_list = {1: None, 2: None, 3: None, 4: None}
-        for i in fit_orders:
-            fit_list[i] = np.real(self.calc_spec(params, i, f_list[i]))
+        for i in self.fit_orders:
+            fit_list[i] = np.real(self.calc_spec(params, i, self.f_list[i]))
 
         # ---------- S1 ------------
         if fit_list[1] is not None:
             print('S1:')
-            print('measurement:', s_list[1][0], '+/-', sigma * err_list[1][0])
+            print('measurement:', self.s_list[1][0], '+/-', sigma * self.err_list[1][0])
             print('fit:', fit_list[1])
-            print('relative error:', (s_list[1][0] - fit_list[1]) / s_list[1][0])
+            print('relative error:', (self.s_list[1][0] - fit_list[1]) / self.s_list[1][0])
 
         # ---------- S2 ------------
         if fit_list[2] is not None:
-            c = ax[0, 0].plot(f_list[2], np.real(s_list[2]), lw=3,
+            c = ax[0, 0].plot(self.f_list[2], np.real(self.s_list[2]), lw=3,
                               color=[0, 0.5, 0.9], label='meas.')
-            c = ax[0, 0].plot(f_list[2], fit_list[2], '--k', alpha=0.8, label='fit')
+            c = ax[0, 0].plot(self.f_list[2], fit_list[2], '--k', alpha=0.8, label='fit')
 
             # ax[0, 0].set_xlim([0, f_max])
             # ax[0].set_ylim([0, 1.1*y.max()])
@@ -405,15 +396,15 @@ class FitSystem:
             ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
             ax[0, 0].legend()
 
-            c = ax[1, 0].plot(f_list[2],
-                              (np.real(s_list[2]) - fit_list[2]) / np.real(s_list[2]),
+            c = ax[1, 0].plot(self.f_list[2],
+                              (np.real(self.s_list[2]) - fit_list[2]) / np.real(self.s_list[2]),
                               lw=2,
                               color=[0, 0.5, 0.9], label='rel. err.')
-            relative_measurement_error = err_list[2] / s_list[2]
-            ax[1, 0].fill_between(f_list[2], sigma * relative_measurement_error,
+            relative_measurement_error = self.err_list[2] / self.s_list[2]
+            ax[1, 0].fill_between(self.f_list[2], sigma * relative_measurement_error,
                                   -sigma * relative_measurement_error, alpha=0.3)
-            ax[1, 0].plot(f_list[2], sigma * relative_measurement_error, 'k', alpha=0.5)
-            ax[1, 0].plot(f_list[2], -sigma * relative_measurement_error, 'k', alpha=0.5)
+            ax[1, 0].plot(self.f_list[2], sigma * relative_measurement_error, 'k', alpha=0.5)
+            ax[1, 0].plot(self.f_list[2], -sigma * relative_measurement_error, 'k', alpha=0.5)
 
             # ax[1, 0].set_xlim([0, f_max])
             # ax[0].set_ylim([0, 1.1*y.max()])
@@ -426,14 +417,14 @@ class FitSystem:
 
         # ---------- S3 and S4 ------------
 
-        for i in fit_orders:
+        for i in self.fit_orders:
 
             if fit_list[i] is not None and i > 2:
                 j = i - 2
 
-                y, x = np.meshgrid(f_list[i], f_list[i])
+                y, x = np.meshgrid(self.f_list[i], self.f_list[i])
 
-                z = np.real(s_list[i])
+                z = np.real(self.s_list[i])
                 z_fit = fit_list[i]
                 z_both = np.tril(z) + np.triu(z_fit)
 
@@ -458,7 +449,7 @@ class FitSystem:
 
                 # ------ rel. err. -------
 
-                z_both = gaussian_filter((np.real(s_list[i]) - fit_list[i]) / np.real(s_list[i]), 0)
+                z_both = gaussian_filter((np.real(self.s_list[i]) - fit_list[i]) / np.real(self.s_list[i]), 0)
                 z_both = np.real(z_both)
 
                 green_alpha = 1
@@ -466,7 +457,7 @@ class FitSystem:
                 cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 
                 err_matrix = np.zeros_like(z_both)
-                relative_measurement_error = sigma * err_list[i] / s_list[i]
+                relative_measurement_error = sigma * self.err_list[i] / self.s_list[i]
                 err_matrix[np.abs(z_both) < relative_measurement_error] = 1
 
                 z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
@@ -494,50 +485,50 @@ class FitSystem:
 
                 # -------- plotting 1D cut ----------
 
-                s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(s_list[i][0, :]).copy(), arcsinh_const=0.02,
-                                order=i, s_err=np.real(s_list[i][0, :]).copy() + sigma * err_list[i][0, :].copy())
-                _, s_err_axis_n = arcsinh_scaling(s_data=np.real(s_list[i][0, :]).copy(), arcsinh_const=0.02,
-                                                  order=i, s_err=np.real(s_list[i][0, :]).copy() - sigma * err_list[i][0, :].copy())
-                _, fit_axis = arcsinh_scaling(s_data=np.real(s_list[i][0, :]).copy(), arcsinh_const=0.02,
+                s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
+                                order=i, s_err=np.real(self.s_list[i][0, :]).copy() + sigma * self.err_list[i][0, :].copy())
+                _, s_err_axis_n = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
+                                                  order=i, s_err=np.real(self.s_list[i][0, :]).copy() - sigma * self.err_list[i][0, :].copy())
+                _, fit_axis = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
                                                        order=i,
                                                        s_err=fit_list[i][0, :].copy())
 
-                s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(s_list[i])).copy(), arcsinh_const=0.02,
-                                                  order=i, s_err=np.real(np.diag(s_list[i])).copy() + sigma * np.diag(err_list[i]).copy())
-                _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(s_list[i])).copy(), arcsinh_const=0.02,
+                s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
+                                                  order=i, s_err=np.real(np.diag(self.s_list[i])).copy() + sigma * np.diag(self.err_list[i]).copy())
+                _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
                                                        order=i,
-                                                       s_err=np.real(np.diag(s_list[i])).copy() - sigma * np.diag(err_list[i]).copy())
-                _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(s_list[i])).copy(), arcsinh_const=0.02,
+                                                       s_err=np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(self.err_list[i]).copy())
+                _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
                                                          order=i,
                                                          s_err=np.diag(fit_list[i]).copy())
 
-                c = ax[2, j].plot(f_list[i],
+                c = ax[2, j].plot(self.f_list[i],
                                   s_axis, '-',
                                   lw=2,
                                   color=[0, 0.5, 0.9], label='meas.')
-                c = ax[2, j].plot(f_list[i],
+                c = ax[2, j].plot(self.f_list[i],
                                   fit_axis, '--',
                                   lw=2,
                                   color=[0, 0.5, 0.9], label='fit')
 
-                c = ax[2, j].plot(f_list[i],
+                c = ax[2, j].plot(self.f_list[i],
                                   s_diag, '-',
                                   lw=2,
                                   color=[0.2, 0.5, 0.9], label='meas.')
-                c = ax[2, j].plot(f_list[i],
+                c = ax[2, j].plot(self.f_list[i],
                                   fit_diag, '--',
                                   lw=2,
                                   color=[0.2, 0.5, 0.9], label='fit')
 
-                ax[2, j].fill_between(f_list[i], s_err_axis_p,
+                ax[2, j].fill_between(self.f_list[i], s_err_axis_p,
                                       s_err_axis_n, alpha=0.3)
-                ax[2, j].plot(f_list[i], s_err_axis_p, 'k', alpha=0.5)
-                ax[2, j].plot(f_list[i], s_err_axis_n, 'k', alpha=0.5)
+                ax[2, j].plot(self.f_list[i], s_err_axis_p, 'k', alpha=0.5)
+                ax[2, j].plot(self.f_list[i], s_err_axis_n, 'k', alpha=0.5)
 
-                ax[2, j].fill_between(f_list[i], s_err_diag_p,
+                ax[2, j].fill_between(self.f_list[i], s_err_diag_p,
                                       s_err_diag_n, alpha=0.3)
-                ax[2, j].plot(f_list[i], s_err_diag_p, 'k', alpha=0.5)
-                ax[2, j].plot(f_list[i], s_err_diag_n, 'k', alpha=0.5)
+                ax[2, j].plot(self.f_list[i], s_err_diag_p, 'k', alpha=0.5)
+                ax[2, j].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.5)
 
                 # ax[1, 0].set_xlim([0, f_max])
                 # ax[0].set_ylim([0, 1.1*y.max()])

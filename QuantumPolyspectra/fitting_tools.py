@@ -150,6 +150,7 @@ class FitSystem:
         # If a function to be called at each iteration is needed, it should be defined separately
         callback = self.plot_fit
 
+
         # If method allows for bounds, add them to the function call
         if method in ['L-BFGS-B', 'TNC', 'SLSQP']:
             result = minimize(self.objective, initial_guess,
@@ -312,7 +313,6 @@ class FitSystem:
 
         print('plotting last fit')
         self.plot_fit(out.params, 9, out.residual)
-
 
         return out, self.measurement_spec, self.f_list
 

@@ -47,6 +47,7 @@ from matplotlib.colors import LinearSegmentedColormap
 class FitSystem:
 
     def __init__(self, set_system, m_op):
+        self.beta_offset = None
         self.use_scipy = None
         self.set_system = set_system
         self.m_op = m_op
@@ -77,8 +78,9 @@ class FitSystem:
 
         A = calc_super_A(sc_ops[self.m_op].full())
 
-        spec = system.calc_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op, beta_offset=True,
-                                    enable_gpu=False, bar=False, verbose=False)
+        spec = system.calc_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op, 
+                                    beta_offset=self.beta_offset, enable_gpu=False, bar=False, verbose=False)
+        
         if isinstance(params, np.ndarray):
             return spec + params[-1]
         else:
@@ -146,7 +148,7 @@ class FitSystem:
         return out
 
     def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
-                     fit_modus='order_based',
+                     fit_modus='order_based', beta_offset=True,
                      fit_orders=(1, 2, 3, 4), show_plot=True,
                      xtol=1e-6, ftol=1e-6, max_nfev=500, general_weight=(2, 2, 1, 1), use_scipy=False):
 
@@ -154,6 +156,7 @@ class FitSystem:
         self.show_plot = show_plot
         self.general_weight = general_weight
         self.use_scipy = use_scipy
+        self.beta_offset = beta_offset
 
         if f_max_2 is not None:
             i = 2

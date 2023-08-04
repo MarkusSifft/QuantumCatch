@@ -42,7 +42,6 @@ from tqdm import tqdm_notebook
 import matplotlib.colors as colors
 from signalsnap.analysis import load_spec
 from matplotlib.colors import LinearSegmentedColormap
-from scipy.optimize import minimize, Bounds
 
 
 class FitSystem:
@@ -136,36 +135,20 @@ class FitSystem:
         else:
             return np.concatenate(resid)
 
-    def start_minimizing(self, fit_params, method, max_nfev, xtol):
+    def start_minimizing(self, fit_params, method, max_nfev, xtol, ftol):
 
         mini = Minimizer(self.objective, fit_params, iter_cb=self.plot_fit)
         if method == 'powell':
             out = mini.minimize(method=method, max_nfev=max_nfev)
         else:
-            out = mini.minimize(method=method, xtol=xtol, max_nfev=max_nfev)
+            out = mini.minimize(method=method, xtol=xtol, ftol=ftol, max_nfev=max_nfev)
 
         return out
-
-    def start_minimizing_scipy(self, initial_guess, bounds, method, max_nfev, xtol):
-
-        # If a function to be called at each iteration is needed, it should be defined separately
-        callback = self.plot_fit_scipy
-
-        # If method allows for bounds, add them to the function call
-        if method in ['L-BFGS-B', 'TNC', 'SLSQP']:
-            result = minimize(self.objective, initial_guess,
-                              method=method, bounds=bounds, callback=callback,
-                              options={'maxiter': max_nfev, 'xtol': xtol})
-        else:
-            result = minimize(self.objective, initial_guess,
-                              method=method, callback=callback, options={'maxiter': max_nfev, 'xtol': xtol})
-
-        return result
 
     def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
                      fit_modus='order_based',
                      fit_orders=(1, 2, 3, 4), show_plot=True,
-                     xtol=1e-5, max_nfev=500, general_weight=(2, 2, 1, 1), use_scipy=False):
+                     xtol=1e-6, ftol=1e-6, max_nfev=500, general_weight=(2, 2, 1, 1), use_scipy=False):
 
         self.measurement_spec = load_spec(path)
         self.show_plot = show_plot
@@ -214,12 +197,7 @@ class FitSystem:
         print('plotting initial fit')
         self.fit_orders = [1, 2, 3]
 
-        if use_scipy:
-            bounds = Bounds([p.min for p in fit_params.values()], [p.max for p in fit_params.values()])
-            fit_params = np.array([p.value for p in fit_params.values()])
-            self.plot_fit_scipy(fit_params)
-        else:
-            self.plot_fit(fit_params, -1, np.array([1, 1]))
+        self.plot_fit(fit_params, -1, np.array([1, 1]))
 
         if fit_modus == 'order_based':
             for i in range(len(fit_orders)):
@@ -227,24 +205,16 @@ class FitSystem:
                 print('Fitting Orders:', fit_orders[:i + 1])
                 self.fit_orders = fit_orders[:i + 1]
 
-                if use_scipy:
-                    out = self.start_minimizing_scipy(fit_params, bounds, method, max_nfev, xtol)
-                    print('plotting current fit state')
-                    self.show_plot = True
-                    self.plot_fit_scipy(out.x)
-                    self.show_plot = False
-                    fit_params = out.x
-                else:
-                    out = self.start_minimizing(fit_params, method, max_nfev, xtol)
+                out = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
 
-                    print('plotting current fit state')
-                    self.plot_fit(out.params, 9, out.residual)
+                print('plotting current fit state')
+                self.plot_fit(out.params, 9, out.residual)
 
-                    for p in out.params:
-                        fit_params[p].value = out.params[p].value
+                for p in out.params:
+                    fit_params[p].value = out.params[p].value
 
-                    print('plotting last fit')
-                    self.plot_fit(out.params, 9, out.residual)
+                print('plotting last fit')
+                self.plot_fit(out.params, 9, out.residual)
 
         elif fit_modus == 'resolution_based':
 
@@ -269,7 +239,7 @@ class FitSystem:
                 else:
                     err_list_sampled.append(data[::2 ** (i + 3), ::2 ** (i + 3)])
 
-            out = self.start_minimizing(fit_params, method, max_nfev, xtol)
+            out = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
@@ -292,7 +262,7 @@ class FitSystem:
                 else:
                     err_list_sampled.append(data[::2 ** (i + 2), ::2 ** (i + 2)])
 
-            out = self.start_minimizing(fit_params, method, max_nfev, xtol)
+            out = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
@@ -315,17 +285,16 @@ class FitSystem:
                 else:
                     err_list_sampled.append(data[::2 ** (i + 1), ::2 ** (i + 1)])
 
-            out = self.start_minimizing(fit_params, method, max_nfev, xtol)  # TODO .._sampled need to be given
+            out = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)  # TODO .._sampled need to be given
 
             for p in out.params:
                 fit_params[p].value = out.params[p].value
 
             print('Full Resolution')
-            out = self.start_minimizing(fit_params, method, max_nfev, xtol)
+            out = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
 
         else:
             print('Parameter fit_order must be: (order_wise, resolution_wise)')
-
 
         return out, self.measurement_spec, self.f_list
 

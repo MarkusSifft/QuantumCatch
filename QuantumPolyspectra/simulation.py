@@ -57,7 +57,7 @@ import pickle
 import arrayfire as af
 from arrayfire.interop import from_ndarray as to_gpu
 
-from signalsnap.analysis import Spectrum
+from signalsnap.spectrum_calculator import SpectrumCalculator
 
 
 #  from pympler import asizeof
@@ -886,7 +886,7 @@ def pickle_save(path, obj):
     f.close()
 
 
-class System(Spectrum):
+class System(SpectrumCalculator):
     """
     Class that will represent the system of interest. It contains the parameters of the system and the
     methods for calculating and storing the polyspectra.

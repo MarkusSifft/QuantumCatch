@@ -32,7 +32,7 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-from QuantumPolyspectra import Spectrum
+from QuantumPolyspectra import SpectrumCalculator
 from QuantumPolyspectra.simulation import calc_super_A
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,7 +40,7 @@ from scipy.ndimage.filters import gaussian_filter
 from lmfit import Parameters, minimize, Minimizer
 from tqdm import tqdm_notebook
 import matplotlib.colors as colors
-from signalsnap.analysis import load_spec
+from signalsnap.spectrum_calculator import load_spec
 from matplotlib.colors import LinearSegmentedColormap
 
 

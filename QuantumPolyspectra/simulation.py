@@ -886,7 +886,7 @@ def pickle_save(path, obj):
     f.close()
 
 
-class System(SpectrumCalculator):
+class System: # (SpectrumCalculator):
     """
     Class that will represent the system of interest. It contains the parameters of the system and the
     methods for calculating and storing the polyspectra.
@@ -980,7 +980,7 @@ class System(SpectrumCalculator):
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):
 
-        super().__init__(None)
+        #super().__init__(None)
         self.H = h
         self.L = None
         self.psi_0 = psi_0

@@ -32,7 +32,7 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-from QuantumPolyspectra import Spectrum
+from QuantumPolyspectra import SpectrumCalculator
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
@@ -41,7 +41,7 @@ from tqdm import tqdm_notebook
 import matplotlib.colors as colors
 
 
-class FitTelegraph(Spectrum):
+class FitTelegraph(SpectrumCalculator):
     def plot_fit(self, gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err, filter):
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(24, 7))
         plt.rc('text', usetex=False)

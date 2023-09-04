@@ -46,9 +46,8 @@ from matplotlib.colors import LinearSegmentedColormap
 
 class FitSystem:
 
-    def __init__(self, set_system, m_op):
+    def __init__(self, set_system, m_op, huber_loss=False, huber_delta=1):
         self.beta_offset = None
-        self.use_scipy = None
         self.set_system = set_system
         self.m_op = m_op
         self.out = None
@@ -59,6 +58,8 @@ class FitSystem:
         self.fit_orders = None
         self.show_plot = None
         self.general_weight = None
+        self.huber_loss = huber_loss
+        self.huber_delta = huber_delta
 
     def s1(self, params):
 
@@ -121,6 +122,11 @@ class FitSystem:
 
         return out
 
+    def adjusted_huber_residual(self, residual):
+        return np.where(np.abs(residual) < self.huber_delta,
+                        residual,  # Quadratic part, as before
+                        np.sqrt(self.huber_delta * (np.abs(residual) - 0.5 * self.huber_delta)))  # Linear part, square-rooted
+
     def objective(self, params):
 
         resid = []
@@ -132,10 +138,11 @@ class FitSystem:
                     i] / self.err_list[
                             order]).flatten()))
 
-        if self.use_scipy:
-            return np.sum(np.abs(np.concatenate(resid)))
+        if self.huber_loss:
+            out = self.adjusted_huber_residual(np.concatenate(resid))
         else:
-            return np.concatenate(resid)
+            out = np.concatenate(resid)
+        return out
 
     def start_minimizing(self, fit_params, method, max_nfev, xtol, ftol):
 

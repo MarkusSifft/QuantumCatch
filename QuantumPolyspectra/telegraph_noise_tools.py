@@ -183,8 +183,8 @@ class FitTelegraph(SpectrumCalculator):
             resid = np.concatenate(resid)
             weighted = np.sqrt(resid ** 2 / err ** 2)
 
-            if self.huber_loss:
-                out = self.adjusted_huber_residual(weighted)
+            if huber_loss:
+                out = adjusted_huber_residual(weighted)
             else:
                 out = weighted
             return out

@@ -125,7 +125,7 @@ class FitSystem:
     def adjusted_huber_residual(self, residual):
         return np.where(np.abs(residual) < self.huber_delta,
                         residual,  # Quadratic part, as before
-                        np.sqrt(self.huber_delta * (np.abs(residual) - 0.5 * self.huber_delta)))  # Linear part, square-rooted
+                        np.sqrt(np.abs(self.huber_delta * (np.abs(residual) - 0.5 * self.huber_delta))))  # Linear part, square-rooted
 
     def objective(self, params):
 

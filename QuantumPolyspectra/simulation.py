@@ -183,6 +183,7 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
 
     else:
         print(eigvals)
+
         diagonal = 1 / (-eigvals - 1j * nu)
         diagonal[zero_ind] = 0
         Fourier_G = eigvecs @ np.diag(diagonal) @ eigvecs_inv

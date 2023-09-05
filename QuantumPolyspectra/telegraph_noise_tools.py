@@ -189,6 +189,7 @@ class FitTelegraph(SpectrumCalculator):
 
             for i, order in enumerate(range(2, max_order)):
                 #  resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max())
+                print(data[i].shape, self.calc_fit_spec(params, order, omega_list[i]).shape, err[i].shape)
                 if order == 2:
                     resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 1 / err[i].flatten())
                 else:

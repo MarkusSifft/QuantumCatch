@@ -128,7 +128,7 @@ class FitTelegraph(SpectrumCalculator):
 
         return beta, gamma_in, gamma_in_err, gamma_out, gamma_out_err
 
-    def fit_telegraph(self, s2_f=None, s3_f=None, s4_f=None, s2_data=None, s3_data=None, s4_data=None,
+    def fit_telegraph(self, f_min=None, f_max=None, s2_f=None, s3_f=None, s4_f=None, s2_data=None, s3_data=None, s4_data=None,
                       gamma_in=100, gamma_out=100, beta=1, c=0, with_err=False,
                       plot=False, show_comp_plot=True, with_s4=True, huber_loss=False, huber_delta=1):
 
@@ -144,20 +144,26 @@ class FitTelegraph(SpectrumCalculator):
 
         data = [np.real(s2_data), np.real(s3_data), np.real(s4_data)]
 
-        if with_err:
-            if with_s4:
-                err = np.hstack((np.real(self.S_err[2]).flatten(), np.real(self.S_err[3]).flatten(),
-                                 np.real(self.S_err[4]).flatten()))
-            else:
-                err = np.hstack((np.real(self.S_err[2]).flatten(), np.real(self.S_err[3]).flatten()))
+        if self.S_err[2] is not None:
+            err = [np.real(self.S_err[2]), np.real(self.S_err[3]), np.real(self.S_err[4])]
         else:
-            if with_s4:
-                err = np.hstack((np.ones_like(data[0]).flatten(), np.ones_like(data[1]).flatten(),
-                                np.ones_like(data[2]).flatten()))
-            else:
-                err = np.hstack((np.ones_like(data[0]).flatten(), np.ones_like(data[1]).flatten()))
+            err = [np.ones_like(data[0]), np.ones_like(data[1]), np.ones_like(data[2])]
 
         omega_list = [s2_f, s3_f, s4_f]
+
+        if f_max is not None:
+            mask_f_max = s2_f <= f_max
+            for i in range(len(data)):
+                data[i] = data[i][mask_f_max]
+                err[i] = err[i][mask_f_max]
+                omega_list[i] = omega_list[i][mask_f_max]
+
+        if f_min is not None:
+            mask_f_min = s2_f >= f_min
+            for i in range(len(data)):
+                data[i] = data[i][mask_f_min]
+                err[i] = err[i][mask_f_min]
+                omega_list[i] = omega_list[i][mask_f_min]
 
         def adjusted_huber_residual(residual):
             return np.where(np.abs(residual) < huber_delta,
@@ -176,17 +182,16 @@ class FitTelegraph(SpectrumCalculator):
             for i, order in enumerate(range(2, max_order)):
                 #  resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max())
                 if order == 2:
-                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 1)
+                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 1 / err[i].flatten())
                 else:
-                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 2)
+                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 2 / err[i].flatten())
 
             resid = np.concatenate(resid)
-            weighted = np.sqrt(resid ** 2 / err ** 2)
 
             if huber_loss:
-                out = adjusted_huber_residual(weighted)
+                out = adjusted_huber_residual(resid)
             else:
-                out = weighted
+                out = resid
             return out
 
         fit_params = Parameters()

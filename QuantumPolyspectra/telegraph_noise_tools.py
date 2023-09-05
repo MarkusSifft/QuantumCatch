@@ -130,7 +130,7 @@ class FitTelegraph(SpectrumCalculator):
 
     def fit_telegraph(self, s2_f=None, s3_f=None, s4_f=None, s2_data=None, s3_data=None, s4_data=None,
                       gamma_in=100, gamma_out=100, beta=1, c=0, with_err=False,
-                      plot=False, show_comp_plot=True, with_s4=True):
+                      plot=False, show_comp_plot=True, with_s4=True, huber_loss=False, huber_delta=1):
 
         if s2_data is None:
             s2_data = self.S[2]
@@ -159,6 +159,12 @@ class FitTelegraph(SpectrumCalculator):
 
         omega_list = [s2_f, s3_f, s4_f]
 
+        def adjusted_huber_residual(residual):
+            return np.where(np.abs(residual) < huber_delta,
+                            residual,  # Quadratic part, as before
+                            np.sqrt(np.abs(huber_delta * (
+                                        np.abs(residual) - 0.5 * huber_delta))))  # Linear part, square-rooted
+
         def objective(params, omega_list, data):
 
             resid = []
@@ -170,13 +176,18 @@ class FitTelegraph(SpectrumCalculator):
             for i, order in enumerate(range(2, max_order)):
                 #  resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max())
                 if order == 2:
-                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / data[i].shape[0])
+                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 1)
                 else:
-                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / data[i].shape[0]**2)
+                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 2)
 
             resid = np.concatenate(resid)
             weighted = np.sqrt(resid ** 2 / err ** 2)
-            return weighted
+
+            if self.huber_loss:
+                out = self.adjusted_huber_residual(weighted)
+            else:
+                out = weighted
+            return out
 
         fit_params = Parameters()
 

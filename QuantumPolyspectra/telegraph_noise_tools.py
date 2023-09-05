@@ -162,8 +162,9 @@ class FitTelegraph(SpectrumCalculator):
                     data[i] = data[i][mask_f_max]
                     err[i] = err[i][mask_f_max]
                 else:
-                    data[i] = data[i][mask_f_max, mask_f_max]
-                    err[i] = err[i][mask_f_max, mask_f_max]
+                    index_mask = np.ix_(mask_f_min, mask_f_min)
+                    data[i] = data[i][index_mask]
+                    err[i] = err[i][index_mask]
 
         if f_min is not None:
             for i in range(len(omega_list)):
@@ -173,8 +174,9 @@ class FitTelegraph(SpectrumCalculator):
                     data[i] = data[i][mask_f_min]
                     err[i] = err[i][mask_f_min]
                 else:
-                    data[i] = data[i][mask_f_min, mask_f_min]
-                    err[i] = err[i][mask_f_min, mask_f_min]
+                    index_mask = np.ix_(mask_f_min, mask_f_min)
+                    data[i] = data[i][index_mask]
+                    err[i] = err[i][index_mask]
 
         print(data[1].shape)
         def adjusted_huber_residual(residual):

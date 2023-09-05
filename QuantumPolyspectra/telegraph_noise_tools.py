@@ -142,7 +142,7 @@ class FitTelegraph(SpectrumCalculator):
             s4_data = self.S[4]
             s4_f = self.freq[4]
 
-        print(self.S[3].shape, s3_data.shape)
+        print(s3_data.shape)
         data = [np.real(s2_data), np.real(s3_data), np.real(s4_data)]
 
         if self.S_err[2] is not None:
@@ -151,6 +151,8 @@ class FitTelegraph(SpectrumCalculator):
             err = [np.ones_like(data[0]), np.ones_like(data[1]), np.ones_like(data[2])]
 
         omega_list = [s2_f, s3_f, s4_f]
+
+        print(data[1].shape)
 
         if f_max is not None:
             for i in range(len(omega_list)):
@@ -174,6 +176,7 @@ class FitTelegraph(SpectrumCalculator):
                     data[i] = data[i][mask_f_min, mask_f_min]
                     err[i] = err[i][mask_f_min, mask_f_min]
 
+        print(data[1].shape)
         def adjusted_huber_residual(residual):
             return np.where(np.abs(residual) < huber_delta,
                             residual,  # Quadratic part, as before

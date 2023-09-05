@@ -162,7 +162,7 @@ class FitTelegraph(SpectrumCalculator):
                     data[i] = data[i][mask_f_max]
                     err[i] = err[i][mask_f_max]
                 else:
-                    index_mask = np.ix_(mask_f_min, mask_f_min)
+                    index_mask = np.ix_(mask_f_max, mask_f_max)
                     data[i] = data[i][index_mask]
                     err[i] = err[i][index_mask]
 

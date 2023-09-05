@@ -142,6 +142,7 @@ class FitTelegraph(SpectrumCalculator):
             s4_data = self.S[4]
             s4_f = self.freq[4]
 
+        print(self.S[3].shape, print(s3_data.shape))
         data = [np.real(s2_data), np.real(s3_data), np.real(s4_data)]
 
         if self.S_err[2] is not None:

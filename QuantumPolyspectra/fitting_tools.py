@@ -430,11 +430,11 @@ class FitSystem:
                               (np.real(self.s_list[2]) - fit_list[2]) / np.real(self.s_list[2]),
                               lw=2,
                               color=[0, 0.5, 0.9], label='rel. err.')
-            relative_measurement_error = self.err_list[2] / self.s_list[2]
-            ax[1, 0].fill_between(self.f_list[2], sigma * relative_measurement_error,
-                                  -sigma * relative_measurement_error, alpha=0.3)
-            ax[1, 0].plot(self.f_list[2], sigma * relative_measurement_error, 'k', alpha=0.5)
-            ax[1, 0].plot(self.f_list[2], -sigma * relative_measurement_error, 'k', alpha=0.5)
+            relative_measurement_error = sigma * self.err_list[2] / self.s_list[2]
+            ax[1, 0].fill_between(self.f_list[2], relative_measurement_error,
+                                  -relative_measurement_error, alpha=0.3)
+            ax[1, 0].plot(self.f_list[2], relative_measurement_error, 'k', alpha=0.5)
+            ax[1, 0].plot(self.f_list[2], -relative_measurement_error, 'k', alpha=0.5)
 
             # ax[1, 0].set_xlim([0, f_max])
             # ax[0].set_ylim([0, 1.1*y.max()])
@@ -479,26 +479,26 @@ class FitSystem:
 
                 # ------ rel. err. -------
 
-                z_both = gaussian_filter((np.real(self.s_list[i]) - fit_list[i]) / np.real(self.s_list[i]), 0)
-                z_both = np.real(z_both)
+                relative_fit_err = gaussian_filter((np.real(self.s_list[i]) - fit_list[i]) / np.real(self.s_list[i]), 0)
+                relative_fit_err = np.real(relative_fit_err)
 
                 green_alpha = 1
                 color_array = np.array([[0., 0., 0., 0.], [0., 0.5, 0., green_alpha]])
                 cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 
-                err_matrix = np.zeros_like(z_both)
+                err_matrix = np.zeros_like(relative_fit_err)
                 relative_measurement_error = sigma * self.err_list[i] / self.s_list[i]
-                err_matrix[np.abs(z_both) < relative_measurement_error] = 1
+                err_matrix[np.abs(relative_fit_err) < relative_measurement_error] = 1
 
-                z_both[z_both > 0.5] = 0 * z_both[z_both > 0.5] + 0.5
-                z_both[z_both < -0.5] = 0 * z_both[z_both < -0.5] - 0.5
+                relative_fit_err[relative_fit_err > 0.5] = 0 * relative_fit_err[relative_fit_err > 0.5] + 0.5
+                relative_fit_err[relative_fit_err < -0.5] = 0 * relative_fit_err[relative_fit_err < -0.5] - 0.5
 
-                vmin = np.min(z_both)
-                vmax = np.max(z_both)
+                vmin = np.min(relative_fit_err)
+                vmax = np.max(relative_fit_err)
                 abs_max = max(abs(vmin), abs(vmax))
                 norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
-                c = ax[1, j].pcolormesh(x, y, z_both, cmap=cmap, norm=norm, zorder=1)
+                c = ax[1, j].pcolormesh(x, y, relative_fit_err, cmap=cmap, norm=norm, zorder=1)
                 ax[1, j].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
                 # ax[1,i].plot([0,f_max], [0,f_max], 'k', alpha=0.4)
                 # ax[1, j].axis([0, f_max, 0, f_max])
@@ -515,29 +515,42 @@ class FitSystem:
 
                 # -------- plotting 1D cut ----------
 
-                s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
-                                                       order=i, s_err=np.real(self.s_list[i][0, :]).copy() + sigma *
-                                                                      self.err_list[i][0, :].copy())
-                _, s_err_axis_n = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
-                                                  order=i,
-                                                  s_err=np.real(self.s_list[i][0, :]).copy() - sigma * self.err_list[i][
-                                                                                                       0, :].copy())
-                _, fit_axis = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
-                                              order=i,
-                                              s_err=fit_list[i][0, :].copy())
+                enable_arcsinh_scaling = False
 
-                s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(),
-                                                       arcsinh_const=0.02,
-                                                       order=i,
-                                                       s_err=np.real(np.diag(self.s_list[i])).copy() + sigma * np.diag(
-                                                           self.err_list[i]).copy())
-                _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
+                if enable_arcsinh_scaling:
+                    s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
+                                                           order=i, s_err=np.real(self.s_list[i][0, :]).copy() + sigma *
+                                                                          self.err_list[i][0, :].copy())
+                    _, s_err_axis_n = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
+                                                      order=i,
+                                                      s_err=np.real(self.s_list[i][0, :]).copy() - sigma * self.err_list[i][
+                                                                                                           0, :].copy())
+                    _, fit_axis = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
                                                   order=i,
-                                                  s_err=np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(
-                                                      self.err_list[i]).copy())
-                _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
-                                              order=i,
-                                              s_err=np.diag(fit_list[i]).copy())
+                                                  s_err=fit_list[i][0, :].copy())
+
+                    s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(),
+                                                           arcsinh_const=0.02,
+                                                           order=i,
+                                                           s_err=np.real(np.diag(self.s_list[i])).copy() + sigma * np.diag(
+                                                               self.err_list[i]).copy())
+                    _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
+                                                      order=i,
+                                                      s_err=np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(
+                                                          self.err_list[i]).copy())
+                    _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
+                                                  order=i,
+                                                  s_err=np.diag(fit_list[i]).copy())
+
+                else:
+                    s_axis = np.real(self.s_list[i][0, :]).copy()
+                    s_err_axis_p = np.real(self.s_list[i][0, :]).copy() + sigma * self.err_list[i][0, :].copy()
+                    s_err_axis_n = np.real(self.s_list[i][0, :]).copy() - sigma * self.err_list[i][0, :].copy()
+                    fit_axis = fit_list[i][0, :].copy()
+                    s_diag = np.real(np.diag(self.s_list[i])).copy()
+                    s_err_diag_p = np.real(np.diag(self.s_list[i])).copy() + sigma * np.diag(self.err_list[i]).copy()
+                    s_err_diag_n = np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(self.err_list[i]).copy()
+                    fit_diag = np.diag(fit_list[i]).copy()
 
                 c = ax[2, j].plot(self.f_list[i],
                                   s_axis, '-',
@@ -619,12 +632,3 @@ def arcsinh_scaling(s_data, arcsinh_const, order, s_err=None, s_err_p=None, s_er
         else:
             return s_data
 
-
-class Callback:
-    def __init__(self, objective):
-        self.counter = 0
-        self.objective = objective
-
-    def __call__(self, xk):
-        self.counter += 1
-        error = self.objective(xk)

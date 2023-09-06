@@ -42,14 +42,14 @@ import matplotlib.colors as colors
 
 
 class FitTelegraph(SpectrumCalculator):
-    def plot_fit(self, gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err, filter):
+    def plot_fit(self, gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err, filter=1):
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(24, 7))
         plt.rc('text', usetex=False)
         plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
         t_for_one_spec = self.delta_t * self.m[2] * self.window_points
-        time_axis = np.arange(0, self.S_errs[2].shape[0] * t_for_one_spec, t_for_one_spec)[::filter]
+        time_axis = np.arange(0, len(self.S_stationarity[2]) * t_for_one_spec, t_for_one_spec)[::filter]
 
         plt.errorbar(time_axis, gamma_ins, yerr=gamma_ins_err, label=r'$\gamma_{in}$')
         plt.errorbar(time_axis, gamma_outs, yerr=gamma_outs_err, label=r'$\gamma_{out}$')

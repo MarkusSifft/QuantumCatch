@@ -555,28 +555,28 @@ class FitSystem:
                 c = ax[2, j].plot(self.f_list[i],
                                   s_axis, '-',
                                   lw=2,
-                                  color=[0, 0.5, 0.9], label='meas.')
+                                  color='tab:blue', label='meas. axis')
                 c = ax[2, j].plot(self.f_list[i],
                                   fit_axis, '--',
                                   lw=2,
-                                  color=[0, 0.5, 0.9], label='fit')
+                                  color='tab:blue', label='fit axis')
 
                 c = ax[2, j].plot(self.f_list[i],
                                   s_diag, '-',
                                   lw=2,
-                                  color=[0.2, 0.5, 0.9], label='meas.')
+                                  color='tab:orange', label='meas. diag.')
                 c = ax[2, j].plot(self.f_list[i],
                                   fit_diag, '--',
                                   lw=2,
-                                  color=[0.2, 0.5, 0.9], label='fit')
+                                  color='tab:orange', label='fit diag.')
 
                 ax[2, j].fill_between(self.f_list[i], s_err_axis_p,
-                                      s_err_axis_n, alpha=0.3)
+                                      s_err_axis_n, color='tab:blue', alpha=0.3)
                 ax[2, j].plot(self.f_list[i], s_err_axis_p, 'k', alpha=0.5)
                 ax[2, j].plot(self.f_list[i], s_err_axis_n, 'k', alpha=0.5)
 
                 ax[2, j].fill_between(self.f_list[i], s_err_diag_p,
-                                      s_err_diag_n, alpha=0.3)
+                                      s_err_diag_n, color='tab:orange', alpha=0.3)
                 ax[2, j].plot(self.f_list[i], s_err_diag_p, 'k', alpha=0.5)
                 ax[2, j].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.5)
 

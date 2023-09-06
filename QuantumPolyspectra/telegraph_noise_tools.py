@@ -33,6 +33,7 @@
 ###############################################################################
 
 from QuantumPolyspectra import SpectrumCalculator
+from .fitting_tools import FitSystem
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
@@ -42,10 +43,18 @@ import matplotlib.colors as colors
 
 
 class FitTelegraph(SpectrumCalculator):
+
+    def comp_plot(self, *args, **kwargs):
+        return self.fit_system.comp_plot(*args, **kwargs)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)  # This will call the __init__ of SpectrumCalculator
+        self.fit_system = FitSystem(None, None)
+
     def plot_fit(self, gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err, filter=1):
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(18, 5))
         plt.rc('text', usetex=False)
-        #plt.rc('font', size=10)
+        # plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
         t_for_one_spec = self.T_window * self.m[2] * self.m_stationarity[2]
@@ -67,14 +76,14 @@ class FitTelegraph(SpectrumCalculator):
 
         plt.errorbar(time_axis, gamma_ins, yerr=gamma_ins_err, label=r'$\gamma_{in}$')
         plt.errorbar(time_axis, gamma_outs, yerr=gamma_outs_err, label=r'$\gamma_{out}$')
-        ax.set_xlabel(r"$t$ (s)")#, fontdict={'fontsize': 14})
-        ax.set_ylabel(r"$\gamma$ (Hz)")#, fontdict={'fontsize': 14})
+        ax.set_xlabel(r"$t$ (s)")  # , fontdict={'fontsize': 14})
+        ax.set_ylabel(r"$\gamma$ (Hz)")  # , fontdict={'fontsize': 14})
         ax.tick_params(axis='both', direction='in')
-        ax.set_title(r'$\gamma$ vs $t$') #, fontdict={'fontsize': 16})
+        ax.set_title(r'$\gamma$ vs $t$')  # , fontdict={'fontsize': 16})
 
     def fit_stationarity_plot(self, starting_gammas, beta, c, f_min=None, f_max=None,
                               huber_loss=False, huber_delta=1, with_s4=False,
-                              with_err=False, filter=0, plot=True):
+                              with_err=False, filter=0, plot=False, show_comp_plot=True):
         s2_array = np.real(self.S_stationarity[2]).T.copy()
         s2_array = gaussian_filter(s2_array, sigma=[0, filter])
         s3_array = np.real(self.S_stationarity[3]).T.copy()
@@ -92,7 +101,7 @@ class FitTelegraph(SpectrumCalculator):
         gamma_outs_err = []
         betas = []
 
-        iterator = list(range(s2_array.shape[1]))[::(filter+1)]
+        iterator = list(range(s2_array.shape[1]))[::(filter + 1)]
 
         for i in tqdm_notebook(iterator):
             beta, gamma_in, gamma_in_err, gamma_out, gamma_out_err = self.find_best_fit(f_min, f_max,
@@ -106,7 +115,8 @@ class FitTelegraph(SpectrumCalculator):
                                                                                         huber_loss, huber_delta,
                                                                                         plot=plot,
                                                                                         with_s4=with_s4,
-                                                                                        with_err=with_err)
+                                                                                        with_err=with_err,
+                                                                                        show_comp_plot=show_comp_plot)
             gamma_ins.append(gamma_in)
             gamma_ins_err.append(gamma_in_err)
             gamma_outs.append(gamma_out)
@@ -117,18 +127,17 @@ class FitTelegraph(SpectrumCalculator):
 
     def find_best_fit(self, f_min, f_max, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, starting_gammas, beta, c,
                       huber_loss, huber_delta,
-                      plot=False, with_s4=True, with_err=False):
+                      plot=False, with_s4=True, with_err=False, show_comp_plot=True):
 
         gamma_range = starting_gammas
 
         err_sum = 1e200
 
         for gamma_in, gamma_out in gamma_range:
-
             out = self.fit_telegraph(f_min=f_min, f_max=f_max, s2_f=s2_f, s3_f=s3_f, s4_f=s4_f, s2_data=s2_data,
                                      s3_data=s3_data, s4_data=s4_data, gamma_in=gamma_in, gamma_out=gamma_out,
                                      beta=beta, c=c, plot=plot, huber_loss=huber_loss, huber_delta=huber_delta,
-                                     with_s4=with_s4, with_err=with_err)
+                                     with_s4=with_s4, with_err=with_err, show_comp_plot=show_comp_plot)
             # print(out.params)
             # if (out.params['gOut']).stderr is None or (out.params['gIn']).stderr is None:
             #     continue
@@ -149,7 +158,8 @@ class FitTelegraph(SpectrumCalculator):
 
         return beta, gamma_in, gamma_in_err, gamma_out, gamma_out_err
 
-    def fit_telegraph(self, f_min=None, f_max=None, s2_f=None, s3_f=None, s4_f=None, s2_data=None, s3_data=None, s4_data=None,
+    def fit_telegraph(self, f_min=None, f_max=None, s2_f=None, s3_f=None, s4_f=None, s2_data=None, s3_data=None,
+                      s4_data=None,
                       gamma_in=100, gamma_out=100, beta=1, c=0, with_err=False,
                       plot=False, show_comp_plot=True, with_s4=True, huber_loss=False, huber_delta=1):
 
@@ -176,7 +186,7 @@ class FitTelegraph(SpectrumCalculator):
             for i in range(len(omega_list)):
                 mask_f_max = omega_list[i] <= f_max
                 omega_list[i] = omega_list[i][mask_f_max]
-                if i==0:
+                if i == 0:
                     data[i] = data[i][mask_f_max]
                     err[i] = err[i][mask_f_max]
                 else:
@@ -200,7 +210,7 @@ class FitTelegraph(SpectrumCalculator):
             return np.where(np.abs(residual) < huber_delta,
                             residual,  # Quadratic part, as before
                             np.sqrt(np.abs(huber_delta * (
-                                        np.abs(residual) - 0.5 * huber_delta))))  # Linear part, square-rooted
+                                    np.abs(residual) - 0.5 * huber_delta))))  # Linear part, square-rooted
 
         def objective(params, omega_list, data):
 
@@ -213,9 +223,11 @@ class FitTelegraph(SpectrumCalculator):
             for i, order in enumerate(range(2, max_order)):
                 #  resid.append(np.abs((data[i] - calc_spec(params, order, omega_list[i])).flatten()) / data[i].max())
                 if order == 2:
-                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 1 / err[i].flatten())
+                    resid.append(
+                        (data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 1 / err[i].flatten())
                 else:
-                    resid.append((data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 2 / err[i].flatten())
+                    resid.append(
+                        (data[i] - self.calc_fit_spec(params, order, omega_list[i])).flatten() / 2 / err[i].flatten())
 
             resid = np.concatenate(resid)
 
@@ -224,6 +236,15 @@ class FitTelegraph(SpectrumCalculator):
             else:
                 out = resid
             return out
+
+        self.f_list = {1: None, 2: None, 3: None, 4: None}
+        self.s_list = {1: None, 2: None, 3: None, 4: None}
+        self.err_list = {1: None, 2: None, 3: None, 4: None}
+
+        for i in range(1, 5):
+            self.f_list[i] = self.freq[i]
+            self.s_list[i] = np.real(self.S[i])
+            self.err_list[i] = np.real(self.S_err[i])
 
         fit_params = Parameters()
 
@@ -247,9 +268,9 @@ class FitTelegraph(SpectrumCalculator):
                     plt.plot(omega_list[i], y_fit / np.abs(data[i]).max(), '-', color=colors2[i],
                              label='s' + str(order), lw=3)
                 else:
-                    plt.plot(omega_list[i], data[i][(data[i].shape[1] - 1) // 2, :] / np.abs(data[i])[0,0],
+                    plt.plot(omega_list[i], data[i][(data[i].shape[1] - 1) // 2, :] / np.abs(data[i])[0, 0],
                              colors[i] + 'o')
-                    plt.plot(omega_list[i], y_fit[(y_fit.shape[1] - 1) // 2, :] / np.abs(data[i])[0,0], '-',
+                    plt.plot(omega_list[i], y_fit[(y_fit.shape[1] - 1) // 2, :] / np.abs(data[i])[0, 0], '-',
                              color=colors2[i], label='s' + str(order), lw=3)
             # plt.xlim([-1, 1])
             # plt.ylim([-700,700])
@@ -257,7 +278,7 @@ class FitTelegraph(SpectrumCalculator):
             plt.show()
 
         if show_comp_plot:
-            self.comp_plot(f_max=s2_f.max())
+            self.comp_plot(out.params)
 
         return out
 
@@ -342,166 +363,164 @@ class FitTelegraph(SpectrumCalculator):
 
         return out
 
-    def comp_plot(self, f_max, plus_S4=True, with_relative_errs=True):
-
-        params = self.out.params
-
-        if not with_relative_errs:
-            fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(21, 6), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
-            plt.rc('text', usetex=False)
-            plt.rc('font', size=10)
-            plt.rcParams["axes.axisbelow"] = False
-
-            cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
-
-            fit_list = []
-            for i in range(2, 5):
-                if not plus_S4 and i == 4:
-                    break
-                fit_list.append(self.calc_fit_spec(params, i, self.freq[i]))
-
-            # ---------- S2 ------------
-            c = ax[0].plot(self.freq[2], np.real(self.S[2]), lw=3, color=[0, 0.5, 0.9], label='meas.')
-            c = ax[0].plot(self.freq[2], fit_list[0], '--k', alpha=0.8, label='fit')
-
-            ax[0].set_xlim([0, f_max])
-            # ax[0].set_ylim([0, 1.1*y.max()])
-
-            ax[0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-            ax[0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-            # ax[0,i].grid(True)
-            ax[0].tick_params(axis='both', direction='in', labelsize=14)
-            ax[0].legend()
-
-            # ---------- S3 and S4 ------------
-
-            if plus_S4:
-                iterator = range(1, 3)
-            else:
-                iterator = range(1, 2)
-
-            for i in iterator:
-                y, x = np.meshgrid(self.freq[i+2], self.freq[i+2])
-
-                z = np.real(self.S[i+2])
-                z_fit = fit_list[i]
-                z_both = np.tril(z) + np.triu(z_fit)
-
-                vmin = np.min(z_both)
-                vmax = np.max(z_both)
-                abs_max = max(abs(vmin), abs(vmax))
-                norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
-
-                c = ax[i].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
-                ax[i].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
-                ax[i].axis([0, f_max, 0, f_max])
-                # ax[1].set_yticks([0,0.2,0.4])
-
-                ax[i].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                ax[i].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-                # ax[i].grid(True)
-                ax[i].tick_params(axis='both', direction='in', labelsize=14)
-                ax[i].set_title('Fit / Measurement')
-
-                cbar = fig.colorbar(c, ax=(ax[i]))
-                cbar.ax.tick_params(labelsize=14)
-
-        else:
-
-            fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(21, 12), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
-            plt.rc('text', usetex=False)
-            plt.rc('font', size=10)
-            plt.rcParams["axes.axisbelow"] = False
-
-            cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
-
-            fit_list = []
-            for i in range(2, 5):
-                if not plus_S4 and i == 4:
-                    break
-                fit_list.append(self.calc_fit_spec(params, i, self.freq[i]))
-
-            # ---------- S2 ------------
-            c = ax[0, 0].plot(self.freq[2], np.real(self.S[2]), lw=3, color=[0, 0.5, 0.9], label='meas.')
-            c = ax[0, 0].plot(self.freq[2], fit_list[0], '--k', alpha=0.8, label='fit')
-
-            ax[0, 0].set_xlim([0, f_max])
-            # ax[0].set_ylim([0, 1.1*y.max()])
-
-            ax[0, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-            ax[0, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-            # ax[0,i].grid(True)
-            ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
-            ax[0, 0].legend()
-
-            c = ax[1, 0].plot(self.freq[2], (np.real(self.S[2]) - fit_list[0]) / np.real(self.S[2]), lw=3,
-                              color=[0, 0.5, 0.9], label='rel. err.')
-
-            ax[1, 0].set_xlim([0, f_max])
-            # ax[0].set_ylim([0, 1.1*y.max()])
-
-            ax[1, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-            ax[1, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-            # ax[0,i].grid(True)
-            ax[1, 0].tick_params(axis='both', direction='in', labelsize=14)
-            ax[1, 0].legend()
-
-            # ---------- S3 and S4 ------------
-
-            if plus_S4:
-                iterator = range(1, 3)
-            else:
-                iterator = range(1, 2)
-
-            for i in iterator:
-                y, x = np.meshgrid(self.freq[i+2], self.freq[i+2])
-
-                z = np.real(self.S[i+2])
-                z_fit = fit_list[i]
-                z_both = np.tril(z) + np.triu(z_fit)
-
-                vmin = np.min(z_both)
-                vmax = np.max(z_both)
-                abs_max = max(abs(vmin), abs(vmax))
-                norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
-
-                c = ax[0, i].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
-                ax[0, i].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
-                ax[0, i].axis([0, f_max, 0, f_max])
-                # ax[1].set_yticks([0,0.2,0.4])
-
-                ax[0, i].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                ax[0, i].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-                # ax[i].grid(True)
-                ax[0, i].tick_params(axis='both', direction='in', labelsize=14)
-                ax[0, i].set_title('Fit / Measurement')
-
-                cbar = fig.colorbar(c, ax=(ax[0, i]))
-                cbar.ax.tick_params(labelsize=14)
-
-                # ------ rel. err. -------
-
-                z_both = gaussian_filter((np.real(self.S[i+2]) - fit_list[i]) / np.real(self.S[i+2]), 3)
-
-                vmin = np.min(z_both)
-                vmax = np.max(z_both)
-                abs_max = max(abs(vmin), abs(vmax))
-                norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
-
-                c = ax[1, i].pcolormesh(x, y, z_both, cmap=cmap, norm=norm, zorder=1)
-                # ax[1,i].plot([0,f_max], [0,f_max], 'k', alpha=0.4)
-                ax[1, i].axis([0, f_max, 0, f_max])
-                # ax[1].set_yticks([0,0.2,0.4])
-
-                ax[1, i].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                ax[1, i].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-                # ax[i].grid(True)
-                ax[1, i].tick_params(axis='both', direction='in', labelsize=14)
-                ax[1, i].set_title('relative error')
-
-                cbar = fig.colorbar(c, ax=(ax[1, i]))
-                cbar.ax.tick_params(labelsize=14)
-
-        plt.show()
-
-
+    # def comp_plot(self, f_max, plus_S4=True, with_relative_errs=True):
+    #
+    #     params = self.out.params
+    #
+    #     if not with_relative_errs:
+    #         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(21, 6), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
+    #         plt.rc('text', usetex=False)
+    #         plt.rc('font', size=10)
+    #         plt.rcParams["axes.axisbelow"] = False
+    #
+    #         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
+    #
+    #         fit_list = []
+    #         for i in range(2, 5):
+    #             if not plus_S4 and i == 4:
+    #                 break
+    #             fit_list.append(self.calc_fit_spec(params, i, self.freq[i]))
+    #
+    #         # ---------- S2 ------------
+    #         c = ax[0].plot(self.freq[2], np.real(self.S[2]), lw=3, color=[0, 0.5, 0.9], label='meas.')
+    #         c = ax[0].plot(self.freq[2], fit_list[0], '--k', alpha=0.8, label='fit')
+    #
+    #         ax[0].set_xlim([0, f_max])
+    #         # ax[0].set_ylim([0, 1.1*y.max()])
+    #
+    #         ax[0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
+    #         ax[0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+    #         # ax[0,i].grid(True)
+    #         ax[0].tick_params(axis='both', direction='in', labelsize=14)
+    #         ax[0].legend()
+    #
+    #         # ---------- S3 and S4 ------------
+    #
+    #         if plus_S4:
+    #             iterator = range(1, 3)
+    #         else:
+    #             iterator = range(1, 2)
+    #
+    #         for i in iterator:
+    #             y, x = np.meshgrid(self.freq[i+2], self.freq[i+2])
+    #
+    #             z = np.real(self.S[i+2])
+    #             z_fit = fit_list[i]
+    #             z_both = np.tril(z) + np.triu(z_fit)
+    #
+    #             vmin = np.min(z_both)
+    #             vmax = np.max(z_both)
+    #             abs_max = max(abs(vmin), abs(vmax))
+    #             norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
+    #
+    #             c = ax[i].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
+    #             ax[i].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
+    #             ax[i].axis([0, f_max, 0, f_max])
+    #             # ax[1].set_yticks([0,0.2,0.4])
+    #
+    #             ax[i].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
+    #             ax[i].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+    #             # ax[i].grid(True)
+    #             ax[i].tick_params(axis='both', direction='in', labelsize=14)
+    #             ax[i].set_title('Fit / Measurement')
+    #
+    #             cbar = fig.colorbar(c, ax=(ax[i]))
+    #             cbar.ax.tick_params(labelsize=14)
+    #
+    #     else:
+    #
+    #         fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(21, 12), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
+    #         plt.rc('text', usetex=False)
+    #         plt.rc('font', size=10)
+    #         plt.rcParams["axes.axisbelow"] = False
+    #
+    #         cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
+    #
+    #         fit_list = []
+    #         for i in range(2, 5):
+    #             if not plus_S4 and i == 4:
+    #                 break
+    #             fit_list.append(self.calc_fit_spec(params, i, self.freq[i]))
+    #
+    #         # ---------- S2 ------------
+    #         c = ax[0, 0].plot(self.freq[2], np.real(self.S[2]), lw=3, color=[0, 0.5, 0.9], label='meas.')
+    #         c = ax[0, 0].plot(self.freq[2], fit_list[0], '--k', alpha=0.8, label='fit')
+    #
+    #         ax[0, 0].set_xlim([0, f_max])
+    #         # ax[0].set_ylim([0, 1.1*y.max()])
+    #
+    #         ax[0, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
+    #         ax[0, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+    #         # ax[0,i].grid(True)
+    #         ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
+    #         ax[0, 0].legend()
+    #
+    #         c = ax[1, 0].plot(self.freq[2], (np.real(self.S[2]) - fit_list[0]) / np.real(self.S[2]), lw=3,
+    #                           color=[0, 0.5, 0.9], label='rel. err.')
+    #
+    #         ax[1, 0].set_xlim([0, f_max])
+    #         # ax[0].set_ylim([0, 1.1*y.max()])
+    #
+    #         ax[1, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
+    #         ax[1, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+    #         # ax[0,i].grid(True)
+    #         ax[1, 0].tick_params(axis='both', direction='in', labelsize=14)
+    #         ax[1, 0].legend()
+    #
+    #         # ---------- S3 and S4 ------------
+    #
+    #         if plus_S4:
+    #             iterator = range(1, 3)
+    #         else:
+    #             iterator = range(1, 2)
+    #
+    #         for i in iterator:
+    #             y, x = np.meshgrid(self.freq[i+2], self.freq[i+2])
+    #
+    #             z = np.real(self.S[i+2])
+    #             z_fit = fit_list[i]
+    #             z_both = np.tril(z) + np.triu(z_fit)
+    #
+    #             vmin = np.min(z_both)
+    #             vmax = np.max(z_both)
+    #             abs_max = max(abs(vmin), abs(vmax))
+    #             norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
+    #
+    #             c = ax[0, i].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
+    #             ax[0, i].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
+    #             ax[0, i].axis([0, f_max, 0, f_max])
+    #             # ax[1].set_yticks([0,0.2,0.4])
+    #
+    #             ax[0, i].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
+    #             ax[0, i].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+    #             # ax[i].grid(True)
+    #             ax[0, i].tick_params(axis='both', direction='in', labelsize=14)
+    #             ax[0, i].set_title('Fit / Measurement')
+    #
+    #             cbar = fig.colorbar(c, ax=(ax[0, i]))
+    #             cbar.ax.tick_params(labelsize=14)
+    #
+    #             # ------ rel. err. -------
+    #
+    #             z_both = gaussian_filter((np.real(self.S[i+2]) - fit_list[i]) / np.real(self.S[i+2]), 3)
+    #
+    #             vmin = np.min(z_both)
+    #             vmax = np.max(z_both)
+    #             abs_max = max(abs(vmin), abs(vmax))
+    #             norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
+    #
+    #             c = ax[1, i].pcolormesh(x, y, z_both, cmap=cmap, norm=norm, zorder=1)
+    #             # ax[1,i].plot([0,f_max], [0,f_max], 'k', alpha=0.4)
+    #             ax[1, i].axis([0, f_max, 0, f_max])
+    #             # ax[1].set_yticks([0,0.2,0.4])
+    #
+    #             ax[1, i].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
+    #             ax[1, i].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+    #             # ax[i].grid(True)
+    #             ax[1, i].tick_params(axis='both', direction='in', labelsize=14)
+    #             ax[1, i].set_title('relative error')
+    #
+    #             cbar = fig.colorbar(c, ax=(ax[1, i]))
+    #             cbar.ax.tick_params(labelsize=14)
+    #
+    #     plt.show()

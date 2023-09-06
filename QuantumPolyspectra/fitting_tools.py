@@ -518,27 +518,27 @@ class FitSystem:
                 enable_arcsinh_scaling = True
 
                 if enable_arcsinh_scaling:
-                    s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
+                    s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.002,
                                                            order=i, s_err=np.real(self.s_list[i][0, :]).copy() + sigma *
                                                                           self.err_list[i][0, :].copy())
-                    _, s_err_axis_n = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
+                    _, s_err_axis_n = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.002,
                                                       order=i,
                                                       s_err=np.real(self.s_list[i][0, :]).copy() - sigma * self.err_list[i][
                                                                                                            0, :].copy())
-                    _, fit_axis = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,
+                    _, fit_axis = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.002,
                                                   order=i,
                                                   s_err=fit_list[i][0, :].copy())
 
                     s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(),
-                                                           arcsinh_const=0.02,
+                                                           arcsinh_const=0.002,
                                                            order=i,
                                                            s_err=np.real(np.diag(self.s_list[i])).copy() + sigma * np.diag(
                                                                self.err_list[i]).copy())
-                    _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
+                    _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.002,
                                                       order=i,
                                                       s_err=np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(
                                                           self.err_list[i]).copy())
-                    _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.02,
+                    _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.002,
                                                   order=i,
                                                   s_err=np.diag(fit_list[i]).copy())
 

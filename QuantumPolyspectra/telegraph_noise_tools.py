@@ -59,7 +59,9 @@ class FitTelegraph(SpectrumCalculator):
         ax.set_title(r'$\gamma$ vs $t$',
                      fontdict={'fontsize': 16})
 
-    def fit_stationarity_plot(self, starting_gammas, beta, c, with_s4=False, with_err=False, filter=0, plot=True):
+    def fit_stationarity_plot(self, starting_gammas, beta, c, f_min=None, f_max=None,
+                              huber_loss=False, huber_delta=1, with_s4=False,
+                              with_err=False, filter=0, plot=True):
         s2_array = np.real(self.S_stationarity[2]).T.copy()
         s2_array = gaussian_filter(s2_array, sigma=[0, filter])
         s3_array = np.real(self.S_stationarity[3]).T.copy()
@@ -80,13 +82,15 @@ class FitTelegraph(SpectrumCalculator):
         iterator = list(range(s2_array.shape[1]))[::(filter+1)]
 
         for i in tqdm_notebook(iterator):
-            beta, gamma_in, gamma_in_err, gamma_out, gamma_out_err = self.find_best_fit(s2_f, s3_f, s4_f,
+            beta, gamma_in, gamma_in_err, gamma_out, gamma_out_err = self.find_best_fit(f_min, f_max,
+                                                                                        s2_f, s3_f, s4_f,
                                                                                         s2_array[:, i],
                                                                                         s3_array[:, :, i],
                                                                                         s4_array[:, :, i],
                                                                                         starting_gammas,
                                                                                         beta,
                                                                                         c,
+                                                                                        huber_loss, huber_delta,
                                                                                         plot=plot,
                                                                                         with_s4=with_s4,
                                                                                         with_err=with_err)
@@ -98,7 +102,9 @@ class FitTelegraph(SpectrumCalculator):
 
         return betas, gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err
 
-    def find_best_fit(self, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, starting_gammas, beta, c, plot=False, with_s4=True, with_err=False):
+    def find_best_fit(self, f_min, f_max, s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, starting_gammas, beta, c,
+                      huber_loss, huber_delta,
+                      plot=False, with_s4=True, with_err=False):
 
         gamma_range = starting_gammas
 
@@ -106,7 +112,9 @@ class FitTelegraph(SpectrumCalculator):
 
         for gamma_in, gamma_out in gamma_range:
 
-            out = self.fit_telegraph(s2_f, s3_f, s4_f, s2_data, s3_data, s4_data, gamma_in, gamma_out, beta, c, plot=plot,
+            out = self.fit_telegraph(f_min=f_min, f_max=f_max, s2_f=s2_f, s3_f=s3_f, s4_f=s4_f, s2_data=s2_data,
+                                     s3_data=s3_data, s4_data=s4_data, gamma_in=gamma_in, gamma_out=gamma_out,
+                                     beta=beta, c=c, plot=plot, huber_loss=huber_loss, huber_delta=huber_delta,
                                      with_s4=with_s4, with_err=with_err)
             # print(out.params)
             # if (out.params['gOut']).stderr is None or (out.params['gIn']).stderr is None:

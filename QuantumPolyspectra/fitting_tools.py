@@ -571,12 +571,12 @@ class FitSystem:
                                   color='tab:orange', label='fit diag.')
 
                 ax[2, j].fill_between(self.f_list[i], s_err_axis_p,
-                                      s_err_axis_n, color='tab:blue', alpha=0.3)
+                                      s_err_axis_n, color='tab:blue', alpha=0.2)
                 ax[2, j].plot(self.f_list[i], s_err_axis_p, 'k', alpha=0.5)
                 ax[2, j].plot(self.f_list[i], s_err_axis_n, 'k', alpha=0.5)
 
                 ax[2, j].fill_between(self.f_list[i], s_err_diag_p,
-                                      s_err_diag_n, color='tab:orange', alpha=0.3)
+                                      s_err_diag_n, color='tab:orange', alpha=0.2)
                 ax[2, j].plot(self.f_list[i], s_err_diag_p, 'k', alpha=0.5)
                 ax[2, j].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.5)
 

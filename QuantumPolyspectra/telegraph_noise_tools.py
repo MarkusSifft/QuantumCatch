@@ -51,6 +51,17 @@ class FitTelegraph(SpectrumCalculator):
         t_for_one_spec = self.delta_t * self.m[2] * self.window_points
         time_axis = np.arange(0, len(self.S_stationarity[2]) * t_for_one_spec, t_for_one_spec)[::filter]
 
+        none_entries_exist = False
+        for data in [gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err]:
+            for i in range(len(data)):
+                if data[i] is None:
+                    data[i] = 0.0
+                    none_entries_exist = True
+
+        if none_entries_exist:
+            print('Some None values have been set 0.')
+
+
         plt.errorbar(time_axis, gamma_ins, yerr=gamma_ins_err, label=r'$\gamma_{in}$')
         plt.errorbar(time_axis, gamma_outs, yerr=gamma_outs_err, label=r'$\gamma_{out}$')
         ax.set_xlabel(r"$t$ (s)", fontdict={'fontsize': 14})

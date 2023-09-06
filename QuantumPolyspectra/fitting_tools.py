@@ -515,7 +515,7 @@ class FitSystem:
 
                 # -------- plotting 1D cut ----------
 
-                enable_arcsinh_scaling = False
+                enable_arcsinh_scaling = True
 
                 if enable_arcsinh_scaling:
                     s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.02,

@@ -44,21 +44,20 @@ import matplotlib.colors as colors
 
 class FitTelegraph(SpectrumCalculator):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)  # This will call the __init__ of SpectrumCalculator
+        self.fit_system = FitSystem(None, None)
+
     def sync_state_with_fit_system(self):
         self.fit_system.f_list = self.f_list
         self.fit_system.s_list = self.s_list
         self.fit_system.err_list = self.err_list
         self.fit_system.fit_orders = [2,3,4]
-        self.fit_system.calc_spec = self.calc_fit_spec
+        self.fit_system.calc_spec = self.calc_fit_spec.__get__(self.fit_system)
 
     def comp_plot(self, *args, **kwargs):
         self.sync_state_with_fit_system()
         return self.fit_system.comp_plot(*args, **kwargs)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)  # This will call the __init__ of SpectrumCalculator
-        self.fit_system = FitSystem(None, None)
-        self.fit_orders = [2,3,4]
 
     def plot_fit(self, gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err, filter=1):
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(18, 5))

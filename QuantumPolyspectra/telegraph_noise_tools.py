@@ -49,7 +49,7 @@ class FitTelegraph(SpectrumCalculator):
         self.fit_system.s_list = self.s_list
         self.fit_system.err_list = self.err_list
         self.fit_system.fit_orders = [2,3,4]
-        self.fit_system.calc_spec = self.calc_spec
+        self.fit_system.calc_spec = self.calc_fit_spec
 
     def comp_plot(self, *args, **kwargs):
         self.sync_state_with_fit_system()

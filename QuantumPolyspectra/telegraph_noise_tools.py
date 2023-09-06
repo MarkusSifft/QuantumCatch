@@ -43,7 +43,7 @@ import matplotlib.colors as colors
 
 class FitTelegraph(SpectrumCalculator):
     def plot_fit(self, gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err, filter=1):
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(24, 7))
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(18, 5))
         plt.rc('text', usetex=False)
         #plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False

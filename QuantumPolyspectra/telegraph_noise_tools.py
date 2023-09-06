@@ -45,10 +45,14 @@ class FitTelegraph(SpectrumCalculator):
     def plot_fit(self, gamma_ins, gamma_ins_err, gamma_outs, gamma_outs_err, filter=1):
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(24, 7))
         plt.rc('text', usetex=False)
-        plt.rc('font', size=10)
+        #plt.rc('font', size=10)
         plt.rcParams["axes.axisbelow"] = False
 
-        t_for_one_spec = self.delta_t * self.m[2] * self.window_points
+        t_for_one_spec = self.T_window * self.m[2] * self.m_stationarity[2]
+
+        if self.config.interlaced_calculation:
+            t_for_one_spec /= 2
+
         time_axis = np.arange(0, len(self.S_stationarity[2]) * t_for_one_spec, t_for_one_spec)[::filter]
 
         none_entries_exist = False
@@ -61,14 +65,12 @@ class FitTelegraph(SpectrumCalculator):
         if none_entries_exist:
             print('Some None values have been set 0.')
 
-
         plt.errorbar(time_axis, gamma_ins, yerr=gamma_ins_err, label=r'$\gamma_{in}$')
         plt.errorbar(time_axis, gamma_outs, yerr=gamma_outs_err, label=r'$\gamma_{out}$')
-        ax.set_xlabel(r"$t$ (s)", fontdict={'fontsize': 14})
-        ax.set_ylabel(r"$\gamma$ (Hz)", fontdict={'fontsize': 14})
+        ax.set_xlabel(r"$t$ (s)")#, fontdict={'fontsize': 14})
+        ax.set_ylabel(r"$\gamma$ (Hz)")#, fontdict={'fontsize': 14})
         ax.tick_params(axis='both', direction='in')
-        ax.set_title(r'$\gamma$ vs $t$',
-                     fontdict={'fontsize': 16})
+        ax.set_title(r'$\gamma$ vs $t$') #, fontdict={'fontsize': 16})
 
     def fit_stationarity_plot(self, starting_gammas, beta, c, f_min=None, f_max=None,
                               huber_loss=False, huber_delta=1, with_s4=False,

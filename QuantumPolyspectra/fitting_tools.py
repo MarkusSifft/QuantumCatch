@@ -202,10 +202,10 @@ class FitSystem:
             for i in range(1, 5):
                 mask_f_min = self.f_list[i] >= f_min
                 self.f_list[i] = self.f_list[i][mask_f_min]
-                if i < 3:
+                if i == 2:
                     self.s_list[i] = self.s_list[i][mask_f_min]
                     self.err_list[i] = self.err_list[i][mask_f_min]
-                else:
+                elif i > 2:
                     index_mask = np.ix_(mask_f_min, mask_f_min)
                     self.s_list[i] = self.s_list[i][index_mask]
                     self.err_list[i] = self.err_list[i][index_mask]

@@ -155,7 +155,7 @@ class FitSystem:
         return out
 
     def complete_fit(self, path, params_in, f_min=None, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
-                     fit_modus='order_based', beta_offset=True,
+                     fit_modus='order_based', start_order=1, beta_offset=True,
                      fit_orders=(1, 2, 3, 4), show_plot=True,
                      xtol=1e-6, ftol=1e-6, max_nfev=500, general_weight=(2, 2, 1, 1), use_scipy=False):
 
@@ -223,20 +223,21 @@ class FitSystem:
 
         if fit_modus == 'order_based':
             for i in range(len(fit_orders)):
+                if i+1 >= start_order:
 
-                print('Fitting Orders:', fit_orders[:i + 1])
-                self.fit_orders = fit_orders[:i + 1]
+                    print('Fitting Orders:', fit_orders[:i + 1])
+                    self.fit_orders = fit_orders[:i + 1]
 
-                out = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
+                    out = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
 
-                print('plotting current fit state')
-                self.plot_fit(out.params, 9, out.residual)
+                    print('plotting current fit state')
+                    self.plot_fit(out.params, 9, out.residual)
 
-                for p in out.params:
-                    fit_params[p].value = out.params[p].value
+                    for p in out.params:
+                        fit_params[p].value = out.params[p].value
 
-                print('plotting last fit')
-                self.plot_fit(out.params, 9, out.residual)
+                    print('plotting last fit')
+                    self.plot_fit(out.params, 9, out.residual)
 
         elif fit_modus == 'resolution_based':
 

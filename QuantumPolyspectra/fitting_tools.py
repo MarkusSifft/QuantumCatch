@@ -154,7 +154,7 @@ class FitSystem:
 
         return out
 
-    def complete_fit(self, path, params_in, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
+    def complete_fit(self, path, params_in, f_min=None, f_max_2=None, f_max_3=None, f_max_4=None, method='least_squares',
                      fit_modus='order_based', beta_offset=True,
                      fit_orders=(1, 2, 3, 4), show_plot=True,
                      xtol=1e-6, ftol=1e-6, max_nfev=500, general_weight=(2, 2, 1, 1), use_scipy=False):
@@ -197,6 +197,18 @@ class FitSystem:
             self.f_list[i] = self.measurement_spec.freq[i]
             self.s_list[i] = np.real(self.measurement_spec.S[i])
             self.err_list[i] = np.real(self.measurement_spec.S_err[i])
+
+        if f_min is not None:
+            for i in range(len(self.f_list)):
+                mask_f_min = self.f_list[i] >= f_min
+                self.f_list[i] = self.f_list[i][mask_f_min]
+                if i == 0:
+                    self.s_list[i] = self.s_list[i][mask_f_min]
+                    self.err_list[i] = self.err_list[i][mask_f_min]
+                else:
+                    index_mask = np.ix_(mask_f_min, mask_f_min)
+                    self.s_list[i] = self.s_list[i][index_mask]
+                    self.err_list[i] = self.err_list[i][index_mask]
 
         fit_params = Parameters()
 

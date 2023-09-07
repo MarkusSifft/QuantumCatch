@@ -199,7 +199,7 @@ class FitSystem:
             self.err_list[i] = np.real(self.measurement_spec.S_err[i])
 
         if f_min is not None:
-            for i in range(len(self.f_list)):
+            for i in range(1, 5):
                 mask_f_min = self.f_list[i] >= f_min
                 self.f_list[i] = self.f_list[i][mask_f_min]
                 if i == 0:

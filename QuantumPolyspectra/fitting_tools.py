@@ -202,7 +202,7 @@ class FitSystem:
             for i in range(1, 5):
                 mask_f_min = self.f_list[i] >= f_min
                 self.f_list[i] = self.f_list[i][mask_f_min]
-                if i == 0:
+                if i < 3:
                     self.s_list[i] = self.s_list[i][mask_f_min]
                     self.err_list[i] = self.err_list[i][mask_f_min]
                 else:

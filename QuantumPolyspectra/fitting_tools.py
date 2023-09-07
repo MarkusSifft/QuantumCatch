@@ -42,6 +42,12 @@ from tqdm import tqdm_notebook
 import matplotlib.colors as colors
 from signalsnap.spectrum_calculator import load_spec
 from matplotlib.colors import LinearSegmentedColormap
+try:
+    __IPYTHON__
+    from IPython.display import display
+    is_ipython = True
+except NameError:
+    is_ipython = False
 
 
 class FitSystem:
@@ -379,9 +385,8 @@ class FitSystem:
 
                 print(iter_ + 1)
 
-                if isinstance(params, np.ndarray):
-                    for i in params:
-                        print('i:', i)
+                if is_ipython:
+                    display(params)
                 else:
                     for key in params.keys():
                         print('key:', params[key])
@@ -393,9 +398,8 @@ class FitSystem:
 
             elif iter_ == -1:
 
-                if isinstance(params, np.ndarray):
-                    for i in params:
-                        print('i:', i)
+                if is_ipython:
+                    display(params)
                 else:
                     for key in params.keys():
                         print('key:', params[key])

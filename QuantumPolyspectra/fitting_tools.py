@@ -156,7 +156,7 @@ class FitSystem:
 
     def start_minimizing(self, fit_params, method, max_nfev, xtol, ftol):
 
-        mini = Minimizer(self.objective, fit_params, iter_cb=self.plot_fit)
+        mini = Minimizer(self.objective, fit_params, iter_cb=self.iter_cb())
         if method == 'powell':
             out = mini.minimize(method=method, max_nfev=max_nfev)
         else:

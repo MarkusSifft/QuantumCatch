@@ -380,12 +380,13 @@ class FitSystem:
                 self.comp_plot(self.saved_iter[i], self.saved_params[i])
 
     def iter_cb(self, params, iter, resid, *args, **kws):
+        self.true_iter_count += 1
         if self.true_iter_count % self.num_params == 0:
             self.saved_params.append(params.valuesdict().copy())
             self.saved_iter.append(self.true_iter_count // self.num_params)
             self.update_real_time(self.true_iter_count // self.num_params, params.valuesdict().copy())
             self.saved_errors.append(None)  # Placeholder for errors
-        self.true_iter_count += 1
+
 
     def display_params(self, params, initial_params, errors=None):
         if errors is None:

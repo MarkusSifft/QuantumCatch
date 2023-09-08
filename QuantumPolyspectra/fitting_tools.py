@@ -239,7 +239,7 @@ class FitSystem:
         self.saved_errors = []
 
         self.num_params = len(fit_params)
-        true_iter_count = 0
+        self.true_iter_count = 0
 
         print('plotting initial fit')
         self.fit_orders = [1, 2, 3]
@@ -371,12 +371,11 @@ class FitSystem:
                 self.comp_plot(self.saved_iter[i], self.saved_params[i])
 
     def iter_cb(self, params, iter, resid, *args, **kws):
-        global true_iter_count
-        true_iter_count += 1
-        if true_iter_count % self.num_params == 0:
+        self.true_iter_count += 1
+        if self.true_iter_count % self.num_params == 0:
             self.saved_params.append(params.valuesdict().copy())
-            self.saved_iter.append(true_iter_count // self.num_params)
-            self.update_real_time(true_iter_count // self.num_params, params.valuesdict().copy())
+            self.saved_iter.append(self.true_iter_count // self.num_params)
+            self.update_real_time(self.true_iter_count // self.num_params, params.valuesdict().copy())
             self.saved_errors.append(None)  # Placeholder for errors
 
     def display_params(self, params, initial_params, errors=None):

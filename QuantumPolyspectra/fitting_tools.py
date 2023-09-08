@@ -229,9 +229,9 @@ class FitSystem:
 
         # Create Widgets
         self.slider = widgets.IntSlider(value=0, min=0, max=0, description='Iteration:')
-        param_text = widgets.HTML()
+        self.param_text = widgets.HTML()
         self.out = widgets.Output()
-        display(widgets.VBox([self.slider, param_text, self.out]))
+        display(widgets.VBox([self.slider, self.param_text, self.out]))
 
         # Variables to hold states of the fit
         self.saved_params = []

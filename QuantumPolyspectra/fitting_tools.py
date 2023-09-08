@@ -141,10 +141,15 @@ class FitSystem:
 
         resid = []
 
+        fit_list = {1: [], 2: [], 3: [], 4: []}
+
         for i, order in enumerate(self.fit_orders):
             # resid.append(((s_list[i] - calc_spec(params, order, f_list[i]))).flatten()/ np.abs(s_list[i]).max())
+
+            fit_list[order] = self.calc_spec(params, order, self.f_list[order])
+
             resid.append(
-                np.abs(((self.s_list[order] - self.calc_spec(params, order, self.f_list[order])) * self.general_weight[
+                np.abs(((self.s_list[order] - fit_list[order]) * self.general_weight[
                     i] / self.err_list[
                             order]).flatten()))
 
@@ -152,6 +157,10 @@ class FitSystem:
             out = self.adjusted_huber_residual(np.concatenate(resid))
         else:
             out = np.concatenate(resid)
+
+        if self.true_iter_count % self.num_params == 0:
+            self.fit_list_array.append(fit_list)
+
         return out
 
     def start_minimizing(self, fit_params, method, max_nfev, xtol, ftol):
@@ -164,41 +173,40 @@ class FitSystem:
 
         return out
 
+    def apply_frequency_limit(self, i, f_max):
+        f_mask = self.measurement_spec.freq[i] < f_max
+        max_ind = f_mask.sum()
+        self.measurement_spec.freq[i] = self.measurement_spec.freq[i][:max_ind]
+
+        # Determine the shape to see if it's 1D or 2D array
+        shape_dim = len(self.measurement_spec.S[i].shape)
+
+        if shape_dim == 1:
+            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind]
+            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind]
+        elif shape_dim == 2:
+            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind, :max_ind]
+            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind, :max_ind]
+
     def complete_fit(self, path, params_in, f_min=None, f_max_2=None, f_max_3=None, f_max_4=None,
                      method='least_squares',
                      fit_modus='order_based', start_order=1, beta_offset=True,
                      fit_orders=(1, 2, 3, 4), show_plot=True,
-                     xtol=1e-6, ftol=1e-6, max_nfev=500, general_weight=(2, 2, 1, 1), use_scipy=False):
+                     xtol=1e-6, ftol=1e-6, max_nfev=500, general_weight=(2, 2, 1, 1)):
 
         self.measurement_spec = load_spec(path)
         self.show_plot = show_plot
         self.general_weight = general_weight
-        self.use_scipy = use_scipy
         self.beta_offset = beta_offset
 
         if f_max_2 is not None:
-            i = 2
-            f_mask = self.measurement_spec.freq[i] < f_max_2
-            max_ind = f_mask.sum()
-            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][:max_ind]
-            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind]
-            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind]
+            self.apply_frequency_limit(2, f_max_2)
 
         if f_max_3 is not None:
-            i = 3
-            f_mask = self.measurement_spec.freq[i] < f_max_3
-            max_ind = f_mask.sum()
-            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][:max_ind]
-            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind, :max_ind]
-            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind, :max_ind]
+            self.apply_frequency_limit(3, f_max_3)
 
         if f_max_4 is not None:
-            i = 4
-            f_mask = self.measurement_spec.freq[i] < f_max_4
-            max_ind = f_mask.sum()
-            self.measurement_spec.freq[i] = self.measurement_spec.freq[i][:max_ind]
-            self.measurement_spec.S[i] = np.real(self.measurement_spec.S[i])[:max_ind, :max_ind]
-            self.measurement_spec.S_err[i] = np.real(self.measurement_spec.S_err[i])[:max_ind, :max_ind]
+            self.apply_frequency_limit(4, f_max_4)
 
         self.f_list = {1: None, 2: None, 3: None, 4: None}
         self.s_list = {1: None, 2: None, 3: None, 4: None}
@@ -240,6 +248,7 @@ class FitSystem:
 
         self.num_params = len(fit_params)
         self.true_iter_count = 0
+        self.fit_list_array = []
 
         print('plotting initial fit')
         self.fit_orders = [1, 2, 3]
@@ -451,9 +460,7 @@ class FitSystem:
 
             cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
-            fit_list = {1: None, 2: None, 3: None, 4: None}
-            for i in self.fit_orders:
-                fit_list[i] = np.real(self.calc_spec(params, i, self.f_list[i]))
+            fit_list = self.fit_list_array[i]
 
             # ---------- S1 ------------
             if fit_list[1] is not None:

@@ -159,7 +159,7 @@ class FitSystem:
             out = np.concatenate(resid)
 
         print('true_iter_count in objective', self.true_iter_count)
-        if self.true_iter_count % self.num_params == 0:
+        if self.true_iter_count+1 % self.num_params == 0:
             self.fit_list_array.append(fit_list)
 
         return out

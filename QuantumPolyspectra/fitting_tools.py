@@ -463,6 +463,7 @@ class FitSystem:
 
             cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
+            print('in in plot:', i, 'len(self.fit_list_array):', len(self.fit_list_array))
             fit_list = self.fit_list_array[i]
 
             # ---------- S1 ------------

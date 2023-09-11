@@ -521,149 +521,151 @@ class FitSystem:
 
             for i in self.fit_orders:
 
-                if fit_list[i] is not None and not fit_list[i].shape[0]==0 and i > 2:
-                    j = i - 2
+                if fit_list[i] is not None and i > 2:
 
-                    y, x = np.meshgrid(self.f_list[i], self.f_list[i])
+                    if fit_list[i].shape[0] > 0:
+                        j = i - 2
 
-                    z = np.real(self.s_list[i])
-                    z_fit = fit_list[i]
-                    z_both = np.tril(z) + np.triu(z_fit)
+                        y, x = np.meshgrid(self.f_list[i], self.f_list[i])
 
-                    vmin = np.min(z_both)
-                    vmax = np.max(z_both)
-                    abs_max = max(abs(vmin), abs(vmax))
-                    norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
+                        z = np.real(self.s_list[i])
+                        z_fit = fit_list[i]
+                        z_both = np.tril(z) + np.triu(z_fit)
 
-                    c = ax[0, j].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
-                    # ax[0, j].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
-                    # ax[0, j].axis([0, f_max, 0, f_max])
-                    # ax[1].set_yticks([0,0.2,0.4])
+                        vmin = np.min(z_both)
+                        vmax = np.max(z_both)
+                        abs_max = max(abs(vmin), abs(vmax))
+                        norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
-                    ax[0, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                    ax[0, j].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-                    # ax[i].grid(True)
-                    ax[0, j].tick_params(axis='both', direction='in', labelsize=14)
-                    ax[0, j].set_title('Fit / Measurement')
+                        c = ax[0, j].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm, zorder=1)
+                        # ax[0, j].plot([0, f_max], [0, f_max], 'k', alpha=0.4)
+                        # ax[0, j].axis([0, f_max, 0, f_max])
+                        # ax[1].set_yticks([0,0.2,0.4])
 
-                    cbar = fig.colorbar(c, ax=(ax[0, j]))
-                    cbar.ax.tick_params(labelsize=14)
+                        ax[0, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
+                        ax[0, j].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                        # ax[i].grid(True)
+                        ax[0, j].tick_params(axis='both', direction='in', labelsize=14)
+                        ax[0, j].set_title('Fit / Measurement')
 
-                    # ------ rel. err. -------
+                        cbar = fig.colorbar(c, ax=(ax[0, j]))
+                        cbar.ax.tick_params(labelsize=14)
 
-                    relative_fit_err = gaussian_filter((np.real(self.s_list[i]) - fit_list[i]) / np.real(self.s_list[i]), 0)
-                    relative_fit_err = np.real(relative_fit_err)
+                        # ------ rel. err. -------
 
-                    green_alpha = 1
-                    color_array = np.array([[0., 0., 0., 0.], [0., 0.5, 0., green_alpha]])
-                    cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
+                        relative_fit_err = gaussian_filter((np.real(self.s_list[i]) - fit_list[i]) / np.real(self.s_list[i]), 0)
+                        relative_fit_err = np.real(relative_fit_err)
 
-                    err_matrix = np.zeros_like(relative_fit_err)
-                    relative_measurement_error = sigma * self.err_list[i] / self.s_list[i]
-                    err_matrix[np.abs(relative_fit_err) < relative_measurement_error] = 1
+                        green_alpha = 1
+                        color_array = np.array([[0., 0., 0., 0.], [0., 0.5, 0., green_alpha]])
+                        cmap_sigma = LinearSegmentedColormap.from_list(name='green_alpha', colors=color_array)
 
-                    relative_fit_err[relative_fit_err > 0.5] = 0 * relative_fit_err[relative_fit_err > 0.5] + 0.5
-                    relative_fit_err[relative_fit_err < -0.5] = 0 * relative_fit_err[relative_fit_err < -0.5] - 0.5
+                        err_matrix = np.zeros_like(relative_fit_err)
+                        relative_measurement_error = sigma * self.err_list[i] / self.s_list[i]
+                        err_matrix[np.abs(relative_fit_err) < relative_measurement_error] = 1
 
-                    vmin = np.min(relative_fit_err)
-                    vmax = np.max(relative_fit_err)
-                    abs_max = max(abs(vmin), abs(vmax))
-                    norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
+                        relative_fit_err[relative_fit_err > 0.5] = 0 * relative_fit_err[relative_fit_err > 0.5] + 0.5
+                        relative_fit_err[relative_fit_err < -0.5] = 0 * relative_fit_err[relative_fit_err < -0.5] - 0.5
 
-                    c = ax[1, j].pcolormesh(x, y, relative_fit_err, cmap=cmap, norm=norm, zorder=1)
-                    ax[1, j].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
-                    # ax[1,i].plot([0,f_max], [0,f_max], 'k', alpha=0.4)
-                    # ax[1, j].axis([0, f_max, 0, f_max])
-                    # ax[1].set_yticks([0,0.2,0.4])
+                        vmin = np.min(relative_fit_err)
+                        vmax = np.max(relative_fit_err)
+                        abs_max = max(abs(vmin), abs(vmax))
+                        norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
-                    ax[1, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                    ax[1, j].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-                    # ax[i].grid(True)
-                    ax[1, j].tick_params(axis='both', direction='in', labelsize=14)
-                    ax[1, j].set_title('relative error')
+                        c = ax[1, j].pcolormesh(x, y, relative_fit_err, cmap=cmap, norm=norm, zorder=1)
+                        ax[1, j].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
+                        # ax[1,i].plot([0,f_max], [0,f_max], 'k', alpha=0.4)
+                        # ax[1, j].axis([0, f_max, 0, f_max])
+                        # ax[1].set_yticks([0,0.2,0.4])
 
-                    cbar = fig.colorbar(c, ax=(ax[1, j]))
-                    cbar.ax.tick_params(labelsize=14)
+                        ax[1, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
+                        ax[1, j].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                        # ax[i].grid(True)
+                        ax[1, j].tick_params(axis='both', direction='in', labelsize=14)
+                        ax[1, j].set_title('relative error')
 
-                    # -------- plotting 1D cut ----------
+                        cbar = fig.colorbar(c, ax=(ax[1, j]))
+                        cbar.ax.tick_params(labelsize=14)
 
-                    enable_arcsinh_scaling = True
+                        # -------- plotting 1D cut ----------
 
-                    if enable_arcsinh_scaling:
-                        s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(),
-                                                               arcsinh_const=0.002,
-                                                               order=i, s_err=np.real(self.s_list[i][0, :]).copy() + sigma *
-                                                                              self.err_list[i][0, :].copy())
-                        _, s_err_axis_n = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.002,
+                        enable_arcsinh_scaling = True
+
+                        if enable_arcsinh_scaling:
+                            s_axis, s_err_axis_p = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(),
+                                                                   arcsinh_const=0.002,
+                                                                   order=i, s_err=np.real(self.s_list[i][0, :]).copy() + sigma *
+                                                                                  self.err_list[i][0, :].copy())
+                            _, s_err_axis_n = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.002,
+                                                              order=i,
+                                                              s_err=np.real(self.s_list[i][0, :]).copy() - sigma *
+                                                                    self.err_list[i][
+                                                                    0, :].copy())
+                            _, fit_axis = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.002,
                                                           order=i,
-                                                          s_err=np.real(self.s_list[i][0, :]).copy() - sigma *
-                                                                self.err_list[i][
-                                                                0, :].copy())
-                        _, fit_axis = arcsinh_scaling(s_data=np.real(self.s_list[i][0, :]).copy(), arcsinh_const=0.002,
-                                                      order=i,
-                                                      s_err=fit_list[i][0, :].copy())
+                                                          s_err=fit_list[i][0, :].copy())
 
-                        s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(),
-                                                               arcsinh_const=0.002,
-                                                               order=i,
-                                                               s_err=np.real(
-                                                                   np.diag(self.s_list[i])).copy() + sigma * np.diag(
-                                                                   self.err_list[i]).copy())
-                        _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(),
-                                                          arcsinh_const=0.002,
+                            s_diag, s_err_diag_p = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(),
+                                                                   arcsinh_const=0.002,
+                                                                   order=i,
+                                                                   s_err=np.real(
+                                                                       np.diag(self.s_list[i])).copy() + sigma * np.diag(
+                                                                       self.err_list[i]).copy())
+                            _, s_err_diag_n = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(),
+                                                              arcsinh_const=0.002,
+                                                              order=i,
+                                                              s_err=np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(
+                                                                  self.err_list[i]).copy())
+                            _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.002,
                                                           order=i,
-                                                          s_err=np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(
-                                                              self.err_list[i]).copy())
-                        _, fit_diag = arcsinh_scaling(s_data=np.real(np.diag(self.s_list[i])).copy(), arcsinh_const=0.002,
-                                                      order=i,
-                                                      s_err=np.diag(fit_list[i]).copy())
+                                                          s_err=np.diag(fit_list[i]).copy())
 
-                    else:
-                        s_axis = np.real(self.s_list[i][0, :]).copy()
-                        s_err_axis_p = np.real(self.s_list[i][0, :]).copy() + sigma * self.err_list[i][0, :].copy()
-                        s_err_axis_n = np.real(self.s_list[i][0, :]).copy() - sigma * self.err_list[i][0, :].copy()
-                        fit_axis = fit_list[i][0, :].copy()
-                        s_diag = np.real(np.diag(self.s_list[i])).copy()
-                        s_err_diag_p = np.real(np.diag(self.s_list[i])).copy() + sigma * np.diag(self.err_list[i]).copy()
-                        s_err_diag_n = np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(self.err_list[i]).copy()
-                        fit_diag = np.diag(fit_list[i]).copy()
+                        else:
+                            s_axis = np.real(self.s_list[i][0, :]).copy()
+                            s_err_axis_p = np.real(self.s_list[i][0, :]).copy() + sigma * self.err_list[i][0, :].copy()
+                            s_err_axis_n = np.real(self.s_list[i][0, :]).copy() - sigma * self.err_list[i][0, :].copy()
+                            fit_axis = fit_list[i][0, :].copy()
+                            s_diag = np.real(np.diag(self.s_list[i])).copy()
+                            s_err_diag_p = np.real(np.diag(self.s_list[i])).copy() + sigma * np.diag(self.err_list[i]).copy()
+                            s_err_diag_n = np.real(np.diag(self.s_list[i])).copy() - sigma * np.diag(self.err_list[i]).copy()
+                            fit_diag = np.diag(fit_list[i]).copy()
 
-                    c = ax[2, j].plot(self.f_list[i],
-                                      s_axis, '-',
-                                      lw=2,
-                                      color='tab:blue', label='meas. axis')
-                    c = ax[2, j].plot(self.f_list[i],
-                                      fit_axis, '--',
-                                      lw=2,
-                                      color='tab:blue', label='fit axis')
+                        c = ax[2, j].plot(self.f_list[i],
+                                          s_axis, '-',
+                                          lw=2,
+                                          color='tab:blue', label='meas. axis')
+                        c = ax[2, j].plot(self.f_list[i],
+                                          fit_axis, '--',
+                                          lw=2,
+                                          color='tab:blue', label='fit axis')
 
-                    c = ax[2, j].plot(self.f_list[i],
-                                      s_diag, '-',
-                                      lw=2,
-                                      color='tab:orange', label='meas. diag.')
-                    c = ax[2, j].plot(self.f_list[i],
-                                      fit_diag, '--',
-                                      lw=2,
-                                      color='tab:orange', label='fit diag.')
+                        c = ax[2, j].plot(self.f_list[i],
+                                          s_diag, '-',
+                                          lw=2,
+                                          color='tab:orange', label='meas. diag.')
+                        c = ax[2, j].plot(self.f_list[i],
+                                          fit_diag, '--',
+                                          lw=2,
+                                          color='tab:orange', label='fit diag.')
 
-                    ax[2, j].fill_between(self.f_list[i], s_err_axis_p,
-                                          s_err_axis_n, color='tab:blue', alpha=0.2)
-                    ax[2, j].plot(self.f_list[i], s_err_axis_p, 'k', alpha=0.5)
-                    ax[2, j].plot(self.f_list[i], s_err_axis_n, 'k', alpha=0.5)
+                        ax[2, j].fill_between(self.f_list[i], s_err_axis_p,
+                                              s_err_axis_n, color='tab:blue', alpha=0.2)
+                        ax[2, j].plot(self.f_list[i], s_err_axis_p, 'k', alpha=0.5)
+                        ax[2, j].plot(self.f_list[i], s_err_axis_n, 'k', alpha=0.5)
 
-                    ax[2, j].fill_between(self.f_list[i], s_err_diag_p,
-                                          s_err_diag_n, color='tab:orange', alpha=0.2)
-                    ax[2, j].plot(self.f_list[i], s_err_diag_p, 'k', alpha=0.5)
-                    ax[2, j].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.5)
+                        ax[2, j].fill_between(self.f_list[i], s_err_diag_p,
+                                              s_err_diag_n, color='tab:orange', alpha=0.2)
+                        ax[2, j].plot(self.f_list[i], s_err_diag_p, 'k', alpha=0.5)
+                        ax[2, j].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.5)
 
-                    # ax[1, 0].set_xlim([0, f_max])
-                    # ax[0].set_ylim([0, 1.1*y.max()])
+                        # ax[1, 0].set_xlim([0, f_max])
+                        # ax[0].set_ylim([0, 1.1*y.max()])
 
-                    ax[2, j].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-                    ax[2, j].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-                    # ax[0,i].grid(True)
-                    ax[2, j].tick_params(axis='both', direction='in', labelsize=14)
-                    ax[2, j].legend()
+                        ax[2, j].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
+                        ax[2, j].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                        # ax[0,i].grid(True)
+                        ax[2, j].tick_params(axis='both', direction='in', labelsize=14)
+                        ax[2, j].legend()
 
             plt.show()
 

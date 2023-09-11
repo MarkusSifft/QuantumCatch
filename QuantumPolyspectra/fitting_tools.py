@@ -472,6 +472,7 @@ class FitSystem:
                 ax[2, 0].plot(1, fit_list[1], 'o', label=f'Fit (rel. err.: {relative_error_s1:.3e})')
                 ax[2,0].set_ylabel(r"$S^{(1)}_z$", fontdict={'fontsize': 15})
                 ax[2,0].set_xticks([])
+                ax[2,0].legend()
 
             # ---------- S2 ------------
             if fit_list[2] is not None:

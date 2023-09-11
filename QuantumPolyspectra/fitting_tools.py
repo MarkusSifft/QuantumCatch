@@ -521,7 +521,7 @@ class FitSystem:
 
             for i in self.fit_orders:
 
-                if fit_list[i] is not None and i > 2:
+                if fit_list[i] is not None and not fit_list[i].shape[0]==0 and i > 2:
                     j = i - 2
 
                     y, x = np.meshgrid(self.f_list[i], self.f_list[i])

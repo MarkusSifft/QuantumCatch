@@ -455,7 +455,7 @@ class FitSystem:
 
             # Create two separate GridSpec objects: one for the first two rows, and one for the last row
             gs1 = gridspec.GridSpec(2, 3, figure=fig, width_ratios=[1, 1.2, 1.2])
-            gs2 = gridspec.GridSpec(1, 3, figure=fig, width_ratios=[1.5, 1, 0.5])
+            gs2 = gridspec.GridSpec(1, 3, figure=fig, width_ratios=[1, 1, 1])
 
             # Place them at the same vertical positions
             gs1.update(left=0.05, right=0.95, wspace=0.05, bottom=0.35)
@@ -479,9 +479,6 @@ class FitSystem:
 
             # ---------- S1 ------------
             if fit_list[1] is not None:
-                #print('S1:')
-                #print('measurement:', self.s_list[1][0], '+/-', sigma * self.err_list[1][0])
-                #print('fit:', fit_list[1])
                 relative_error_s1 = (self.s_list[1][0] - fit_list[1]) / self.s_list[1][0]
 
                 ax[2,0].errorbar(1, self.s_list[1][0], sigma * self.err_list[1][0], fmt='o', label='Measurement')

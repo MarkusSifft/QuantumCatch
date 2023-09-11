@@ -468,8 +468,10 @@ class FitSystem:
                 print('fit:', fit_list[1])
                 print('relative error:', (self.s_list[1][0] - fit_list[1]) / self.s_list[1][0])
 
-                ax[2,0].errorbar(1, self.s_list[1][0], sigma * self.err_list[1][0])
-                ax[2, 0].plot(1, fit_list[1], 'o')
+                ax[2,0].errorbar(1, self.s_list[1][0], sigma * self.err_list[1][0], fmt='o', label='Measurement')
+                ax[2, 0].plot(1, fit_list[1], 'o', label='Fit')
+                ax[2,0].set_ylabel(r"$S^{(1)}_z$", fontdict={'fontsize': 15})
+                ax[2,0].set_xticks([])
 
             # ---------- S2 ------------
             if fit_list[2] is not None:

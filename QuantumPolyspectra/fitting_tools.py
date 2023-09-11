@@ -492,7 +492,7 @@ class FitSystem:
             # ---------- S2 ------------
             if fit_list[2] is not None:
 
-                if len(fit_list[i]) > 0:
+                if len(fit_list[2]) > 0:
 
                     c = ax[0, 1].plot(self.f_list[2], self.s_list[2], lw=3,
                                       color=[0, 0.5, 0.9], label='meas.')

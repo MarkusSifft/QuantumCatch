@@ -450,22 +450,23 @@ class FitSystem:
         with self.out:
             self.out.clear_output(wait=True)  # Clear the output to avoid any artifacts
 
-            #fig, ax = plt.subplots(nrows=3, ncols=3, figsize=(21, 16), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
-            fig = plt.figure(figsize=(20, 20))
+            fig, ax = plt.subplots(nrows=3, ncols=3, figsize=(21, 16), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
 
-            # Create two separate GridSpec objects: one for the first two rows, and one for the last row
-            gs1 = gridspec.GridSpec(2, 3, figure=fig, width_ratios=[1, 1.2, 1.2])
-            gs2 = gridspec.GridSpec(1, 3, figure=fig, width_ratios=[1, 1, 1])
-
-            # Place them at the same vertical positions
-            gs1.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, bottom=0.40)
-            gs2.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, top=0.35)
-
-            # Create the list of axes
-            ax_list = [plt.subplot(gs) for gs in [*gs1, *gs2]]
-
-            # Convert the list into a 3x3 NumPy array for easy indexing
-            ax = np.array(ax_list).reshape(3, 3)
+            # fig = plt.figure(figsize=(20, 20))
+            #
+            # # Create two separate GridSpec objects: one for the first two rows, and one for the last row
+            # gs1 = gridspec.GridSpec(2, 3, figure=fig, width_ratios=[1, 1.2, 1.2])
+            # gs2 = gridspec.GridSpec(1, 3, figure=fig, width_ratios=[1, 1, 1])
+            #
+            # # Place them at the same vertical positions
+            # gs1.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, bottom=0.40)
+            # gs2.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, top=0.35)
+            #
+            # # Create the list of axes
+            # ax_list = [plt.subplot(gs) for gs in [*gs1, *gs2]]
+            #
+            # # Convert the list into a 3x3 NumPy array for easy indexing
+            # ax = np.array(ax_list).reshape(3, 3)
 
             plt.rc('text', usetex=False)
             plt.rc('font', size=10)
@@ -481,39 +482,39 @@ class FitSystem:
             if fit_list[1] is not None:
                 relative_error_s1 = (self.s_list[1][0] - fit_list[1]) / self.s_list[1][0]
 
-                ax[2,0].errorbar(1, self.s_list[1][0], sigma * self.err_list[1][0], fmt='o', label='Measurement')
-                ax[2, 0].plot(1, fit_list[1], 'o', label=f'Fit (rel. err.: {relative_error_s1:.3e})')
-                ax[2,0].set_ylabel(r"$S^{(1)}_z$", fontdict={'fontsize': 15})
-                ax[2,0].set_xticks([])
-                ax[2,0].legend()
-                ax[2, 0].set_xlim([0.9,1.5])
+                ax[0,0].errorbar(1, self.s_list[1][0], sigma * self.err_list[1][0], fmt='o', label='Measurement')
+                ax[0,0].plot(1, fit_list[1], 'o', label=f'Fit (rel. err.: {relative_error_s1:.3e})')
+                ax[0,0].set_ylabel(r"$S^{(1)}_z$", fontdict={'fontsize': 15})
+                ax[0,0].set_xticks([])
+                ax[0,0].legend()
+                ax[0,0].set_xlim([0.9,1.5])
 
             # ---------- S2 ------------
             if fit_list[2] is not None:
-                c = ax[0, 0].plot(self.f_list[2], self.s_list[2], lw=3,
+                c = ax[0, 1].plot(self.f_list[2], self.s_list[2], lw=3,
                                   color=[0, 0.5, 0.9], label='meas.')
-                c = ax[0, 0].plot(self.f_list[2], fit_list[2], '--k', alpha=0.8, label='fit')
+                c = ax[0, 1].plot(self.f_list[2], fit_list[2], '--k', alpha=0.8, label='fit')
 
-                ax[0, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-                ax[0, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                ax[0, 1].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
+                ax[0, 1].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
 
-                ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
-                ax[0, 0].legend()
+                ax[0, 1].tick_params(axis='both', direction='in', labelsize=14)
+                ax[0, 1].legend()
 
-                c = ax[1, 0].plot(self.f_list[2],
+                c = ax[0, 2].plot(self.f_list[2],
                                   (self.s_list[2] - fit_list[2]) / self.s_list[2],
                                   lw=2,
                                   color=[0, 0.5, 0.9], label='rel. err.')
                 relative_measurement_error = sigma * self.err_list[2] / self.s_list[2]
-                ax[1, 0].fill_between(self.f_list[2], relative_measurement_error,
+                ax[0, 2].fill_between(self.f_list[2], relative_measurement_error,
                                       -relative_measurement_error, alpha=0.3)
-                ax[1, 0].plot(self.f_list[2], relative_measurement_error, 'k', alpha=0.5)
-                ax[1, 0].plot(self.f_list[2], -relative_measurement_error, 'k', alpha=0.5)
+                ax[0, 2].plot(self.f_list[2], relative_measurement_error, 'k', alpha=0.5)
+                ax[0, 2].plot(self.f_list[2], -relative_measurement_error, 'k', alpha=0.5)
 
-                ax[1, 0].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-                ax[1, 0].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
-                ax[1, 0].tick_params(axis='both', direction='in', labelsize=14)
-                ax[1, 0].legend()
+                ax[0, 2].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
+                ax[0, 2].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                ax[0, 2].tick_params(axis='both', direction='in', labelsize=14)
+                ax[0, 2].legend()
 
             # ---------- S3 and S4 ------------
 
@@ -522,6 +523,7 @@ class FitSystem:
                 if fit_list[i] is not None and i > 2:
 
                     if len(fit_list[i]) > 0:
+
                         j = i - 2
 
                         y, x = np.meshgrid(self.f_list[i], self.f_list[i])
@@ -535,16 +537,16 @@ class FitSystem:
                         abs_max = max(abs(vmin), abs(vmax))
                         norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
-                        c = ax[0, j].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm,
+                        c = ax[j, 0].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm,
                                                 zorder=1)
 
-                        ax[0, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                        ax[0, j].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                        ax[j, 0].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
+                        ax[j, 0].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
 
-                        ax[0, j].tick_params(axis='both', direction='in', labelsize=14)
-                        ax[0, j].set_title('Fit / Measurement')
+                        ax[j, 0].tick_params(axis='both', direction='in', labelsize=14)
+                        ax[j, 0].set_title('Fit / Measurement')
 
-                        cbar = fig.colorbar(c, ax=(ax[0, j]))
+                        cbar = fig.colorbar(c, ax=(ax[j, 0]))
                         cbar.ax.tick_params(labelsize=14)
 
                         # ------ rel. err. -------
@@ -569,16 +571,16 @@ class FitSystem:
                         abs_max = max(abs(vmin), abs(vmax))
                         norm = colors.TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
-                        c = ax[1, j].pcolormesh(x, y, relative_fit_err, cmap=cmap, norm=norm, zorder=1)
-                        ax[1, j].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
+                        c = ax[j, 1].pcolormesh(x, y, relative_fit_err, cmap=cmap, norm=norm, zorder=1)
+                        ax[j, 1].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
 
-                        ax[1, j].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                        ax[1, j].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                        ax[j, 1].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
+                        ax[j, 1].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
 
-                        ax[1, j].tick_params(axis='both', direction='in', labelsize=14)
-                        ax[1, j].set_title('relative error')
+                        ax[j, 1].tick_params(axis='both', direction='in', labelsize=14)
+                        ax[j, 1].set_title('relative error')
 
-                        cbar = fig.colorbar(c, ax=(ax[1, j]))
+                        cbar = fig.colorbar(c, ax=(ax[j, 1]))
                         cbar.ax.tick_params(labelsize=14)
 
                         # -------- plotting 1D cut ----------
@@ -632,39 +634,39 @@ class FitSystem:
                                 self.err_list[i]).copy()
                             fit_diag = np.diag(fit_list[i]).copy()
 
-                        c = ax[2, j].plot(self.f_list[i],
+                        c = ax[j, 2].plot(self.f_list[i],
                                           s_axis, '-',
                                           lw=2,
                                           color='tab:blue', label='meas. axis')
-                        c = ax[2, j].plot(self.f_list[i],
+                        c = ax[j, 2].plot(self.f_list[i],
                                           fit_axis, '--',
                                           lw=2,
                                           color='tab:blue', label='fit axis')
 
-                        c = ax[2, j].plot(self.f_list[i],
+                        c = ax[j, 2].plot(self.f_list[i],
                                           s_diag, '-',
                                           lw=2,
                                           color='tab:orange', label='meas. diag.')
-                        c = ax[2, j].plot(self.f_list[i],
+                        c = ax[j, 2].plot(self.f_list[i],
                                           fit_diag, '--',
                                           lw=2,
                                           color='tab:orange', label='fit diag.')
 
-                        ax[2, j].fill_between(self.f_list[i], s_err_axis_p,
+                        ax[j, 2].fill_between(self.f_list[i], s_err_axis_p,
                                               s_err_axis_n, color='tab:blue', alpha=0.2)
-                        ax[2, j].plot(self.f_list[i], s_err_axis_p, 'k', alpha=0.5)
-                        ax[2, j].plot(self.f_list[i], s_err_axis_n, 'k', alpha=0.5)
+                        ax[j, 2].plot(self.f_list[i], s_err_axis_p, 'k', alpha=0.5)
+                        ax[j, 2].plot(self.f_list[i], s_err_axis_n, 'k', alpha=0.5)
 
-                        ax[2, j].fill_between(self.f_list[i], s_err_diag_p,
+                        ax[j, 2].fill_between(self.f_list[i], s_err_diag_p,
                                               s_err_diag_n, color='tab:orange', alpha=0.2)
-                        ax[2, j].plot(self.f_list[i], s_err_diag_p, 'k', alpha=0.5)
-                        ax[2, j].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.5)
+                        ax[j, 2].plot(self.f_list[i], s_err_diag_p, 'k', alpha=0.5)
+                        ax[j, 2].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.5)
 
-                        ax[2, j].set_ylabel(r"arcsinh scaled values", fontdict={'fontsize': 15})
-                        ax[2, j].set_xlabel(r"$\omega_1/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                        ax[j, 2].set_ylabel(r"arcsinh scaled values", fontdict={'fontsize': 15})
+                        ax[j, 2].set_xlabel(r"$\omega_1/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
 
-                        ax[2, j].tick_params(axis='both', direction='in', labelsize=14)
-                        ax[2, j].legend()
+                        ax[j, 2].tick_params(axis='both', direction='in', labelsize=14)
+                        ax[j, 2].legend()
 
             plt.show()
 

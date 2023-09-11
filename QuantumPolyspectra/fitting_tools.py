@@ -523,9 +523,7 @@ class FitSystem:
 
                 if fit_list[i] is not None and i > 2:
 
-                    print(fit_list[i])
-
-                    if fit_list[i].shape[0] > 0:
+                    if len(fit_list[i]) > 0:
                         j = i - 2
 
                         y, x = np.meshgrid(self.f_list[i], self.f_list[i])

@@ -41,8 +41,8 @@ from lmfit import Parameters, Minimizer
 import matplotlib.colors as colors
 from signalsnap.spectrum_calculator import load_spec
 from matplotlib.colors import LinearSegmentedColormap
-from IPython.display import display, HTML, clear_output
-from ipywidgets import widgets, VBox
+from ipywidgets import widgets
+import matplotlib.gridspec as gridspec
 
 try:
     __IPYTHON__
@@ -450,7 +450,23 @@ class FitSystem:
         with self.out:
             self.out.clear_output(wait=True)  # Clear the output to avoid any artifacts
 
-            fig, ax = plt.subplots(nrows=3, ncols=3, figsize=(21, 16), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
+            #fig, ax = plt.subplots(nrows=3, ncols=3, figsize=(21, 16), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
+            fig = plt.figure(figsize=(21, 16))
+
+            # Create two separate GridSpec objects: one for the first two rows, and one for the last row
+            gs1 = gridspec.GridSpec(2, 3, figure=fig, width_ratios=[1, 1.2, 1.2])
+            gs2 = gridspec.GridSpec(1, 3, figure=fig, width_ratios=[1.5, 1, 0.5])
+
+            # Place them at the same vertical positions
+            gs1.update(left=0.05, right=0.95, wspace=0.05, bottom=0.35)
+            gs2.update(left=0.05, right=0.95, wspace=0.05, top=0.34)
+
+            # Create the list of axes
+            ax_list = [plt.subplot(gs) for gs in [*gs1, *gs2]]
+
+            # Convert the list into a 3x3 NumPy array for easy indexing
+            ax = np.array(ax_list).reshape(3, 3)
+
             plt.rc('text', usetex=False)
             plt.rc('font', size=10)
             plt.rcParams["axes.axisbelow"] = False

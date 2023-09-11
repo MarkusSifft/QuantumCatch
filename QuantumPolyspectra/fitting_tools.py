@@ -451,15 +451,15 @@ class FitSystem:
             self.out.clear_output(wait=True)  # Clear the output to avoid any artifacts
 
             #fig, ax = plt.subplots(nrows=3, ncols=3, figsize=(21, 16), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
-            fig = plt.figure(figsize=(21, 16))
+            fig = plt.figure(figsize=(20, 20))
 
             # Create two separate GridSpec objects: one for the first two rows, and one for the last row
             gs1 = gridspec.GridSpec(2, 3, figure=fig, width_ratios=[1, 1.2, 1.2])
             gs2 = gridspec.GridSpec(1, 3, figure=fig, width_ratios=[1, 1, 1])
 
             # Place them at the same vertical positions
-            gs1.update(left=0.05, right=0.95, wspace=0.05, bottom=0.35)
-            gs2.update(left=0.05, right=0.95, wspace=0.05, top=0.34)
+            gs1.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, bottom=0.35)
+            gs2.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, top=0.34)
 
             # Create the list of axes
             ax_list = [plt.subplot(gs) for gs in [*gs1, *gs2]]

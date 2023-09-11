@@ -198,7 +198,7 @@ class FitSystem:
             raise ValueError("start_order must be an integer.")
 
         # Check if start_order is smaller than the largest number in fit_orders
-        if start_order >= max(fit_orders):
+        if start_order > max(fit_orders):
             raise ValueError(f"start_order must be smaller than the largest number in fit_orders. "
                              f"The largest number in fit_orders is {max(fit_orders)}.")
 
@@ -482,18 +482,19 @@ class FitSystem:
             if fit_list[1] is not None:
                 relative_error_s1 = (self.s_list[1][0] - fit_list[1]) / self.s_list[1][0]
 
-                ax[0,0].errorbar(1, self.s_list[1][0], sigma * self.err_list[1][0], fmt='o', label='Measurement')
-                ax[0,0].plot(1, fit_list[1], 'o', label=f'Fit (rel. err.: {relative_error_s1:.3e})')
-                ax[0,0].set_ylabel(r"$S^{(1)}_z$", fontdict={'fontsize': 15})
-                ax[0,0].set_xticks([])
-                ax[0,0].legend()
-                ax[0,0].set_xlim([0.9,1.5])
+                ax[0, 0].errorbar(1, self.s_list[1][0], sigma * self.err_list[1][0], fmt='o', label='Measurement')
+                ax[0, 0].plot(1, fit_list[1], 'o', label=f'Fit (rel. err.: {relative_error_s1:.3e})')
+                ax[0, 0].set_ylabel(r"$S^{(1)}_z$", fontdict={'fontsize': 15})
+                ax[0, 0].set_xticks([])
+                ax[0, 0].legend()
+                ax[0, 0].set_title(r'S^{(1)}_z')
+                ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
+                ax[0, 0].set_xlim([0.9, 1.5])
 
             # ---------- S2 ------------
             if fit_list[2] is not None:
 
                 if len(fit_list[2]) > 0:
-
                     c = ax[0, 1].plot(self.f_list[2], self.s_list[2], lw=3,
                                       color=[0, 0.5, 0.9], label='meas.')
                     c = ax[0, 1].plot(self.f_list[2], fit_list[2], '--k', alpha=0.8, label='fit')
@@ -503,6 +504,7 @@ class FitSystem:
 
                     ax[0, 1].tick_params(axis='both', direction='in', labelsize=14)
                     ax[0, 1].legend()
+                    ax[0, 1].set_title(r'S^{(2)}_z(\omega)')
 
                     c = ax[0, 2].plot(self.f_list[2],
                                       (self.s_list[2] - fit_list[2]) / self.s_list[2],
@@ -517,6 +519,7 @@ class FitSystem:
                     ax[0, 2].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
                     ax[0, 2].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
                     ax[0, 2].tick_params(axis='both', direction='in', labelsize=14)
+                    ax[0, 2].set_title(r'rel. err. and fit deviation in S^{(2)}_z(\omega)')
                     ax[0, 2].legend()
 
             # ---------- S3 and S4 ------------
@@ -611,14 +614,16 @@ class FitSystem:
                                                                    arcsinh_const=0.002,
                                                                    order=i,
                                                                    s_err=(
-                                                                       np.diag(
-                                                                           self.s_list[i])).copy() + sigma * np.diag(
+                                                                             np.diag(
+                                                                                 self.s_list[
+                                                                                     i])).copy() + sigma * np.diag(
                                                                        self.err_list[i]).copy())
                             _, s_err_diag_n = arcsinh_scaling(s_data=(np.diag(self.s_list[i])).copy(),
                                                               arcsinh_const=0.002,
                                                               order=i,
                                                               s_err=(
-                                                                  np.diag(self.s_list[i])).copy() - sigma * np.diag(
+                                                                        np.diag(
+                                                                            self.s_list[i])).copy() - sigma * np.diag(
                                                                   self.err_list[i]).copy())
                             _, fit_diag = arcsinh_scaling(s_data=(np.diag(self.s_list[i])).copy(),
                                                           arcsinh_const=0.002,

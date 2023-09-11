@@ -458,8 +458,8 @@ class FitSystem:
             gs2 = gridspec.GridSpec(1, 3, figure=fig, width_ratios=[1, 1, 1])
 
             # Place them at the same vertical positions
-            gs1.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, bottom=0.35)
-            gs2.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, top=0.34)
+            gs1.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, bottom=0.40)
+            gs2.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, top=0.35)
 
             # Create the list of axes
             ax_list = [plt.subplot(gs) for gs in [*gs1, *gs2]]

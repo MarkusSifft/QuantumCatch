@@ -140,7 +140,6 @@ class FitSystem:
     def objective(self, params):
 
         resid = []
-        print('fit starts')
         fit_list = {1: [], 2: [], 3: [], 4: []}
 
         for i, order in enumerate(self.fit_orders):
@@ -158,10 +157,7 @@ class FitSystem:
         else:
             out = np.concatenate(resid)
 
-        print('true_iter_count in objective', self.true_iter_count, 'condition:',
-              (self.true_iter_count + 1) % self.num_params)
         if (self.true_iter_count + 1) % self.num_params == 0:
-            print('-----fint gets appended-----')
             self.fit_list_array.append(fit_list)
 
         return out
@@ -463,7 +459,6 @@ class FitSystem:
 
             cmap = colors.LinearSegmentedColormap.from_list('', [[0.1, 0.1, 0.8], [0.97, 0.97, 0.97], [1, 0.1, 0.1]])
 
-            print('in in plot:', i - 1, 'len(self.fit_list_array):', len(self.fit_list_array))
             fit_list = self.fit_list_array[i - 1]
 
             # ---------- S1 ------------

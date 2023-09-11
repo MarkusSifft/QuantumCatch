@@ -468,6 +468,9 @@ class FitSystem:
                 print('fit:', fit_list[1])
                 print('relative error:', (self.s_list[1][0] - fit_list[1]) / self.s_list[1][0])
 
+                ax[2,0].errorbar(1, self.s_list[1][0], sigma * self.err_list[1][0])
+                ax[2, 0].plot(1, fit_list[1], 'o')
+
             # ---------- S2 ------------
             if fit_list[2] is not None:
                 c = ax[0, 0].plot(self.f_list[2], self.s_list[2], lw=3,

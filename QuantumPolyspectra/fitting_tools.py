@@ -523,6 +523,8 @@ class FitSystem:
 
                 if fit_list[i] is not None and i > 2:
 
+                    print(fit_list[i])
+
                     if fit_list[i].shape[0] > 0:
                         j = i - 2
 

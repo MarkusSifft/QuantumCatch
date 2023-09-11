@@ -196,6 +196,15 @@ class FitSystem:
                      fit_orders=(1, 2, 3, 4), show_plot=True,
                      xtol=1e-6, ftol=1e-6, max_nfev=500, general_weight=(2, 2, 1, 1)):
 
+        # Check if start_order is an integer
+        if not isinstance(start_order, int):
+            raise ValueError("start_order must be an integer.")
+
+        # Check if start_order is smaller than the largest number in fit_orders
+        if start_order >= max(fit_orders):
+            raise ValueError(f"start_order must be smaller than the largest number in fit_orders. "
+                             f"The largest number in fit_orders is {max(fit_orders)}.")
+
         self.measurement_spec = load_spec(path)
         self.show_plot = show_plot
         self.general_weight = general_weight

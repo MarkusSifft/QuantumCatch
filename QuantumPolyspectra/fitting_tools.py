@@ -473,7 +473,7 @@ class FitSystem:
                 ax[2,0].set_ylabel(r"$S^{(1)}_z$", fontdict={'fontsize': 15})
                 ax[2,0].set_xticks([])
                 ax[2,0].legend()
-                ax[2, 0].set_xlim([0.9,1.9])
+                ax[2, 0].set_xlim([0.9,1.5])
 
             # ---------- S2 ------------
             if fit_list[2] is not None:

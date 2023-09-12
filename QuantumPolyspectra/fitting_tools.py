@@ -358,7 +358,7 @@ class FitSystem:
         else:
             print('Parameter fit_order must be: (order_wise, resolution_wise)')
 
-        return result, self.measurement_spec, self.f_list
+        return result
 
     def update_real_time(self, i, params):
         self.display_params(params, self.initial_params)
@@ -401,20 +401,20 @@ class FitSystem:
                 ) for k, v in params.items()
             ])
 
-    def save_fit(self, spec, path, f_list, out):
+    def save_fit(self, path, out):
         fit_list = {1: None, 2: None, 3: None, 4: None}
         for i in range(1, 5):
-            fit_list[i] = self.calc_spec(out.params, i, f_list[i])
+            fit_list[i] = self.calc_spec(out.params, i, self.f_list[i])
 
         for i in range(1, 5):
-            spec.S[i] = fit_list[i]
-            spec.freq[i] = f_list[i]
-            spec.S_err[i] = None
+            self.measurement_spec.S[i] = fit_list[i]
+            self.measurement_spec.freq[i] = self.f_list[i]
+            self.measurement_spec.S_err[i] = None
 
-        spec.params = out.params
-        spec.out = out
+        self.measurement_spec.params = out.params
+        self.measurement_spec.out = out
 
-        spec.save_spec(path)
+        self.measurement_spec.save_spec(path)
 
     # def plot_fit(self, params, iter_, resid):
     #
@@ -487,7 +487,7 @@ class FitSystem:
                 ax[0, 0].set_ylabel(r"$S^{(1)}_z$", fontdict={'fontsize': 15})
                 ax[0, 0].set_xticks([])
                 ax[0, 0].legend()
-                ax[0, 0].set_title(r'S^{(1)}_z')
+                ax[0, 0].set_title(r'$S^{(1)}_z$')
                 ax[0, 0].tick_params(axis='both', direction='in', labelsize=14)
                 ax[0, 0].set_xlim([0.9, 1.5])
 
@@ -504,7 +504,7 @@ class FitSystem:
 
                     ax[0, 1].tick_params(axis='both', direction='in', labelsize=14)
                     ax[0, 1].legend()
-                    ax[0, 1].set_title(r'S^{(2)}_z(\omega)')
+                    ax[0, 1].set_title(r'$S^{(2)}_z(\omega)$')
 
                     c = ax[0, 2].plot(self.f_list[2],
                                       (self.s_list[2] - fit_list[2]) / self.s_list[2],
@@ -519,7 +519,7 @@ class FitSystem:
                     ax[0, 2].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
                     ax[0, 2].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
                     ax[0, 2].tick_params(axis='both', direction='in', labelsize=14)
-                    ax[0, 2].set_title(r'rel. err. and fit deviation in S^{(2)}_z(\omega)')
+                    ax[0, 2].set_title(r'rel. err. and fit deviation in $S^{(2)}_z(\omega)$')
                     ax[0, 2].legend()
 
             # ---------- S3 and S4 ------------
@@ -559,7 +559,6 @@ class FitSystem:
 
                         relative_fit_err = gaussian_filter(
                             (self.s_list[i] - fit_list[i]) / self.s_list[i], 0)
-                        relative_fit_err = relative_fit_err
 
                         green_alpha = 1
                         color_array = np.array([[0., 0., 0., 0.], [0., 0.5, 0., green_alpha]])

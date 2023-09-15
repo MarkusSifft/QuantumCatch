@@ -30,6 +30,7 @@
 #    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 ###############################################################################
 
 
@@ -660,14 +661,14 @@ class FitSystem:
                                           color='tab:orange', label='fit diag.')
 
                         ax[j, 2].fill_between(self.f_list[i], s_err_axis_p,
-                                              s_err_axis_n, color='tab:blue', alpha=0.2)
-                        ax[j, 2].plot(self.f_list[i], s_err_axis_p, 'k', alpha=0.5)
-                        ax[j, 2].plot(self.f_list[i], s_err_axis_n, 'k', alpha=0.5)
+                                              s_err_axis_n, color='tab:blue', alpha=0.1)
+                        ax[j, 2].plot(self.f_list[i], s_err_axis_p, 'k', alpha=0.1)
+                        ax[j, 2].plot(self.f_list[i], s_err_axis_n, 'k', alpha=0.1)
 
                         ax[j, 2].fill_between(self.f_list[i], s_err_diag_p,
-                                              s_err_diag_n, color='tab:orange', alpha=0.2)
-                        ax[j, 2].plot(self.f_list[i], s_err_diag_p, 'k', alpha=0.5)
-                        ax[j, 2].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.5)
+                                              s_err_diag_n, color='tab:orange', alpha=0.1)
+                        ax[j, 2].plot(self.f_list[i], s_err_diag_p, 'k', alpha=0.1)
+                        ax[j, 2].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.1)
 
                         ax[j, 2].set_ylabel(r"arcsinh scaled values", fontdict={'fontsize': 15})
                         ax[j, 2].set_xlabel(r"$\omega_1/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})

@@ -57,9 +57,6 @@ import pickle
 import arrayfire as af
 from arrayfire.interop import from_ndarray as to_gpu
 
-from signalsnap.spectrum_calculator import SpectrumCalculator
-
-
 #  from pympler import asizeof
 
 

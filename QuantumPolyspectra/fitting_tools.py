@@ -645,7 +645,7 @@ class FitSystem:
                         c = ax[j, 2].plot(self.f_list[i],
                                           s_axis, '-',
                                           lw=2,
-                                          color='tab:blue', label='meas. axis')
+                                          color='tab:blue', label='meas. axis', alpha=0.7)
                         c = ax[j, 2].plot(self.f_list[i],
                                           fit_axis, '--',
                                           lw=2,
@@ -654,7 +654,7 @@ class FitSystem:
                         c = ax[j, 2].plot(self.f_list[i],
                                           s_diag, '-',
                                           lw=2,
-                                          color='tab:orange', label='meas. diag.')
+                                          color='tab:orange', label='meas. diag.', alpha=0.7)
                         c = ax[j, 2].plot(self.f_list[i],
                                           fit_diag, '--',
                                           lw=2,

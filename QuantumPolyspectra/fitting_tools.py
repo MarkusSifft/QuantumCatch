@@ -71,11 +71,7 @@ class FitSystem:
         self.huber_loss = huber_loss
         self.huber_delta = huber_delta
 
-    def s1(self, params):
-
-        system, sc_ops, measure_strength = self.set_system(params)
-
-        A = calc_super_A(sc_ops[self.m_op].full())
+    def s1(self, system, A):
 
         spec = system.calc_spectrum(np.array([0]), order=1, mathcal_a=A, g_prim=False, measure_op=self.m_op,
                                     enable_gpu=False,
@@ -83,11 +79,7 @@ class FitSystem:
 
         return np.real(spec)
 
-    def s2(self, params, omegas):
-
-        system, sc_ops, measure_strength = self.set_system(params)
-
-        A = calc_super_A(sc_ops[self.m_op].full())
+    def s2(self, params, system, A, omegas):
 
         spec = system.calc_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op,
                                     beta_offset=self.beta_offset, enable_gpu=False, bar=False, verbose=False)
@@ -97,38 +89,30 @@ class FitSystem:
         else:
             return np.real(spec) + params['c']
 
-    def s3(self, params, omegas):
-
-        system, sc_ops, measure_strength = self.set_system(params)
-
-        A = calc_super_A(sc_ops[self.m_op].full())
+    def s3(self, system, A, omegas):
 
         spec = system.calc_spectrum(omegas, order=3, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=False,
                                     bar=False, verbose=False)
 
         return np.real(spec)
 
-    def s4(self, params, omegas):
-
-        system, sc_ops, measure_strength = self.set_system(params)
-
-        A = calc_super_A(sc_ops[self.m_op].full())
+    def s4(self, system, A, omegas):
 
         spec = system.calc_spectrum(omegas, order=4, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=False,
                                     bar=False, verbose=False)
 
         return np.real(spec)
 
-    def calc_spec(self, lmfit_params, order, fs=None):
+    def calc_spec(self, system, A, lmfit_params, order, fs=None):
 
         if order == 1:
-            out = self.s1(lmfit_params)
+            out = self.s1(system, A)
         elif order == 2:
-            out = self.s2(lmfit_params, fs)
+            out = self.s2(lmfit_params, system, A, fs)
         elif order == 3:
-            out = self.s3(lmfit_params, fs)
+            out = self.s3(system, A, fs)
         else:
-            out = self.s4(lmfit_params, fs)
+            out = self.s4(system, A, fs)
 
         return out
 
@@ -140,13 +124,16 @@ class FitSystem:
 
     def objective(self, params):
 
+        system, sc_ops, measure_strength = self.set_system(params)
+        A = calc_super_A(sc_ops[self.m_op].full())
+
         resid = []
         fit_list = {1: [], 2: [], 3: [], 4: []}
 
         for i, order in enumerate(self.fit_orders):
             # resid.append(((s_list[i] - calc_spec(params, order, f_list[i]))).flatten()/ np.abs(s_list[i]).max())
 
-            fit_list[order] = self.calc_spec(params, order, self.f_list[order])
+            fit_list[order] = self.calc_spec(system, A, params, order, self.f_list[order])
 
             resid.append(
                 np.abs(((self.s_list[order] - fit_list[order]) * self.general_weight[

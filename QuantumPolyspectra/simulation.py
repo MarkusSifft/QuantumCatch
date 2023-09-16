@@ -141,12 +141,10 @@ def calc_super_A(op):
     return op_super
 
 
-# @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
-# @numba.jit(nopython=True)  # 25% speedup
 @cached(cache=cache_dict['cache_fourier_g_prim'],
         key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
             nu))
-def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
+def _fourier_g_prim_gpu(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
 
@@ -173,33 +171,65 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
         Fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
     """
 
-    if enable_gpu:
-        small_indices = np.abs(eigvals.to_ndarray()) < 1e-12
-        if sum(small_indices) > 1:
-            raise ValueError(f'There are {sum(small_indices)} eigenvalues smaller than 1e-12. '
-                             f'The Liouvilian might have multiple steady states.')
+    small_indices = np.abs(eigvals.to_ndarray()) < 1e-12
+    if sum(small_indices) > 1:
+        raise ValueError(f'There are {sum(small_indices)} eigenvalues smaller than 1e-12. '
+                         f'The Liouvilian might have multiple steady states.')
 
-        diagonal = 1 / (-eigvals - 1j * nu)
-        diagonal[zero_ind] = gpu_0  # 0
-        diag_mat = af.data.diag(diagonal, extract=False)
+    diagonal = 1 / (-eigvals - 1j * nu)
+    diagonal[zero_ind] = gpu_0  # 0
+    diag_mat = af.data.diag(diagonal, extract=False)
 
-        tmp = af.matmul(diag_mat, eigvecs_inv)
-        Fourier_G = af.matmul(eigvecs, tmp)
+    tmp = af.matmul(diag_mat, eigvecs_inv)
+    Fourier_G = af.matmul(eigvecs, tmp)
 
-    else:
-        small_indices = np.abs(eigvals) < 1e-12
-        if sum(small_indices) > 1:
-            raise ValueError(f'There are {sum(small_indices)} eigenvalues smaller than 1e-12. '
-                             f'The Liouvilian might have multiple steady states.')
+    return Fourier_G
 
-        # diagonal = 1 / (-eigvals - 1j * nu)
-        # diagonal[zero_ind] = 0
 
-        diagonal = np.zeros_like(eigvals)
-        diagonal[~small_indices] = 1 / (-eigvals[~small_indices] - 1j * nu)
-        diagonal[zero_ind] = 0
+@cached(cache=cache_dict['cache_fourier_g_prim'],
+        key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
+            nu))
+@njit(fastmath=True)
+def _fourier_g_prim_njit(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
+    """
+    Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
 
-        Fourier_G = eigvecs @ np.diag(diagonal) @ eigvecs_inv
+    Parameters
+    ----------
+    nu : float
+        The desired frequency
+    eigvecs : array
+        Eigenvectors of the Liouvillian
+    eigvals : array
+        Eigenvalues of the Liouvillian
+    eigvecs_inv : array
+        The inverse eigenvectors of the Liouvillian
+    enable_gpu : bool
+        Set if calculations should be performed on GPU
+    zero_ind : int
+        Index of steady state in \mathcal{G}
+    gpu_0 : int
+        Pointer to presaved zero on GPU. Avoids unnecessary transfers of zeros from CPU to GPU
+
+    Returns
+    -------
+    Fourier_G : array
+        Fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
+    """
+
+    small_indices = np.abs(eigvals) < 1e-12
+    if sum(small_indices) > 1:
+        raise ValueError(f'There are {sum(small_indices)} eigenvalues smaller than 1e-12. '
+                         f'The Liouvilian might have multiple steady states.')
+
+    # diagonal = 1 / (-eigvals - 1j * nu)
+    # diagonal[zero_ind] = 0
+
+    diagonal = np.zeros_like(eigvals)
+    diagonal[~small_indices] = 1 / (-eigvals[~small_indices] - 1j * nu)
+    diagonal[zero_ind] = 0
+
+    Fourier_G = eigvecs @ np.diag(diagonal) @ eigvecs_inv
 
     return Fourier_G
 
@@ -297,11 +327,12 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
         First matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
     """
 
-    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
     if enable_gpu:
+        G_prim = _fourier_g_prim_gpu(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
         rho_prim = af.matmul(G_prim, rho)
         out = af.matmul(a_prim, rho_prim)
     else:
+        G_prim = _fourier_g_prim_njit(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
 
@@ -346,11 +377,13 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
     """
 
     _ = omega2
-    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
+
     if enable_gpu:
+        G_prim = _fourier_g_prim_gpu(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
         rho_prim = af.matmul(G_prim, rho)
         out = af.matmul(a_prim, rho_prim)
     else:
+        G_prim = _fourier_g_prim_njit(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
 
@@ -394,11 +427,13 @@ def _third_matrix_step(rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eig
     """
     _ = omega2
     _ = omega3
-    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
+
     if enable_gpu:
+        G_prim = _fourier_g_prim_gpu(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
         rho_prim = af.matmul(G_prim, rho)
         out = af.matmul(a_prim, rho_prim)
     else:
+        G_prim = _fourier_g_prim_njit(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
 
@@ -435,11 +470,13 @@ def _matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, 
     out : array
         output of one matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143
     """
-    G_prim = _fourier_g_prim(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
+
     if enable_gpu:
+        G_prim = _fourier_g_prim_gpu(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
         rho_prim = af.matmul(G_prim, rho)
         out = af.matmul(a_prim, rho_prim)
     else:
+        G_prim = _fourier_g_prim_njit(omega, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0)
         rho_prim = G_prim @ rho
         out = a_prim @ rho_prim
     return out
@@ -1138,11 +1175,11 @@ class System:  # (SpectrumCalculator):
 
         pickle_save(path, self)
 
-    def fourier_g_prim(self, omega):
-        """
-        Helper method to move function out of the class. njit is not working within classes
-        """
-        return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)
+    #def fourier_g_prim(self, omega):
+    #    """
+    #    Helper method to move function out of the class. njit is not working within classes
+    #    """
+    #    return _fourier_g_prim(omega, self.eigvecs, self.eigvals, self.eigvecs_inv)
 
     def g_prim(self, t):
         """

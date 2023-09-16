@@ -143,9 +143,9 @@ def calc_super_A(op):
 
 # @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-#@cached(cache=cache_dict['cache_fourier_g_prim'],
-#        key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
-#            nu))
+@cached(cache=cache_dict['cache_fourier_g_prim'],
+        key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
+            nu))
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
@@ -264,8 +264,8 @@ def _g_prim(t, eigvecs, eigvals, eigvecs_inv):
     return G_prim
 
 
-#@cached(cache=cache_dict['cache_first_matrix_step'],
-#        key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
+@cached(cache=cache_dict['cache_first_matrix_step'],
+        key=lambda rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(omega))
 def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates first matrix multiplication in Eqs. 110-111 in 10.1103/PhysRevB.98.205143. Used
@@ -309,9 +309,9 @@ def _first_matrix_step(rho, omega, a_prim, eigvecs, eigvals, eigvecs_inv, enable
 
 
 # ------ can be cached for large systems --------
-#@cached(cache=cache_dict['cache_second_matrix_step'],
-#        key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
-#            omega, omega2))
+@cached(cache=cache_dict['cache_second_matrix_step'],
+        key=lambda rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
+            omega, omega2))
 def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used
@@ -357,9 +357,9 @@ def _second_matrix_step(rho, omega, omega2, a_prim, eigvecs, eigvals, eigvecs_in
     return out
 
 
-#@cached(cache=cache_dict['cache_third_matrix_step'],
-#        key=lambda rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind,
-#                   gpu_0: hashkey(omega, omega2))
+@cached(cache=cache_dict['cache_third_matrix_step'],
+        key=lambda rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind,
+                   gpu_0: hashkey(omega, omega2))
 def _third_matrix_step(rho, omega, omega2, omega3, a_prim, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates second matrix multiplication in Eqs. 110 in 10.1103/PhysRevB.98.205143. Used
@@ -582,8 +582,8 @@ def second_term_gpu(omega1, omega2, omega3, s_k, eigvals):
     return out_sum
 
 
-#@cached(cache=cache_dict['cache_second_term'],
-#        key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache_dict['cache_second_term'],
+        key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     For the calculation of the erratum correction terms of the S4.
@@ -690,8 +690,8 @@ def third_term_gpu(omega1, omega2, omega3, s_k, eigvals):
 
 
 # @njit(fastmath=True)
-#@cached(cache=cache_dict['cache_third_term'],
-#        key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
+@cached(cache=cache_dict['cache_third_term'],
+        key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     """
     For the calculation of the erratum correction terms of the S4.
@@ -1474,7 +1474,7 @@ class System:  # (SpectrumCalculator):
             # self.S[order] = np.real(_full_trispec(spec_data)) * beta ** 8
             self.S[order] = _full_trispec(spec_data) * beta ** 8
 
-        #clear_cache_dict()
+        clear_cache_dict()
         return self.S[order]
 
     def plot_all(self, f_max=None):

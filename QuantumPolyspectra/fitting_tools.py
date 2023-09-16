@@ -391,8 +391,11 @@ class FitSystem:
 
     def save_fit(self, path, out):
         fit_list = {1: None, 2: None, 3: None, 4: None}
+        system, sc_ops, measure_strength = self.set_system(out.params)
+        A = calc_super_A(sc_ops[self.m_op].full())
+
         for i in range(1, 5):
-            fit_list[i] = self.calc_spec(out.params, i, self.f_list[i])
+            fit_list[i] = self.calc_spec(system, A, out.params, i, fs=self.f_list[i])
 
         for i in range(1, 5):
             self.measurement_spec.S[i] = fit_list[i]
@@ -401,7 +404,6 @@ class FitSystem:
 
         self.measurement_spec.params = out.params
         self.measurement_spec.out = out
-
         self.measurement_spec.save_spec(path)
 
     # def plot_fit(self, params, iter_, resid):

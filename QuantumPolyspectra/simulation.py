@@ -57,6 +57,7 @@ import pickle
 import arrayfire as af
 from arrayfire.interop import from_ndarray as to_gpu
 
+
 #  from pympler import asizeof
 
 
@@ -95,6 +96,7 @@ cache_dict = {'cache_fourier_g_prim': LRUCache(maxsize=initial_max_cache_size),
 def clear_cache_dict():
     for key in cache_dict.keys():
         cache_dict[key].clear()
+
 
 # Function to get available GPU memory in bytes
 def get_free_gpu_memory():
@@ -141,8 +143,9 @@ def calc_super_A(op):
 
 # @cached(cache_fourier_g_prim=cache_fourier_g_prim, key=lambda nu, eigvecs, eigvals, eigvecs_inv: hashkey(nu))  # eigvecs change with magnetic field
 # @numba.jit(nopython=True)  # 25% speedup
-@cached(cache=cache_dict['cache_fourier_g_prim'], key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
-    nu))
+@cached(cache=cache_dict['cache_fourier_g_prim'],
+        key=lambda nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0: hashkey(
+            nu))
 def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu_0):
     """
     Calculates the fourier transform of \mathcal{G'} as defined in 10.1103/PhysRevB.98.205143
@@ -189,8 +192,8 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
             raise ValueError(f'There are {sum(small_indices)} eigenvalues smaller than 1e-12. '
                              f'The Liouvilian might have multiple steady states.')
 
-        #diagonal = 1 / (-eigvals - 1j * nu)
-        #diagonal[zero_ind] = 0
+        # diagonal = 1 / (-eigvals - 1j * nu)
+        # diagonal[zero_ind] = 0
 
         diagonal = np.zeros_like(eigvals)
         diagonal[~small_indices] = 1 / (-eigvals[~small_indices] - 1j * nu)
@@ -202,7 +205,6 @@ def _fourier_g_prim(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind, gpu
 
 
 def update_cache_size(cachename, out, enable_gpu):
-
     cache = cache_dict[cachename]
 
     if cache.maxsize == 1:
@@ -504,7 +506,82 @@ def small_s(rho_steady, a_prim, eigvecs, eigvec_inv, reshape_ind, enable_gpu, ze
     return s_k
 
 
-#  @njit(fastmath=True)
+@njit(fastmath=True)
+def second_term_njit(omega1, omega2, omega3, s_k, eigvals):
+    """
+    For the calculation of the erratum correction terms of the S4.
+    Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+
+    Parameters
+    ----------
+    omega1 : float
+        Frequency of interest
+    omega2 : float
+        Frequency of interest
+    omega3 : float
+        Frequency of interest
+    s_k : array
+        Array calculated with :func:small_s
+    eigvals : array
+        Eigenvalues of the Liouvillian
+
+    Returns
+    -------
+    out_sum : array
+        Second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+    """
+    nu1 = omega1 + omega2 + omega3
+    nu2 = omega2 + omega3
+    nu3 = omega3
+
+    out_sum = 0
+    iterator = np.array(list(range(len(s_k))))
+    iterator = iterator[np.abs(s_k) > 1e-10 * np.max(np.abs(s_k))]
+
+    for k in iterator:
+        for l in iterator:
+            out_sum += s_k[k] * s_k[l] * 1 / ((eigvals[l] + 1j * nu1) * (eigvals[k] + 1j * nu3)
+                                              * (eigvals[k] + eigvals[l] + 1j * nu2))
+
+    return out_sum
+
+
+def second_term_gpu(omega1, omega2, omega3, s_k, eigvals):
+    """
+    For the calculation of the erratum correction terms of the S4.
+    Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+
+    Parameters
+    ----------
+    omega1 : float
+        Frequency of interest
+    omega2 : float
+        Frequency of interest
+    omega3 : float
+        Frequency of interest
+    s_k : array
+        Array calculated with :func:small_s
+    eigvals : array
+        Eigenvalues of the Liouvillian
+
+    Returns
+    -------
+    out_sum : array
+        Second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+    """
+    nu1 = omega1 + omega2 + omega3
+    nu2 = omega2 + omega3
+    nu3 = omega3
+
+    temp1 = af.matmulNT(s_k, s_k)
+    temp2 = af.matmulNT(eigvals + 1j * nu1, eigvals + 1j * nu3)
+    temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
+    out = temp1 * 1 / (temp2 * temp3)
+    out_sum = af.algorithm.sum(af.algorithm.sum(out, dim=0), dim=1)
+
+    return out_sum
+
+
 @cached(cache=cache_dict['cache_second_term'],
         key=lambda omega1, omega2, omega3, s_k, eigvals, enable_gpu: hashkey(omega1, omega2, omega3))
 def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
@@ -532,43 +609,84 @@ def second_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     out_sum : array
         Second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
     """
+    if enable_gpu:
+        return second_term_gpu(omega1, omega2, omega3, s_k, eigvals)
+    else:
+        return second_term_njit(omega1, omega2, omega3, s_k, eigvals)
 
+
+@njit(fastmath=True)
+def third_term_njit(omega1, omega2, omega3, s_k, eigvals):
+    """
+    For the calculation of the erratum correction terms of the S4.
+    Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+
+    Parameters
+    ----------
+    omega1 : float
+        Frequency of interest
+    omega2 : float
+        Frequency of interest
+    omega3 : float
+        Frequency of interest
+    s_k : array
+        Array calculated with :func:small_s
+    eigvals : array
+        Eigenvalues of the Liouvillian
+
+    Returns
+    -------
+    out_sum : array
+        Third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+    """
+    out = 0
+    nu1 = omega1 + omega2 + omega3
+    nu2 = omega2 + omega3
+    nu3 = omega3
+    iterator = np.array(list(range(len(s_k))))
+    iterator = iterator[np.abs(s_k) > 1e-10 * np.max(np.abs(s_k))]
+
+    for k in iterator:
+        for l in iterator:
+            out += s_k[k] * s_k[l] * 1 / ((eigvals[k] + 1j * nu1) * (eigvals[k] + 1j * nu3)
+                                          * (eigvals[k] + eigvals[l] + 1j * nu2))
+    return out
+
+
+def third_term_gpu(omega1, omega2, omega3, s_k, eigvals):
+    """
+    For the calculation of the erratum correction terms of the S4.
+    Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+
+    Parameters
+    ----------
+    omega1 : float
+        Frequency of interest
+    omega2 : float
+        Frequency of interest
+    omega3 : float
+        Frequency of interest
+    s_k : array
+        Array calculated with :func:small_s
+    eigvals : array
+        Eigenvalues of the Liouvillian
+
+    Returns
+    -------
+    out_sum : array
+        Third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
+    """
     nu1 = omega1 + omega2 + omega3
     nu2 = omega2 + omega3
     nu3 = omega3
 
-    # zero_ind = np.argmax(np.real(eigvals))
-    # iterator = list(range(len(s_k)))
-    # iterator.remove(zero_ind)
-
-    # if enable_gpu:
-    #    inner_iterator = af.ParallelRange(len(s_k))
-    # else:
-    #    inner_iterator = np.array(list(range(len(s_k))))
-    #    inner_iterator = inner_iterator[np.abs(s_k) > 1e-10 * np.max(np.abs(s_k))]
-
-    if enable_gpu:
-        # ones = to_gpu(np.ones_like(s_k.to_ndarray()))
-        # ones = af.constant(1, eigvals.shape[0], dtype=af.Dtype.c64)
-        temp1 = af.matmulNT(s_k, s_k)
-        temp2 = af.matmulNT(eigvals + 1j * nu1, eigvals + 1j * nu3)
-        # temp3 = af.matmulNT(eigvals, ones) + af.matmulNT(ones, eigvals) + 1j * nu2
-        temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
-        out = temp1 * 1 / (temp2 * temp3)
-        # out_sum = af.algorithm.sum(af.algorithm.sum(af.data.moddims(out, d0=eigvals.shape[0], d1=eigvals.shape[0], d2=1, d3=1), dim=0), dim=1)
-        out_sum = af.algorithm.sum(af.algorithm.sum(out, dim=0), dim=1)
-
-    else:
-        out_sum = 0
-        iterator = np.array(list(range(len(s_k))))
-        iterator = iterator[np.abs(s_k) > 1e-10 * np.max(np.abs(s_k))]
-
-        for k in iterator:
-            for l in iterator:
-                out_sum += s_k[k] * s_k[l] * 1 / ((eigvals[l] + 1j * nu1) * (eigvals[k] + 1j * nu3)
-                                                  * (eigvals[k] + eigvals[l] + 1j * nu2))
-
-    return out_sum
+    temp1 = af.matmulNT(s_k, s_k)
+    temp2 = af.tile((eigvals + 1j * nu1) * (eigvals + 1j * nu3), 1, eigvals.shape[0])
+    temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
+    out = temp1 * 1 / (temp2 * temp3)
+    out = af.algorithm.sum(
+        af.algorithm.sum(af.data.moddims(out, d0=eigvals.shape[0], d1=eigvals.shape[0], d2=1, d3=1), dim=0), dim=1)
+    return out
 
 
 # @njit(fastmath=True)
@@ -599,40 +717,10 @@ def third_term(omega1, omega2, omega3, s_k, eigvals, enable_gpu):
     out_sum : array
         Third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.
     """
-
-    out = 0
-    nu1 = omega1 + omega2 + omega3
-    nu2 = omega2 + omega3
-    nu3 = omega3
-
-    # zero_ind = np.argmax(np.real(eigvals))
-    # iterator = list(range(len(s_k)))
-    # iterator.remove(zero_ind)
-
     if enable_gpu:
-        # ones = to_gpu(np.ones_like(s_k.to_ndarray()))
-        temp1 = af.matmulNT(s_k, s_k)
-        # temp2 = af.matmulNT((eigvals + 1j * nu1)*(eigvals + 1j * nu3), ones)
-        temp2 = af.tile((eigvals + 1j * nu1) * (eigvals + 1j * nu3), 1, eigvals.shape[0])
-
-        # temp3 = af.matmulNT(eigvals, ones) + af.matmulNT(ones, eigvals) + 1j * nu2
-        temp3 = af.tile(eigvals, 1, eigvals.shape[0]) + af.tile(eigvals.T, eigvals.shape[0]) + 1j * nu2
-
-        out = temp1 * 1 / (temp2 * temp3)
-        out = af.algorithm.sum(
-            af.algorithm.sum(af.data.moddims(out, d0=eigvals.shape[0], d1=eigvals.shape[0], d2=1, d3=1), dim=0), dim=1)
-        # out = af.data.moddims(out, d0=1, d1=1, d2=out.shape[0], d3=out.shape[1])
-
+        return third_term_gpu(omega1, omega2, omega3, s_k, eigvals)
     else:
-        iterator = np.array(list(range(len(s_k))))
-        iterator = iterator[np.abs(s_k) > 1e-10 * np.max(np.abs(s_k))]
-
-        for k in iterator:
-            for l in iterator:
-                out += s_k[k] * s_k[l] * 1 / ((eigvals[k] + 1j * nu1) * (eigvals[k] + 1j * nu3)
-                                              * (eigvals[k] + eigvals[l] + 1j * nu2))
-
-    return out
+        return third_term_njit(omega1, omega2, omega3, s_k, eigvals)
 
 
 # ------- Hepler functions ----------
@@ -898,7 +986,7 @@ def pickle_save(path, obj):
     f.close()
 
 
-class System: # (SpectrumCalculator):
+class System:  # (SpectrumCalculator):
     """
     Class that will represent the system of interest. It contains the parameters of the system and the
     methods for calculating and storing the polyspectra.
@@ -992,7 +1080,7 @@ class System: # (SpectrumCalculator):
 
     def __init__(self, h, psi_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength):
 
-        #super().__init__(None)
+        # super().__init__(None)
         self.H = h
         self.L = None
         self.psi_0 = psi_0
@@ -1373,7 +1461,6 @@ class System: # (SpectrumCalculator):
                         if not enable_gpu:
                             spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum + trace_sum
                             spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum + trace_sum
-
 
             if enable_gpu:
                 spec_data = af.algorithm.sum(rho_prim_sum, dim=2).to_ndarray()

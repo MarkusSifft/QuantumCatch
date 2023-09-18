@@ -1458,8 +1458,8 @@ class System:  # (SpectrumCalculator):
                     if correction_only:
 
                         for omega in perms:
-                            second_term_sum += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals)
-                            third_term_sum += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals)
+                            second_term_sum += second_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
+                            third_term_sum += third_term(omega[1], omega[2], omega[3], s_k, self.eigvals, enable_gpu)
 
                         spec_data[ind_1, ind_2 + ind_1] = second_term_sum + third_term_sum
                         spec_data[ind_2 + ind_1, ind_1] = second_term_sum + third_term_sum

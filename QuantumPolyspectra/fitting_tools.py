@@ -378,13 +378,13 @@ class FitSystem:
     def display_params(self, params, initial_params, errors=None):
         if errors is None:
             self.param_text.value = "<h3>Current Parameters:</h3>" + ''.join([
-                '<b>{}</b>: {:.7e} (Initial: {:.3f}, Limits: {} to {})<br>'.format(
+                '<b>{}</b>: {:.7e} (Initial: {:.3e}, Limits: {} to {})<br>'.format(
                     k, v, initial_params[k].value, initial_params[k].min, initial_params[k].max
                 ) for k, v in params.items()
             ])
         else:
             self.param_text.value = "<h3>Final Parameters:</h3>" + ''.join([
-                '<b>{}</b>: {:.7e} ± {} (Initial: {:.3f}, Limits: {} to {})<br>'.format(
+                '<b>{}</b>: {:.7e} ± {} (Initial: {:.3e}, Limits: {} to {})<br>'.format(
                     k, v, "{:.7e}".format(errors[k]) if errors[k] is not None else "N/A",
                     initial_params[k].value, initial_params[k].min, initial_params[k].max
                 ) for k, v in params.items()

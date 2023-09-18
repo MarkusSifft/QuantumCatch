@@ -1357,7 +1357,7 @@ class System:  # (SpectrumCalculator):
                 print('Calculating first order')
             if enable_gpu:
                 rho = af.matmul(mathcal_a, self.rho_steady)
-                self.S[order] = beta ** 2 * af.algorithm.sum(rho[reshape_ind]) # .to_ndarray()
+                self.S[order] = beta ** 2 * af.algorithm.sum(rho[reshape_ind])  # .to_ndarray()
             else:
                 rho = mathcal_a @ self.rho_steady
                 self.S[order] = beta ** 2 * rho[reshape_ind].sum()

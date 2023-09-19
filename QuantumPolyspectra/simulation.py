@@ -54,6 +54,9 @@ from tqdm import tqdm_notebook
 from IPython.display import clear_output
 import pickle
 
+from signalsnap.spectrum_plotter import SpectrumPlotter
+from signalsnap.plot_config import PlotConfig
+
 import arrayfire as af
 from arrayfire.interop import from_ndarray as to_gpu
 
@@ -1207,7 +1210,20 @@ class System:  # (SpectrumCalculator):
         """
         return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
                             self.enable_gpu, self.zero_ind, self.gpu_0)
+    def plot(self, plot_orders=(2, 3, 4)):
+        config = PlotConfig(plot_orders=plot_orders, s2_f=self.freq[2], s2_data=self.S[2], s3_f=self.freq[3],
+                            s3_data=self.S[3], s4_f=self.freq[4], s4_data=self.S[4])
 
+        self.f_lists = {1: None, 2: None, 3: None, 4: None}
+        self.S_err = {1: None, 2: None, 3: None, 4: None}
+        self.config = config
+        self.config.f_unit = 'Hz'
+        plot = SpectrumPlotter(self, config)
+
+        if self.S[1] is not None:
+            print('s1:', self.S[1])
+        fig = plot.plot()
+        return fig
     def calculate_spectrum(self, f_data, order_in, measure_op=None, mathcal_a=None, g_prim=False, bar=True,
                            verbose=False,
                            beta=None, correction_only=False, beta_offset=True, enable_gpu=False, cache_trispec=True):

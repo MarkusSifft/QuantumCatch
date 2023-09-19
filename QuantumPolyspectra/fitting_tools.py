@@ -74,16 +74,16 @@ class FitSystem:
 
     def s1(self, system, A):
 
-        spec = system.calc_spectrum(np.array([0]), order=1, mathcal_a=A, g_prim=False, measure_op=self.m_op,
-                                    enable_gpu=self.enable_gpu,
-                                    bar=False, verbose=False)
+        spec = system.calculate_one_spectrum(np.array([0]), order=1, mathcal_a=A, g_prim=False, measure_op=self.m_op,
+                                             enable_gpu=self.enable_gpu,
+                                             bar=False, verbose=False)
 
         return np.real(spec)
 
     def s2(self, params, system, A, omegas):
 
-        spec = system.calc_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op,
-                                    beta_offset=self.beta_offset, enable_gpu=self.enable_gpu, bar=False, verbose=False)
+        spec = system.calculate_one_spectrum(omegas, order=2, mathcal_a=A, g_prim=False, measure_op=self.m_op,
+                                             beta_offset=self.beta_offset, enable_gpu=self.enable_gpu, bar=False, verbose=False)
 
         if isinstance(params, np.ndarray):
             return np.real(spec) + params[-1]
@@ -92,15 +92,15 @@ class FitSystem:
 
     def s3(self, system, A, omegas):
 
-        spec = system.calc_spectrum(omegas, order=3, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=self.enable_gpu,
-                                    bar=False, verbose=False)
+        spec = system.calculate_one_spectrum(omegas, order=3, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=self.enable_gpu,
+                                             bar=False, verbose=False)
 
         return np.real(spec)
 
     def s4(self, system, A, omegas):
 
-        spec = system.calc_spectrum(omegas, order=4, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=self.enable_gpu,
-                                    bar=False, verbose=False)
+        spec = system.calculate_one_spectrum(omegas, order=4, mathcal_a=A, g_prim=False, measure_op=self.m_op, enable_gpu=self.enable_gpu,
+                                             bar=False, verbose=False)
 
         return np.real(spec)
 

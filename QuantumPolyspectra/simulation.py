@@ -222,8 +222,8 @@ def _fourier_g_prim_njit(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind
         raise ValueError(f'There are {sum(small_indices)} eigenvalues smaller than 1e-12. '
                          f'The Liouvilian might have multiple steady states.')
 
-    #diagonal = 1 / (-eigvals - 1j * nu)
-    #diagonal[zero_ind] = 0
+    # diagonal = 1 / (-eigvals - 1j * nu)
+    # diagonal[zero_ind] = 0
 
     diagonal = np.zeros_like(eigvals)
     diagonal[~small_indices] = 1 / (-eigvals[~small_indices] - 1j * nu)
@@ -1175,7 +1175,7 @@ class System:  # (SpectrumCalculator):
 
         pickle_save(path, self)
 
-    #def fourier_g_prim(self, omega):
+    # def fourier_g_prim(self, omega):
     #    """
     #    Helper method to move function out of the class. njit is not working within classes
     #    """
@@ -1208,8 +1208,26 @@ class System:  # (SpectrumCalculator):
         return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
                             self.enable_gpu, self.zero_ind, self.gpu_0)
 
-    def calc_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True, verbose=False,
-                      beta=None, correction_only=False, beta_offset=True, enable_gpu=False, cache_trispec=True):
+    def calculate_spectrum(self, f_data, order_in, measure_op=None, mathcal_a=None, g_prim=False, bar=True,
+                           verbose=False,
+                           beta=None, correction_only=False, beta_offset=True, enable_gpu=False, cache_trispec=True):
+
+        if order_in == 'all':
+            orders = [1, 2, 3, 4]
+        else:
+            orders = order_in
+
+        for order in orders:
+            self.calculate_one_spectrum(f_data, order, measure_op=measure_op, mathcal_a=mathcal_a, g_prim=g_prim,
+                                        bar=bar,
+                                        verbose=verbose, beta=beta, correction_only=correction_only,
+                                        beta_offset=beta_offset,
+                                        enable_gpu=enable_gpu, cache_trispec=cache_trispec)
+
+    def calculate_one_spectrum(self, f_data, order, measure_op=None, mathcal_a=None, g_prim=False, bar=True,
+                               verbose=False,
+                               beta=None, correction_only=False, beta_offset=True, enable_gpu=False,
+                               cache_trispec=True):
         """
         Calculates analytic polyspectra (order 2 to 4) as described in 10.1103/PhysRevB.98.205143
         and 10.1103/PhysRevB.102.119901
@@ -1225,7 +1243,7 @@ class System:  # (SpectrumCalculator):
         mathcal_a : array
             Stores the measurement superoperator \mathcal{A} as defined in 10.1103/PhysRevB.98.205143
         g_prim : bool
-            Set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
+            !Depreciated! Set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
             But unnecessary for standard polyspectra
         bar : bool
             Set if progress bars should be shown during calculation
@@ -1345,12 +1363,12 @@ class System:  # (SpectrumCalculator):
             self.gpu_0 = 0
 
         # estimate necessary cachesize (TODO: Anteile könnten noch anders gewählt werden)
-        #update_cache_size('cache_fourier_g_prim', self.A_prim, enable_gpu)
-        #update_cache_size('cache_first_matrix_step', rho, enable_gpu)
-        #update_cache_size('cache_second_matrix_step', rho, enable_gpu)
-        #update_cache_size('cache_third_matrix_step', rho, enable_gpu)
-        #update_cache_size('cache_second_term', rho[0], enable_gpu)
-        #update_cache_size('cache_third_term', rho[0], enable_gpu)
+        # update_cache_size('cache_fourier_g_prim', self.A_prim, enable_gpu)
+        # update_cache_size('cache_first_matrix_step', rho, enable_gpu)
+        # update_cache_size('cache_second_matrix_step', rho, enable_gpu)
+        # update_cache_size('cache_third_matrix_step', rho, enable_gpu)
+        # update_cache_size('cache_second_term', rho[0], enable_gpu)
+        # update_cache_size('cache_third_term', rho[0], enable_gpu)
 
         if order == 1:
             if bar:

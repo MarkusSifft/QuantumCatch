@@ -1,4 +1,4 @@
-# This file is part of QuantumPolyspectra: a Python Package for the
+# This file is part of quantumcatch: a Python Package for the
 # Analysis and Simulation of Quantum Measurements
 #
 #    Copyright (c) 2011 and later, Paul D. Nation and Robert J. Johansson.
@@ -34,7 +34,7 @@
 ###############################################################################
 
 
-from QuantumPolyspectra.simulation import calc_super_A
+from quantumcatch.simulation import calc_super_A
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter

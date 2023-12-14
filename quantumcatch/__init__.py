@@ -1,4 +1,4 @@
-# This file is part of QuantumPolyspectra: a Python Package for the
+# This file is part of quantumcatch: a Python Package for the
 # Analysis and Simulation of Quantum Measurements
 #
 #    Copyright (c) 2011 and later, Paul D. Nation and Robert J. Johansson.
@@ -33,5 +33,5 @@
 ###############################################################################
 
 from signalsnap.spectrum_calculator import *
-from QuantumPolyspectra.simulation import *
-from QuantumPolyspectra.telegraph_noise_tools import *
+from quantumcatch.simulation import *
+from quantumcatch.telegraph_noise_tools import *

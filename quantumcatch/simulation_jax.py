@@ -1,4 +1,4 @@
-# This file is part of QuantumPolyspectra: a Python Package for the
+# This file is part of quantumcatch: a Python Package for the
 # Analysis and Simulation of Quantum Measurements
 #
 #    Copyright (c) 2011 and later, Paul D. Nation and Robert J. Johansson.
@@ -53,7 +53,7 @@ from cachetools.keys import hashkey
 from tqdm import tqdm_notebook
 from IPython.display import clear_output
 
-from QuantumPolyspectra.analysis import Spectrum
+from quantumcatch.analysis import Spectrum
 import jax.numpy as np
 from jax.numpy.linalg import inv, eig
 from jax import jit, partial

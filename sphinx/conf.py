@@ -13,12 +13,12 @@
 import os
 import sys
 #sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(0, os.path.abspath('QuantumPolyspectra/'))
+sys.path.insert(0, os.path.abspath('quantumcatch/'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'QuantumPolyspectra'
+project = 'quantumcatch'
 copyright = '2021, Markus Sifft, Daniel Hägele'
 author = 'Markus Sifft, Daniel Hägele'
 

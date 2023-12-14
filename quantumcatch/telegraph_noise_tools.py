@@ -1,4 +1,4 @@
-# This file is part of QuantumPolyspectra: a Python Package for the
+# This file is part of quantumcatch: a Python Package for the
 # Analysis and Simulation of Quantum Measurements
 #
 #    Copyright (c) 2011 and later, Paul D. Nation and Robert J. Johansson.
@@ -32,7 +32,7 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-from QuantumPolyspectra import SpectrumCalculator
+from quantumcatch import SpectrumCalculator
 from .fitting_tools import FitSystem
 import numpy as np
 import matplotlib.pyplot as plt

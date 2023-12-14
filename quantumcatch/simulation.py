@@ -1,4 +1,4 @@
-# This file is part of QuantumPolyspectra: a Python Package for the
+# This file is part of quantumcatch: a Python Package for the
 # Analysis and Simulation of Quantum Measurements
 #
 #    Copyright (c) 2020 and later, Markus Sifft and Daniel Hägele.

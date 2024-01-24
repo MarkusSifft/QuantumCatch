@@ -221,9 +221,9 @@ def _fourier_g_prim_njit(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind
     """
 
     small_indices = np.abs(eigvals) < 1e-12
-    if sum(small_indices) > 1:
-        raise ValueError(f'There are {sum(small_indices)} eigenvalues smaller than 1e-12. '
-                         f'The Liouvilian might have multiple steady states.')
+    #if sum(small_indices) > 1:
+    #    raise ValueError(f'There are {sum(small_indices)} eigenvalues smaller than 1e-12. '
+    #                     f'The Liouvilian might have multiple steady states.')
 
     # diagonal = 1 / (-eigvals - 1j * nu)
     # diagonal[zero_ind] = 0

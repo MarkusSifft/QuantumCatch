@@ -34,7 +34,7 @@
 ###############################################################################
 
 
-from quantumcatch.simulation import calc_super_A
+from src.quantumcatch.simulation import calc_super_A
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
@@ -43,7 +43,6 @@ import matplotlib.colors as colors
 from signalsnap.spectrum_calculator import load_spec
 from matplotlib.colors import LinearSegmentedColormap
 from ipywidgets import widgets
-import matplotlib.gridspec as gridspec
 
 try:
     __IPYTHON__

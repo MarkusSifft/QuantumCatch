@@ -221,7 +221,7 @@ def _fourier_g_prim_njit(nu, eigvecs, eigvals, eigvecs_inv, enable_gpu, zero_ind
     """
 
     small_indices = np.abs(eigvals) < 1e-12
-    #if sum(small_indices) > 1:
+    # if sum(small_indices) > 1:
     #    raise ValueError(f'There are {sum(small_indices)} eigenvalues smaller than 1e-12. '
     #                     f'The Liouvilian might have multiple steady states.')
 
@@ -870,30 +870,44 @@ def cgw(len_y):
 
 def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=None, filter_window=None):
     """
-    Helper function for easy plotting with plotly.
+    This function provides an easy interface for creating plots with Plotly. It allows for customization
+    of various aspects of the plot, including the title, axis labels, and legend.
 
     Parameters
     ----------
     x : array
+        The x-coordinates for the points in the plot.
+
     y : array
+        The y-coordinates for the points in the plot.
+
     title : str
-        Plot title
+        The title of the plot.
+
     domain : str ('freq', 'time')
-        Changes the plot style depending on input in frequency or time domain.
-    order : int (2, 3, 4)
-        Order of the spectrum to be shown.
-    y_label : str
-        Label of the y axis
-    x_label : str
-        Label of the x axis
-    legend : list
-        List of trace names for the legend.
-    filter_window : int
-        For noisy data the spectra can be convoluted with a gaussian of length filter_window
+        Specifies the domain of the data. This changes the plot style depending on whether the input
+        is in the frequency or time domain.
+
+    order : int (2, 3, 4), optional
+        The order of the spectrum to be shown. This can be 2, 3, or 4.
+
+    y_label : str, optional
+        The label for the y-axis.
+
+    x_label : str, optional
+        The label for the x-axis.
+
+    legend : list, optional
+        A list of trace names for the legend.
+
+    filter_window : int, optional
+        For noisy data, the spectra can be convoluted with a Gaussian of length filter_window. This can
+        help smooth out the noise and make the underlying signal more apparent.
 
     Returns
     -------
-    Returns the figure.
+    figure
+        The resulting Plotly figure. This can be displayed or saved using Plotly's built-in functions.
     """
     if domain == 'freq' and order == 2:
         fig = go.Figure(data=go.Scatter(x=x, y=y), layout_title_text=title)
@@ -933,22 +947,24 @@ def plotly(x, y, title, domain, order=None, y_label=None, x_label=None, legend=N
 @njit(cache=True)
 def calc_liou(rho_, h, c_ops_):
     """
-    Calculates the outcome of applying the Liouvillain to the density matrix. Use to calculated the
-    superoperator form of the Liouvillian.
+    This function calculates the outcome of applying the Liouvillian to the density matrix.
+    It is used to calculate the superoperator form of the Liouvillian.
 
     Parameters
     ----------
-    rho_ : array
-        Test states ([1,0,0,......]) as inputs
+    ``rho_`` : array
+        The input test states, typically represented as a list of zeros and ones
+        (e.g., [1,0,0,...]).
     h : array
-        Hamilton operator
-    c_ops_ : array
-        Collapse operators for the Lindblad dampers
+        The Hamiltonian operator, represented as an array.
+    ``c_ops_`` : array
+        The collapse operators for the Lindblad dampers, represented as an array.
 
     Returns
     -------
     liou : array
-        \mathcal{L} @ rho_
+        The result of applying the Liouvillian to ``rho_``, represented as an array.
+        Mathematically, this is equivalent to \mathcal{L} @ ``rho_``.
     """
 
     def cmtr(a, b):
@@ -983,20 +999,20 @@ def calc_liou(rho_, h, c_ops_):
 @njit(cache=True)
 def calc_super_liou(h_, c_ops):
     """
-    Calculated the superoperator form of the Liouvillian, by checking one basis state of the desity matrix
-    after the other: [1,0,0...], [0,1,0,0,....], ...
+    Calculates the superoperator form of the Liouvillian by checking one basis state of the density matrix
+    after the other: [1,0,0...], [0,1,0,0,...], etc.
 
     Parameters
     ----------
-    h_ : array
-        Hamilton operator
-    c_ops : array
-        Collapse operators for the Lindblad dampers
+    ``h_`` : array
+        The Hamiltonian operator.
+    ``c_ops`` : array
+        The collapse operators for the Lindblad dampers.
 
     Returns
     -------
     op_super : array
-        Superoperator form of the Liouvillian
+        The superoperator form of the Liouvillian.
     """
     m, n = h_.shape
     op_super = 1j * np.ones((n ** 2, n ** 2))
@@ -1012,13 +1028,18 @@ def calc_super_liou(h_, c_ops):
 
 def pickle_save(path, obj):
     """
-    Helper function to pickle system objects
+    This function pickles and saves system objects to a specified location.
+    Pickling is the process of converting a Python object into a byte stream,
+    and it's useful for saving and loading complex objects.
 
     Parameters
     ----------
     path : str
-        Location of saved data
+        The path where the pickled object will be saved. This should include the full
+        directory path as well as the filename and .pickle extension.
+
     obj : System obj
+        The system object to be pickled and saved. This can be any Python object.
 
     """
     f = open(path, mode='wb')
@@ -1210,6 +1231,7 @@ class System:  # (SpectrumCalculator):
         """
         return _matrix_step(rho, omega, self.A_prim, self.eigvecs, self.eigvals, self.eigvecs_inv,
                             self.enable_gpu, self.zero_ind, self.gpu_0)
+
     def plot(self, plot_orders=(2, 3, 4)):
         config = PlotConfig(plot_orders=plot_orders, s2_f=self.freq[2], s2_data=self.S[2], s3_f=self.freq[3],
                             s3_data=self.S[3], s4_f=self.freq[4], s4_data=self.S[4])
@@ -1224,6 +1246,7 @@ class System:  # (SpectrumCalculator):
             print('s1:', self.S[1])
         fig = plot.plot()
         return fig
+
     def calculate_spectrum(self, f_data, order_in, measure_op=None, mathcal_a=None, g_prim=False, bar=True,
                            verbose=False,
                            beta=None, correction_only=False, beta_offset=True, enable_gpu=False, cache_trispec=True):
@@ -1726,32 +1749,42 @@ class System:  # (SpectrumCalculator):
     def calc_transient(self, t, seed=None, _solver=None, progress_bar=None, _nsubsteps=1, _normalize=None,
                        options=None, return_result=False):
         """
-        Integrate the SME for the system definined by \mathcal{L} and the starting state rho_0. Saves the
-        results (daemon view and measurement with detector noise) in a dataframe
+        This function integrates the Stochastic Master Equation (SME) for the system defined by \mathcal{L}
+        and the initial state rho_0. The results, including the daemon view and measurement with detector noise,
+        are saved in a dataframe.
 
         Parameters
         ----------
         t : array
-            Times at which the SME is intergrated
-        seed : int
-            Seed for the generation of the Wiener Process
-         _solver : str
-            Name of the solver used for the intergration of the SME (see the qutip docs for more information)
-        _nsubsteps : int
-            Number of substeps between to point in t. Reduces numerical errors.
-        _normalize : bool
-            Set if density matrix should be normalized after each integration step
-        progress_bar : bool
-            Set if progress bar should be shown during integration
-        options : dict
-            Solver options (see qutip documentation)
-        return_result : bool
-            Set if solver result should be returned in addition to the dataframe
+            The time points at which the SME is integrated.
+
+        seed : int, optional
+            The seed for the random number generator used in the generation of the Wiener Process.
+
+        _solver : str, optional
+            The name of the solver used for the integration of the SME. Refer to the qutip documentation
+            for more information on available solvers.
+
+        _nsubsteps : int, optional
+            The number of substeps to be taken between two points in `t`. This can help reduce numerical errors.
+
+        _normalize : bool, optional
+            If set to True, the density matrix will be normalized after each integration step.
+
+        progress_bar : bool, optional
+            If set to True, a progress bar will be displayed during the integration process.
+
+        options : dict, optional
+            A dictionary of solver options. Refer to the qutip documentation for more information on available options.
+
+        return_result : bool, optional
+            If set to True, the solver result will be returned in addition to the dataframe.
 
         Returns
         -------
-        Return a dataframe containing the daemon view and measurement with detector noise.
-        Additionally, returns solver result (see return_result parameter)
+        dataframe
+            A dataframe containing the daemon view and measurement with detector noise. If `return_result` is set to True,
+            the solver result will also be returned.
         """
 
         self.time_series_data = self.time_series_data_empty.copy()  # [kHz]

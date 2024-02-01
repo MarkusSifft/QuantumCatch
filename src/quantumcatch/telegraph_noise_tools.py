@@ -32,17 +32,16 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-from quantumcatch import SpectrumCalculator
+from src.quantumcatch import System
 from .fitting_tools import FitSystem
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
 from lmfit import Parameters, minimize
 from tqdm import tqdm_notebook
-import matplotlib.colors as colors
 
 
-class FitTelegraph(SpectrumCalculator):
+class FitTelegraph(System):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  # This will call the __init__ of SpectrumCalculator

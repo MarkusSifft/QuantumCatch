@@ -32,6 +32,5 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-from signalsnap.spectrum_calculator import *
-from quantumcatch.simulation import *
-from quantumcatch.telegraph_noise_tools import *
+from src.quantumcatch.simulation import *
+from src.quantumcatch.telegraph_noise_tools import *

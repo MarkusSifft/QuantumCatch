@@ -1,25 +1,25 @@
-
 <!DOCTYPE html>
 
-<html>
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <title>Code Documentation &#8212; QuantumPolyspectra  documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Code Documentation &#8212; quantumcatch  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Welcome to QuantumPolyspectra’s documentation!" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   
@@ -31,13 +31,15 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-QuantumPolyspectra.simulation">
-<span id="code-documentation"></span><h1>Code Documentation<a class="headerlink" href="#module-QuantumPolyspectra.simulation" title="Permalink to this headline">¶</a></h1>
+  <section id="module-src.quantumcatch.simulation">
+<span id="code-documentation"></span><h1>Code Documentation<a class="headerlink" href="#module-src.quantumcatch.simulation" title="Link to this heading">¶</a></h1>
 <dl class="py class">
-<dt id="QuantumPolyspectra.simulation.System">
-<em class="property">class </em><code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">System</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">h</span></em>, <em class="sig-param"><span class="n">psi_0</span></em>, <em class="sig-param"><span class="n">c_ops</span></em>, <em class="sig-param"><span class="n">sc_ops</span></em>, <em class="sig-param"><span class="n">e_ops</span></em>, <em class="sig-param"><span class="n">c_measure_strength</span></em>, <em class="sig-param"><span class="n">sc_measure_strength</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">System</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psi_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_ops</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sc_ops</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_ops</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_measure_strength</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sc_measure_strength</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System" title="Link to this definition">¶</a></dt>
 <dd><p>Class that will represent the system of interest. It contains the parameters of the system and the
 methods for calculating and storing the polyspectra.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>h<span class="classifier">Qobj</span></dt><dd><p>Hamiltonian of the system.</p>
 </dd>
@@ -57,6 +59,9 @@ keys as the corresponding collaps operators in c_ops.</p>
 keys as the corresponding collaps operators in sc_ops.</p>
 </dd>
 </dl>
+</section>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>H<span class="classifier">array</span></dt><dd><p>Hamiltonian of the system</p>
 </dd>
@@ -123,24 +128,70 @@ keys as the corresponding collaps operators in sc_ops.</p>
 </dd>
 </dl>
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.calc_a_w3">
-<code class="sig-name descname">calc_a_w3</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.calc_a_w3" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.calc_a_w3">
+<span class="sig-name descname"><span class="pre">calc_a_w3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a_w</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.calc_a_w3" title="Link to this definition">¶</a></dt>
 <dd><p>Preparation of a_(w1+w2) for the calculation of the bispectrum</p>
+<section id="id1">
+<h3>Parameters<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>a_w<span class="classifier">array</span></dt><dd><p>Fourier coefficients of signal</p>
 </dd>
 </dl>
+</section>
+<section id="returns">
+<h3>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>a_w3<span class="classifier">array</span></dt><dd><p>Matrix corresponding to a_(w1+w2)</p>
 </dd>
 </dl>
+</section>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.calc_spectrum">
-<code class="sig-name descname">calc_spectrum</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f_data</span></em>, <em class="sig-param"><span class="n">order</span></em>, <em class="sig-param"><span class="n">measure_op</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mathcal_a</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">g_prim</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bar</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">beta</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">correction_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">beta_offset</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">enable_gpu</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cache_trispec</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.calc_spectrum" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.calc_transient">
+<span class="sig-name descname"><span class="pre">calc_transient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_nsubsteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.calc_transient" title="Link to this definition">¶</a></dt>
+<dd><p>This function integrates the Stochastic Master Equation (SME) for the system defined by mathcal{L}
+and the initial state rho_0. The results, including the daemon view and measurement with detector noise,
+are saved in a dataframe.</p>
+<section id="id2">
+<h3>Parameters<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>t<span class="classifier">array</span></dt><dd><p>The time points at which the SME is integrated.</p>
+</dd>
+<dt>seed<span class="classifier">int, optional</span></dt><dd><p>The seed for the random number generator used in the generation of the Wiener Process.</p>
+</dd>
+<dt>_solver<span class="classifier">str, optional</span></dt><dd><p>The name of the solver used for the integration of the SME. Refer to the qutip documentation
+for more information on available solvers.</p>
+</dd>
+<dt>_nsubsteps<span class="classifier">int, optional</span></dt><dd><p>The number of substeps to be taken between two points in <cite>t</cite>. This can help reduce numerical errors.</p>
+</dd>
+<dt>_normalize<span class="classifier">bool, optional</span></dt><dd><p>If set to True, the density matrix will be normalized after each integration step.</p>
+</dd>
+<dt>progress_bar<span class="classifier">bool, optional</span></dt><dd><p>If set to True, a progress bar will be displayed during the integration process.</p>
+</dd>
+<dt>options<span class="classifier">dict, optional</span></dt><dd><p>A dictionary of solver options. Refer to the qutip documentation for more information on available options.</p>
+</dd>
+<dt>return_result<span class="classifier">bool, optional</span></dt><dd><p>If set to True, the solver result will be returned in addition to the dataframe.</p>
+</dd>
+</dl>
+</section>
+<section id="id3">
+<h3>Returns<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>dataframe</dt><dd><p>A dataframe containing the daemon view and measurement with detector noise. If <cite>return_result</cite> is set to True,
+the solver result will also be returned.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.calculate_one_spectrum">
+<span class="sig-name descname"><span class="pre">calculate_one_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measure_op</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mathcal_a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_prim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correction_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_gpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_trispec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.calculate_one_spectrum" title="Link to this definition">¶</a></dt>
 <dd><p>Calculates analytic polyspectra (order 2 to 4) as described in 10.1103/PhysRevB.98.205143
 and 10.1103/PhysRevB.102.119901</p>
+<section id="id4">
+<h3>Parameters<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>f_data<span class="classifier">array</span></dt><dd><p>Frequencies at which the spectra are calculated</p>
 </dd>
@@ -150,10 +201,12 @@ and 10.1103/PhysRevB.102.119901</p>
 </dd>
 <dt>mathcal_a<span class="classifier">array</span></dt><dd><p>Stores the measurement superoperator mathcal{A} as defined in 10.1103/PhysRevB.98.205143</p>
 </dd>
-<dt>g_prim<span class="classifier">bool</span></dt><dd><p>Set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
+<dt>g_prim<span class="classifier">bool</span></dt><dd><p>!Depreciated! Set if mathcal_a should be applied twice/squared (was of use when defining the current operator)
 But unnecessary for standard polyspectra</p>
 </dd>
 <dt>bar<span class="classifier">bool</span></dt><dd><p>Set if progress bars should be shown during calculation</p>
+</dd>
+<dt>verbose<span class="classifier">bool</span></dt><dd><p>Set if more details about the current state of the calculation are needed</p>
 </dd>
 <dt>beta<span class="classifier">float</span></dt><dd><p>Measurement strength used for the calculation. If not set beta is the prefactor
 in sc_measure_strength[measure_op]</p>
@@ -168,73 +221,42 @@ calculated</p>
 <dt>cache_trispec<span class="classifier">bool</span></dt><dd><p>Set if Matrix multiplication in the calculation of the trispectrum should be cached</p>
 </dd>
 </dl>
+</section>
+<section id="id5">
+<h3>Returns<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>S[order]<span class="classifier">array</span></dt><dd><p>Returns spectral value at specified frequencies</p>
 </dd>
 </dl>
+</section>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.calc_transient">
-<code class="sig-name descname">calc_transient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">seed</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">_solver</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">progress_bar</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">_nsubsteps</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">_normalize</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">return_result</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.calc_transient" title="Permalink to this definition">¶</a></dt>
-<dd><p>Integrate the SME for the system definined by mathcal{L} and the starting state rho_0. Saves the
-results (daemon view and measurement with detector noise) in a dataframe</p>
-<dl>
-<dt>t<span class="classifier">array</span></dt><dd><p>Times at which the SME is intergrated</p>
-</dd>
-<dt>seed<span class="classifier">int</span></dt><dd><blockquote>
-<div><p>Seed for the generation of the Wiener Process</p>
-</div></blockquote>
-<dl class="simple">
-<dt>_solver<span class="classifier">str</span></dt><dd><p>Name of the solver used for the intergration of the SME (see the qutip docs for more information)</p>
-</dd>
-</dl>
-</dd>
-<dt>_nsubsteps<span class="classifier">int</span></dt><dd><p>Number of substeps between to point in t. Reduces numerical errors.</p>
-</dd>
-<dt>_normalize<span class="classifier">bool</span></dt><dd><p>Set if density matrix should be normalized after each integration step</p>
-</dd>
-<dt>progress_bar<span class="classifier">bool</span></dt><dd><p>Set if progress bar should be shown during integration</p>
-</dd>
-<dt>options<span class="classifier">dict</span></dt><dd><p>Solver options (see qutip documentation)</p>
-</dd>
-<dt>return_result<span class="classifier">bool</span></dt><dd><p>Set if solver result should be returned in addition to the dataframe</p>
-</dd>
-</dl>
-<p>Return a dataframe containing the daemon view and measurement with detector noise.
-Additionally, returns solver result (see return_result parameter)</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.first_matrix_step">
-<code class="sig-name descname">first_matrix_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">omega</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.first_matrix_step" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.first_matrix_step">
+<span class="sig-name descname"><span class="pre">first_matrix_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.first_matrix_step" title="Link to this definition">¶</a></dt>
 <dd><p>Helper method to move function out of the class. njit is not working within classes</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.fourier_g_prim">
-<code class="sig-name descname">fourier_g_prim</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.fourier_g_prim" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.g_prim">
+<span class="sig-name descname"><span class="pre">g_prim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.g_prim" title="Link to this definition">¶</a></dt>
 <dd><p>Helper method to move function out of the class. njit is not working within classes</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.g_prim">
-<code class="sig-name descname">g_prim</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.g_prim" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.matrix_step">
+<span class="sig-name descname"><span class="pre">matrix_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.matrix_step" title="Link to this definition">¶</a></dt>
 <dd><p>Helper method to move function out of the class. njit is not working within classes</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.matrix_step">
-<code class="sig-name descname">matrix_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">omega</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.matrix_step" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper method to move function out of the class. njit is not working within classes</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.numeric_spec">
-<code class="sig-name descname">numeric_spec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t_window_in</span></em>, <em class="sig-param"><span class="n">measure_op</span></em>, <em class="sig-param"><span class="n">f_max</span></em>, <em class="sig-param"><span class="n">power</span></em>, <em class="sig-param"><span class="n">order</span></em>, <em class="sig-param"><span class="n">max_samples</span></em>, <em class="sig-param"><span class="n">m</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">_solver</span><span class="o">=</span><span class="default_value">'milstein'</span></em>, <em class="sig-param"><span class="n">plot_after</span><span class="o">=</span><span class="default_value">12</span></em>, <em class="sig-param"><span class="n">title_in</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">with_noise</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">_normalize</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">roll</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_simulation</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">backend</span><span class="o">=</span><span class="default_value">'opencl'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.numeric_spec" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.numeric_spec">
+<span class="sig-name descname"><span class="pre">numeric_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_window_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measure_op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">power</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'milstein'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_after</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roll</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_simulation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'opencl'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.numeric_spec" title="Link to this definition">¶</a></dt>
 <dd><p>Method for the automated calculation of the polyspectra from the numerical integration of the SME.
 Can be used as an alternative to the analytic quantum polyspectra or to estimated measurement time and
 noise levels of the spectra.</p>
+<section id="id6">
+<h3>Parameters<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>t_window_in<span class="classifier">array</span></dt><dd><p>Times at with the SME will be integrated</p>
 </dd>
@@ -270,14 +292,20 @@ the daemon view</p>
 <dt>backend<span class="classifier">str {cpu, opencl, cuda}</span></dt><dd><p>Backend to be used by arrayfire</p>
 </dd>
 </dl>
+</section>
+<section id="id7">
+<h3>Returns<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
 <p>Return frequencies and the spectral values as arrays</p>
+</section>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.parallel_tranisent">
-<code class="sig-name descname">parallel_tranisent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">seed</span></em>, <em class="sig-param"><span class="n">measure_op</span></em>, <em class="sig-param"><span class="n">t</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">_solver</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">with_noise</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">_nsubsteps</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">_normalize</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.parallel_tranisent" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.parallel_tranisent">
+<span class="sig-name descname"><span class="pre">parallel_tranisent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measure_op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_nsubsteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.parallel_tranisent" title="Link to this definition">¶</a></dt>
 <dd><p>Method for the quick integration of the SME (avoids saving the results into dataframes). Is used for
 parallelization of the integration.</p>
+<section id="id8">
+<h3>Parameters<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>seed<span class="classifier">int</span></dt><dd><p>Seed for the generation of random numbers for the Wiener process</p>
 </dd>
@@ -294,27 +322,39 @@ parallelization of the integration.</p>
 <dt>_normalize<span class="classifier">bool</span></dt><dd><p>Set if density matrix should be normalized after each integration step</p>
 </dd>
 </dl>
+</section>
+<section id="id9">
+<h3>Returns<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>out<span class="classifier">array</span></dt><dd><p>Simulated detector output</p>
 </dd>
 </dl>
+</section>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.plot_all">
-<code class="sig-name descname">plot_all</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f_max</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.plot_all" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.plot_all">
+<span class="sig-name descname"><span class="pre">plot_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.plot_all" title="Link to this definition">¶</a></dt>
 <dd><p>Method for quick plotting of polyspectra</p>
+<section id="id10">
+<h3>Parameters<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>f_max<span class="classifier">float</span></dt><dd><p>Maximum frequencies upto which the spectra should be plotted</p>
 </dd>
 </dl>
+</section>
+<section id="id11">
+<h3>Returns<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
 <p>Returns matplotlib figure</p>
+</section>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.plot_spectrum">
-<code class="sig-name descname">plot_spectrum</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">order</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">log</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">x_range</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">imag_plot</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.plot_spectrum" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.plot_spectrum">
+<span class="sig-name descname"><span class="pre">plot_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imag_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.plot_spectrum" title="Link to this definition">¶</a></dt>
 <dd><p>Method for the visualization of single spectra with an interactive plot</p>
+<section id="id12">
+<h3>Parameters<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>order<span class="classifier">int {2,3,4}</span></dt><dd><p>Order of polyspectrum to be plotted</p>
 </dd>
@@ -327,13 +367,19 @@ parallelization of the integration.</p>
 <dt>imag_plot<span class="classifier">bool</span></dt><dd><p>Set if imaginary of the spectrum should be shown</p>
 </dd>
 </dl>
+</section>
+<section id="id13">
+<h3>Returns<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
 <p>Returns plotly figure</p>
+</section>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.plot_transient">
-<code class="sig-name descname">plot_transient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ops_with_power</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">shift</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.plot_transient" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.plot_transient">
+<span class="sig-name descname"><span class="pre">plot_transient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ops_with_power</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.plot_transient" title="Link to this definition">¶</a></dt>
 <dd><p>Interactive plot of the integration results.</p>
+<section id="id14">
+<h3>Parameters<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>ops_with_power<span class="classifier">dict</span></dt><dd><p>Key of the operators in e_ops as key with integer labels corresponding the exponent to with the
 corresponding trace should be raised to. (Was useful during the experimentation with the current operator.)</p>
@@ -343,29 +389,38 @@ corresponding trace should be raised to. (Was useful during the experimentation 
 <dt>shift<span class="classifier">bool</span></dt><dd><p>Set if traces should be shifted up to avoid overlapping of multiple traces</p>
 </dd>
 </dl>
+</section>
+<section id="id15">
+<h3>Returns<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
 <p>Plotly figure</p>
+</section>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.save_spec">
-<code class="sig-name descname">save_spec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.save_spec" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.save_spec">
+<span class="sig-name descname"><span class="pre">save_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.save_spec" title="Link to this definition">¶</a></dt>
 <dd><p>Save System class with spectral data</p>
+<section id="id16">
+<h3>Parameters<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>path<span class="classifier">str</span></dt><dd><p>Location of file</p>
 </dd>
 </dl>
+</section>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.second_matrix_step">
-<code class="sig-name descname">second_matrix_step</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">omega</span></em>, <em class="sig-param"><span class="n">omega2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.second_matrix_step" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.second_matrix_step">
+<span class="sig-name descname"><span class="pre">second_matrix_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.second_matrix_step" title="Link to this definition">¶</a></dt>
 <dd><p>Helper method to move function out of the class. njit is not working within classes</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="QuantumPolyspectra.simulation.System.single_plot">
-<code class="sig-name descname">single_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">order</span></em>, <em class="sig-param"><span class="n">f_max</span></em>, <em class="sig-param"><span class="n">f_min</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">arcsinh_plot</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">arcsinh_const</span><span class="o">=</span><span class="default_value">0.02</span></em>, <em class="sig-param"><span class="n">contours</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">s3_filter</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">s4_filter</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">s2_data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s3_data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s4_data</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s2_f</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s3_f</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">s4_f</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">imag_plot</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.System.single_plot" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.System.single_plot">
+<span class="sig-name descname"><span class="pre">single_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arcsinh_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arcsinh_const</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contours</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s3_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s4_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s2_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s3_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s4_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s2_f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s3_f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s4_f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imag_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.System.single_plot" title="Link to this definition">¶</a></dt>
 <dd><p>Generates plot of the polyspectum of order “order”</p>
+<section id="id17">
+<h3>Parameters<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>order<span class="classifier">int {2,3,4}</span></dt><dd><p>Order of polyspectrum to be plotted</p>
 </dd>
@@ -400,115 +455,167 @@ corresponding trace should be raised to. (Was useful during the experimentation 
 <dt>title<span class="classifier">set</span></dt><dd><p>Title of the plot</p>
 </dd>
 </dl>
+</section>
+<section id="id18">
+<h3>Returns<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
 <p>Matplotlib figure</p>
+</section>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="py function">
-<dt id="QuantumPolyspectra.simulation.calc_liou">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">calc_liou</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho_</span></em>, <em class="sig-param"><span class="n">h</span></em>, <em class="sig-param"><span class="n">c_ops_</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.calc_liou" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the outcome of applying the Liouvillain to the density matrix. Use to calculated the
-superoperator form of the Liouvillian.</p>
-<dl class="simple">
-<dt><a href="#id1"><span class="problematic" id="id2">rho_</span></a><span class="classifier">array</span></dt><dd><p>Test states ([1,0,0,……]) as inputs</p>
-</dd>
-<dt>h<span class="classifier">array</span></dt><dd><p>Hamilton operator</p>
-</dd>
-<dt><a href="#id3"><span class="problematic" id="id4">c_ops_</span></a><span class="classifier">array</span></dt><dd><p>Collapse operators for the Lindblad dampers</p>
-</dd>
-</dl>
-<dl class="simple">
-<dt>liou<span class="classifier">array</span></dt><dd><p>mathcal{L} &#64; <a href="#id5"><span class="problematic" id="id6">rho_</span></a></p>
-</dd>
-</dl>
+</section>
 </dd></dl>
 
 <dl class="py function">
-<dt id="QuantumPolyspectra.simulation.calc_super_A">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">calc_super_A</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">op</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.calc_super_A" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.calc_liou">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">calc_liou</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_ops_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.calc_liou" title="Link to this definition">¶</a></dt>
+<dd><p>This function calculates the outcome of applying the Liouvillian to the density matrix.
+It is used to calculate the superoperator form of the Liouvillian.</p>
+<section id="id19">
+<h2>Parameters<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">rho_</span></code><span class="classifier">array</span></dt><dd><p>The input test states, typically represented as a list of zeros and ones
+(e.g., [1,0,0,…]).</p>
+</dd>
+<dt>h<span class="classifier">array</span></dt><dd><p>The Hamiltonian operator, represented as an array.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">c_ops_</span></code><span class="classifier">array</span></dt><dd><p>The collapse operators for the Lindblad dampers, represented as an array.</p>
+</dd>
+</dl>
+</section>
+<section id="id20">
+<h2>Returns<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>liou<span class="classifier">array</span></dt><dd><p>The result of applying the Liouvillian to <code class="docutils literal notranslate"><span class="pre">rho_</span></code>, represented as an array.
+Mathematically, this is equivalent to mathcal{L} &#64; <code class="docutils literal notranslate"><span class="pre">rho_</span></code>.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.calc_super_A">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">calc_super_A</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.calc_super_A" title="Link to this definition">¶</a></dt>
 <dd><p>Calculates the super operator of A as defined in 10.1103/PhysRevB.98.205143</p>
+<section id="id21">
+<h2>Parameters<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>op<span class="classifier">array</span></dt><dd><p>Operator a for the calculation of A[a]</p>
 </dd>
 </dl>
+</section>
+<section id="id22">
+<h2>Returns<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>op_super<span class="classifier">array</span></dt><dd><p>Superoperator A</p>
 </dd>
 </dl>
+</section>
 </dd></dl>
 
 <dl class="py function">
-<dt id="QuantumPolyspectra.simulation.calc_super_liou">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">calc_super_liou</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">h_</span></em>, <em class="sig-param"><span class="n">c_ops</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.calc_super_liou" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculated the superoperator form of the Liouvillian, by checking one basis state of the desity matrix
-after the other: [1,0,0…], [0,1,0,0,….], …</p>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.calc_super_liou">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">calc_super_liou</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_ops</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.calc_super_liou" title="Link to this definition">¶</a></dt>
+<dd><p>Calculates the superoperator form of the Liouvillian by checking one basis state of the density matrix
+after the other: [1,0,0…], [0,1,0,0,…], etc.</p>
+<section id="id23">
+<h2>Parameters<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h2>
 <dl class="simple">
-<dt><a href="#id7"><span class="problematic" id="id8">h_</span></a><span class="classifier">array</span></dt><dd><p>Hamilton operator</p>
+<dt><code class="docutils literal notranslate"><span class="pre">h_</span></code><span class="classifier">array</span></dt><dd><p>The Hamiltonian operator.</p>
 </dd>
-<dt>c_ops<span class="classifier">array</span></dt><dd><p>Collapse operators for the Lindblad dampers</p>
+<dt><code class="docutils literal notranslate"><span class="pre">c_ops</span></code><span class="classifier">array</span></dt><dd><p>The collapse operators for the Lindblad dampers.</p>
 </dd>
 </dl>
+</section>
+<section id="id24">
+<h2>Returns<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h2>
 <dl class="simple">
-<dt>op_super<span class="classifier">array</span></dt><dd><p>Superoperator form of the Liouvillian</p>
+<dt>op_super<span class="classifier">array</span></dt><dd><p>The superoperator form of the Liouvillian.</p>
 </dd>
 </dl>
+</section>
 </dd></dl>
 
 <dl class="py function">
-<dt id="QuantumPolyspectra.simulation.cgw">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">cgw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">len_y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.cgw" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.cgw">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">cgw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">len_y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.cgw" title="Link to this definition">¶</a></dt>
 <dd><p>Creates an array corresponding to the approx. confined gaussian window function</p>
+<section id="id25">
+<h2>Parameters<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>len_y<span class="classifier">int</span></dt><dd><p>Length of the window</p>
 </dd>
 </dl>
+</section>
+<section id="id26">
+<h2>Returns<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h2>
 <p>window : array</p>
+</section>
 </dd></dl>
 
 <dl class="py function">
-<dt id="QuantumPolyspectra.simulation.pickle_save">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">pickle_save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">obj</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.pickle_save" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function to pickle system objects</p>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.pickle_save">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">pickle_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.pickle_save" title="Link to this definition">¶</a></dt>
+<dd><p>This function pickles and saves system objects to a specified location.
+Pickling is the process of converting a Python object into a byte stream,
+and it’s useful for saving and loading complex objects.</p>
+<section id="id27">
+<h2>Parameters<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h2>
 <dl class="simple">
-<dt>path<span class="classifier">str</span></dt><dd><p>Location of saved data</p>
+<dt>path<span class="classifier">str</span></dt><dd><p>The path where the pickled object will be saved. This should include the full
+directory path as well as the filename and .pickle extension.</p>
+</dd>
+<dt>obj<span class="classifier">System obj</span></dt><dd><p>The system object to be pickled and saved. This can be any Python object.</p>
 </dd>
 </dl>
-<p>obj : System obj</p>
+</section>
 </dd></dl>
 
 <dl class="py function">
-<dt id="QuantumPolyspectra.simulation.plotly">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">plotly</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">title</span></em>, <em class="sig-param"><span class="n">domain</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y_label</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x_label</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">legend</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">filter_window</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.plotly" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function for easy plotting with plotly.</p>
-<p>x : array
-y : array
-title : str</p>
-<blockquote>
-<div><p>Plot title</p>
-</div></blockquote>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.plotly">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">plotly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.plotly" title="Link to this definition">¶</a></dt>
+<dd><p>This function provides an easy interface for creating plots with Plotly. It allows for customization
+of various aspects of the plot, including the title, axis labels, and legend.</p>
+<section id="id28">
+<h2>Parameters<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h2>
 <dl class="simple">
-<dt>domain<span class="classifier">str (‘freq’, ‘time’)</span></dt><dd><p>Changes the plot style depending on input in frequency or time domain.</p>
+<dt>x<span class="classifier">array</span></dt><dd><p>The x-coordinates for the points in the plot.</p>
 </dd>
-<dt>order<span class="classifier">int (2, 3, 4)</span></dt><dd><p>Order of the spectrum to be shown.</p>
+<dt>y<span class="classifier">array</span></dt><dd><p>The y-coordinates for the points in the plot.</p>
 </dd>
-<dt>y_label<span class="classifier">str</span></dt><dd><p>Label of the y axis</p>
+<dt>title<span class="classifier">str</span></dt><dd><p>The title of the plot.</p>
 </dd>
-<dt>x_label<span class="classifier">str</span></dt><dd><p>Label of the x axis</p>
+<dt>domain<span class="classifier">str (‘freq’, ‘time’)</span></dt><dd><p>Specifies the domain of the data. This changes the plot style depending on whether the input
+is in the frequency or time domain.</p>
 </dd>
-<dt>legend<span class="classifier">list</span></dt><dd><p>List of trace names for the legend.</p>
+<dt>order<span class="classifier">int (2, 3, 4), optional</span></dt><dd><p>The order of the spectrum to be shown. This can be 2, 3, or 4.</p>
 </dd>
-<dt>filter_window<span class="classifier">int</span></dt><dd><p>For noisy data the spectra can be convoluted with a gaussian of length filter_window</p>
+<dt>y_label<span class="classifier">str, optional</span></dt><dd><p>The label for the y-axis.</p>
+</dd>
+<dt>x_label<span class="classifier">str, optional</span></dt><dd><p>The label for the x-axis.</p>
+</dd>
+<dt>legend<span class="classifier">list, optional</span></dt><dd><p>A list of trace names for the legend.</p>
+</dd>
+<dt>filter_window<span class="classifier">int, optional</span></dt><dd><p>For noisy data, the spectra can be convoluted with a Gaussian of length filter_window. This can
+help smooth out the noise and make the underlying signal more apparent.</p>
 </dd>
 </dl>
-<p>Returns the figure.</p>
+</section>
+<section id="id29">
+<h2>Returns<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>figure</dt><dd><p>The resulting Plotly figure. This can be displayed or saved using Plotly’s built-in functions.</p>
+</dd>
+</dl>
+</section>
 </dd></dl>
 
 <dl class="py function">
-<dt id="QuantumPolyspectra.simulation.second_term">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">second_term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega1</span></em>, <em class="sig-param"><span class="n">omega2</span></em>, <em class="sig-param"><span class="n">omega3</span></em>, <em class="sig-param"><span class="n">s_k</span></em>, <em class="sig-param"><span class="n">eigvals</span></em>, <em class="sig-param"><span class="n">enable_gpu</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.second_term" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.second_term">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">second_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eigvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_gpu</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.second_term" title="Link to this definition">¶</a></dt>
 <dd><p>For the calculation of the erratum correction terms of the S4.
 Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<section id="id30">
+<h2>Parameters<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>Specify if GPU should be used</p>
 </dd>
@@ -523,17 +630,81 @@ Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.<
 <dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
 </dd>
 </dl>
+</section>
+<section id="id31">
+<h2>Returns<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>out_sum<span class="classifier">array</span></dt><dd><p>Second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
 </dd>
 </dl>
+</section>
 </dd></dl>
 
 <dl class="py function">
-<dt id="QuantumPolyspectra.simulation.small_s">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">small_s</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rho_steady</span></em>, <em class="sig-param"><span class="n">a_prim</span></em>, <em class="sig-param"><span class="n">eigvecs</span></em>, <em class="sig-param"><span class="n">eigvec_inv</span></em>, <em class="sig-param"><span class="n">reshape_ind</span></em>, <em class="sig-param"><span class="n">enable_gpu</span></em>, <em class="sig-param"><span class="n">zero_ind</span></em>, <em class="sig-param"><span class="n">gpu_zero_mat</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.small_s" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.second_term_gpu">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">second_term_gpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eigvals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.second_term_gpu" title="Link to this definition">¶</a></dt>
+<dd><p>For the calculation of the erratum correction terms of the S4.
+Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<section id="id32">
+<h2>Parameters<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>omega1<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>omega2<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>omega3<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>s_k<span class="classifier">array</span></dt><dd><p>Array calculated with :func:small_s</p>
+</dd>
+<dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
+</dd>
+</dl>
+</section>
+<section id="id33">
+<h2>Returns<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>out_sum<span class="classifier">array</span></dt><dd><p>Second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.second_term_njit">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">second_term_njit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eigvals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.second_term_njit" title="Link to this definition">¶</a></dt>
+<dd><p>For the calculation of the erratum correction terms of the S4.
+Calculates the second sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<section id="id34">
+<h2>Parameters<a class="headerlink" href="#id34" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>omega1<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>omega2<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>omega3<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>s_k<span class="classifier">array</span></dt><dd><p>Array calculated with :func:small_s</p>
+</dd>
+<dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
+</dd>
+</dl>
+</section>
+<section id="id35">
+<h2>Returns<a class="headerlink" href="#id35" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>out_sum<span class="classifier">array</span></dt><dd><p>Second correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.small_s">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">small_s</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho_steady</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_prim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eigvecs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eigvec_inv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reshape_ind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_gpu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero_ind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_zero_mat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.small_s" title="Link to this definition">¶</a></dt>
 <dd><p>For the calculation of the erratum correction terms of the S4.
 Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
+<section id="id36">
+<h2>Parameters<a class="headerlink" href="#id36" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>zero_ind<span class="classifier">int</span></dt><dd><p>Index of the steadystate eigenvector</p>
 </dd>
@@ -552,17 +723,23 @@ Calculates the small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
 <dt>reshape_ind<span class="classifier">array</span></dt><dd><p>Indices that give the trace of a flattened matrix.</p>
 </dd>
 </dl>
+</section>
+<section id="id37">
+<h2>Returns<a class="headerlink" href="#id37" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>s_k<span class="classifier">array</span></dt><dd><p>Small s (Eq. 7) from 10.1103/PhysRevB.102.119901</p>
 </dd>
 </dl>
+</section>
 </dd></dl>
 
 <dl class="py function">
-<dt id="QuantumPolyspectra.simulation.third_term">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">third_term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">omega1</span></em>, <em class="sig-param"><span class="n">omega2</span></em>, <em class="sig-param"><span class="n">omega3</span></em>, <em class="sig-param"><span class="n">s_k</span></em>, <em class="sig-param"><span class="n">eigvals</span></em>, <em class="sig-param"><span class="n">enable_gpu</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.third_term" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.third_term">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">third_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eigvals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_gpu</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.third_term" title="Link to this definition">¶</a></dt>
 <dd><p>For the calculation of the erratum correction terms of the S4.
 Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<section id="id38">
+<h2>Parameters<a class="headerlink" href="#id38" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>enable_gpu<span class="classifier">bool</span></dt><dd><p>Specify if GPU should be used</p>
 </dd>
@@ -577,56 +754,120 @@ Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</
 <dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
 </dd>
 </dl>
+</section>
+<section id="id39">
+<h2>Returns<a class="headerlink" href="#id39" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>out_sum<span class="classifier">array</span></dt><dd><p>Third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
 </dd>
 </dl>
+</section>
 </dd></dl>
 
 <dl class="py function">
-<dt id="QuantumPolyspectra.simulation.time_series_setup">
-<code class="sig-prename descclassname">QuantumPolyspectra.simulation.</code><code class="sig-name descname">time_series_setup</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sc_ops</span></em>, <em class="sig-param"><span class="n">e_ops</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.simulation.time_series_setup" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.third_term_gpu">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">third_term_gpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eigvals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.third_term_gpu" title="Link to this definition">¶</a></dt>
+<dd><p>For the calculation of the erratum correction terms of the S4.
+Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<section id="id40">
+<h2>Parameters<a class="headerlink" href="#id40" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>omega1<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>omega2<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>omega3<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>s_k<span class="classifier">array</span></dt><dd><p>Array calculated with :func:small_s</p>
+</dd>
+<dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
+</dd>
+</dl>
+</section>
+<section id="id41">
+<h2>Returns<a class="headerlink" href="#id41" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>out_sum<span class="classifier">array</span></dt><dd><p>Third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.third_term_njit">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">third_term_njit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eigvals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.third_term_njit" title="Link to this definition">¶</a></dt>
+<dd><p>For the calculation of the erratum correction terms of the S4.
+Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+<section id="id42">
+<h2>Parameters<a class="headerlink" href="#id42" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>omega1<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>omega2<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>omega3<span class="classifier">float</span></dt><dd><p>Frequency of interest</p>
+</dd>
+<dt>s_k<span class="classifier">array</span></dt><dd><p>Array calculated with :func:small_s</p>
+</dd>
+<dt>eigvals<span class="classifier">array</span></dt><dd><p>Eigenvalues of the Liouvillian</p>
+</dd>
+</dl>
+</section>
+<section id="id43">
+<h2>Returns<a class="headerlink" href="#id43" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>out_sum<span class="classifier">array</span></dt><dd><p>Third correction term as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.quantumcatch.simulation.time_series_setup">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.simulation.</span></span><span class="sig-name descname"><span class="pre">time_series_setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc_ops</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_ops</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.simulation.time_series_setup" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a dataframe for storing the simulation results.</p>
+<section id="id44">
+<h2>Parameters<a class="headerlink" href="#id44" title="Link to this heading">¶</a></h2>
 <dl class="simple">
 <dt>sc_ops<span class="classifier">dict</span></dt><dd><p>Dictionary with all stochastic collapse operators with corresponding names as keys.</p>
 </dd>
 <dt>e_ops<span class="classifier">dict</span></dt><dd><p>Dictionary with all operators for the calculation of the expectation values with corresponding names as keys.</p>
 </dd>
 </dl>
+</section>
+<section id="id45">
+<h2>Returns<a class="headerlink" href="#id45" title="Link to this heading">¶</a></h2>
 <p>Returns a dataframe with columns names like the keys.</p>
+</section>
 </dd></dl>
 
-<span class="target" id="module-QuantumPolyspectra.analysis"></span><dl class="py function">
-<dt id="QuantumPolyspectra.analysis.c2">
-<code class="sig-prename descclassname">QuantumPolyspectra.analysis.</code><code class="sig-name descname">c2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w</span></em>, <em class="sig-param"><span class="n">a_w_corr</span></em>, <em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">coherent</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.analysis.c2" title="Permalink to this definition">¶</a></dt>
-<dd><p>calculation of c2 for powerspectrum</p>
+<dl class="py function" id="module-src.quantumcatch.fitting_tools">
+<dt class="sig sig-object py" id="src.quantumcatch.fitting_tools.arcsinh_scaling">
+<span class="sig-prename descclassname"><span class="pre">src.quantumcatch.fitting_tools.</span></span><span class="sig-name descname"><span class="pre">arcsinh_scaling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arcsinh_const</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_err_p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s_err_m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.quantumcatch.fitting_tools.arcsinh_scaling" title="Link to this definition">¶</a></dt>
+<dd><p>Helper function to improve visibility in plotting (similar to a log scale but also works for negative values)</p>
+<section id="id46">
+<h2>Parameters<a class="headerlink" href="#id46" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>s_data<span class="classifier">array</span></dt><dd><p>spectral values of any order</p>
+</dd>
+<dt>arcsinh_const<span class="classifier">float</span></dt><dd><p>these parameters sets the rescaling amount (the smaller, the stronger the rescaling)</p>
+</dd>
+<dt>order<span class="classifier">int</span></dt><dd><p>important since the error arrays are called differently in the second-order case</p>
+</dd>
+<dt>s_err<span class="classifier">array</span></dt><dd><p>spectral errors of order 3 or 4</p>
+</dd>
+<dt>s_err_p<span class="classifier">array</span></dt><dd><p>spectral values + error of order 2</p>
+</dd>
+<dt>s_err_m<span class="classifier">array</span></dt><dd><p>spectral values - error of order 2</p>
+</dd>
+</dl>
+</section>
+<section id="id47">
+<h2>Returns<a class="headerlink" href="#id47" title="Link to this heading">¶</a></h2>
+</section>
 </dd></dl>
 
-<dl class="py function">
-<dt id="QuantumPolyspectra.analysis.c3">
-<code class="sig-prename descclassname">QuantumPolyspectra.analysis.</code><code class="sig-name descname">c3</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w1</span></em>, <em class="sig-param"><span class="n">a_w2</span></em>, <em class="sig-param"><span class="n">a_w3</span></em>, <em class="sig-param"><span class="n">m</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.analysis.c3" title="Permalink to this definition">¶</a></dt>
-<dd><p>calculation of c3 for bispectrum</p>
-</dd></dl>
-
-<dl class="py function">
-<dt id="QuantumPolyspectra.analysis.c4">
-<code class="sig-prename descclassname">QuantumPolyspectra.analysis.</code><code class="sig-name descname">c4</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w</span></em>, <em class="sig-param"><span class="n">a_w_corr</span></em>, <em class="sig-param"><span class="n">m</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.analysis.c4" title="Permalink to this definition">¶</a></dt>
-<dd><p>calculation of c4 for trispectrum</p>
-</dd></dl>
-
-<dl class="py function">
-<dt id="QuantumPolyspectra.analysis.calc_a_w3">
-<code class="sig-prename descclassname">QuantumPolyspectra.analysis.</code><code class="sig-name descname">calc_a_w3</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a_w_all</span></em>, <em class="sig-param"><span class="n">f_max_ind</span></em>, <em class="sig-param"><span class="n">m</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.analysis.calc_a_w3" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preparation of a_(w1+w2) for the calculation of the bispectrum</p>
-</dd></dl>
-
-<dl class="py function">
-<dt id="QuantumPolyspectra.analysis.import_data">
-<code class="sig-prename descclassname">QuantumPolyspectra.analysis.</code><code class="sig-name descname">import_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">group_key</span></em>, <em class="sig-param"><span class="n">dataset</span></em><span class="sig-paren">)</span><a class="headerlink" href="#QuantumPolyspectra.analysis.import_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Import of .h5 data with format group_key -&gt; data + attrs[dt]</p>
-</dd></dl>
-
-</div>
+</section>
 
 
           </div>
@@ -635,7 +876,7 @@ Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">QuantumPolyspectra</a></h1>
+<h1 class="logo"><a href="index.html">quantumcatch</a></h1>
 
 
 
@@ -645,9 +886,27 @@ Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Code Documentation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Code Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.System"><code class="docutils literal notranslate"><span class="pre">System</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.calc_liou"><code class="docutils literal notranslate"><span class="pre">calc_liou()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.calc_super_A"><code class="docutils literal notranslate"><span class="pre">calc_super_A()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.calc_super_liou"><code class="docutils literal notranslate"><span class="pre">calc_super_liou()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.cgw"><code class="docutils literal notranslate"><span class="pre">cgw()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.pickle_save"><code class="docutils literal notranslate"><span class="pre">pickle_save()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.plotly"><code class="docutils literal notranslate"><span class="pre">plotly()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.second_term"><code class="docutils literal notranslate"><span class="pre">second_term()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.second_term_gpu"><code class="docutils literal notranslate"><span class="pre">second_term_gpu()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.second_term_njit"><code class="docutils literal notranslate"><span class="pre">second_term_njit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.small_s"><code class="docutils literal notranslate"><span class="pre">small_s()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.third_term"><code class="docutils literal notranslate"><span class="pre">third_term()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.third_term_gpu"><code class="docutils literal notranslate"><span class="pre">third_term_gpu()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.third_term_njit"><code class="docutils literal notranslate"><span class="pre">third_term_njit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.simulation.time_series_setup"><code class="docutils literal notranslate"><span class="pre">time_series_setup()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.quantumcatch.fitting_tools.arcsinh_scaling"><code class="docutils literal notranslate"><span class="pre">arcsinh_scaling()</span></code></a></li>
+</ul>
+</li>
 </ul>
 
 <div class="relations">
@@ -662,12 +921,12 @@ Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -681,11 +940,11 @@ Calculates the third sum as defined in Eq. 109 in 10.1103/PhysRevB.102.119901.</
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2021, Markus Sifft, Daniel Hägele.
+      &#169;2021, Markus Sifft, Daniel Hägele.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |
       <a href="_sources/code.rst.txt"

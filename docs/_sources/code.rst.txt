@@ -1,7 +1,7 @@
 Code Documentation
 ==================
 
-.. automodule:: QuantumPolyspectra.simulation
+.. automodule:: src.quantumcatch.simulation
     :members:
-.. automodule:: QuantumPolyspectra.analysis
+.. automodule:: src.quantumcatch.fitting_tools
     :members:

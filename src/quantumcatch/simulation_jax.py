@@ -37,27 +37,25 @@ from numpy.linalg import eig as eig_np
 # from scipy.linalg import eig
 from scipy import signal
 from qutip import *
-from numba import njit, prange
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import matplotlib.colors as colors
-from matplotlib.colors import LinearSegmentedColormap
 from scipy.ndimage.filters import gaussian_filter
 
 from itertools import permutations
 from cachetools import cached
-from cachetools import LFUCache, LRUCache
+from cachetools import LRUCache
 from cachetools.keys import hashkey
 from tqdm import tqdm_notebook
 from IPython.display import clear_output
 
-from quantumcatch.analysis import Spectrum
+from src.quantumcatch import Spectrum
 import jax.numpy as np
-from jax.numpy.linalg import inv, eig
-from jax import jit, partial
-from jax.ops import index, index_add, index_update
+from jax.numpy.linalg import inv
+from jax import jit
+from jax.ops import index, index_update
 from jax import device_put
 
 import pickle

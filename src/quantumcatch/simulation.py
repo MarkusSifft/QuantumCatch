@@ -2177,3 +2177,33 @@ class System:  # (SpectrumCalculator):
         plt.show()
 
         return fig
+
+    def plot(self, plot_orders=(2, 3, 4), s2_f=None, s2_data=None, s3_f=None, s3_data=None, s4_f=None, s4_data=None):
+
+        if s2_f is None:
+            s2_f = self.freq[2]
+        if s3_f is None:
+            s3_f = self.freq[3]
+        if s4_f is None:
+            s4_f = self.freq[4]
+
+        if s2_data is None:
+            s2_data = self.S[2]
+        if s3_data is None:
+            s3_data = self.S[3]
+        if s4_data is None:
+            s4_data = self.S[4]
+
+        config = PlotConfig(plot_orders=plot_orders, s2_f=s2_f, s2_data=s2_data, s3_f=s3_f,
+                            s3_data=s3_data, s4_f=s4_f, s4_data=s4_data)
+
+        self.f_lists = {1: None, 2: None, 3: None, 4: None}
+        self.S_err = {1: None, 2: None, 3: None, 4: None}
+        self.config = config
+        self.config.f_unit = 'Hz'
+        plot_obj = SpectrumPlotter(self, config)
+
+        if self.S[1] is not None:
+            print('s1:', self.S[1])
+        fig = plot_obj.plot()
+        return fig

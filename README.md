@@ -82,7 +82,7 @@ and the measurement are modelled via Lindbladian damping terms
 while the measurement gets an additional backaction as defined in the 
 stochastic master equation:
 
-$$\mathrm{d}\rho = \frac{i}{\hbar}[\rho, H]\mathrm{d}t +  \mathcal{D}[\sqrt{\gamma_{\rm in}}a^\dagger](\rho) \mathrm{d}t + \mathcal{D}[\sqrt{ \gamma_{\rm out}}a](\rho) \mathrm{d}t +  \mathcal{D}[\beta n](\rho) \mathrm{d}t +  \mathcal{S}[ \beta n](\rho)\mathrm{d}W$$
+![quantum dot sme](Examples/plots/quantum_dot_sme.png)
 
 Let's see how this system is implemented for QuantumCatch using QuTip functions. First we are going to
 define the operators:
@@ -172,11 +172,27 @@ system.plot_transient(view_ops)
 ```
 ![quantum dot measurement](Examples/plots/quantum_dot_measurement.png)
 
+The corresponding quantum polyspectra can be calculated easily via `calculate_spectrum` function. Refer to the 
+documentation for the option of this function. For example, here the usage of the GPU can be enabled setting `enable_gpu=True`.
 
 ```python
+f_start = 0
+f_stop = 2
+n_points = 200
+fs = np.linspace(f_start, f_stop, n_points)
 
+measure_op = 'n'
+
+spec = system.calculate_spectrum(fs, order_in=[1,2,3,4], measure_op=measure_op)
 ```
 
+The polyspectra can be plotted with the `plot` method:
+
+```python
+fig = system.plot()
+```
+
+![quantum dot spectra](Examples/plots/quantum_dot_spectra.png)
 
 ## Support
 The development of the QuantumPolyspectra package is supported by the working group Spectroscopy of Condensed Matter 

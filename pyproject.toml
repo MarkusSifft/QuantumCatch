@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "QuantumCatch"
+version = "0.1"
+authors = [
+  { name="Markus Sifft", email="markus.sifft@rub.de" },
+]
+description = "Package for the simulation and evaluation of continuous quantum measurements"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: Microsoft :: Windows",
+]
+
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "h5py",
+    "arrayfire",
+    "numba",
+    "scipy",
+    "tqdm",
+    "plotly",
+    "psutil",
+    "cachetools",
+    "signalsnap",
+    "pandas",
+    "lmfit",
+    "ipywidgets",
+]
+
+keywords = ["signal processing", "spectra", "analysis", "quantum polyspectra",
+"continuous quantum measurement", "quantum measurement"]
+
+[project.urls]
+"Homepage" = "https://github.com/MarkusSifft/QuantumCatch"
+"Bug Tracker" = "https://github.com/MarkusSifft/QuantumCatch/issues"

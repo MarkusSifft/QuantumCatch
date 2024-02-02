@@ -49,7 +49,7 @@ usage of a GPU is highly recommended for quantum systems with more
 than about 10 states. A comprehensive installation guide for Linux + NVidia GPU can be found [here](https://github.com/MarkusSifft/QuantumCatch/wiki/Installation-Guide). 
 For GPU calculations the high performance library Arrayfire is used. The Python wrapper ([see here](https://github.com/arrayfire/arrayfire-python)) 
 is automatically installed when installing SignalSnap, however, [ArrayFire C/C++ libraries](https://arrayfire.com/download) need to be installed separately. 
-Instructioins can be found can be found [here](https://github.com/arrayfire/arrayfire-python) and [here](https://arrayfire.org/docs/installing.htm#gsc.tab=0).
+Instructions can be found can be found [here](https://github.com/arrayfire/arrayfire-python) and [here](https://arrayfire.org/docs/installing.htm#gsc.tab=0).
 
 ## Documentation
 The documentation of the package can be found [here](https://markussifft.github.io/QuantumCatch/). 
@@ -77,7 +77,7 @@ import numpy as np
 from qutip import *
 ```
 
-Next, we are going to define the quantum dot system. The system has an Hamiltonian 
+Next, we are going to define the quantum dot system. The system has a Hamiltonian 
 of $\mathcal{H} = 0$. The tunneling of electrons into and from the quantum dot 
 and the measurement are modelled via Lindbladian damping terms 
 while the measurement gets an additional backaction as defined in the 

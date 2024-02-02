@@ -32,7 +32,7 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-from src.quantumcatch import System
+from .simulation import System
 from .fitting_tools import FitSystem
 import numpy as np
 import matplotlib.pyplot as plt

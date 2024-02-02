@@ -34,7 +34,7 @@
 ###############################################################################
 
 
-from src.quantumcatch.simulation import calc_super_A
+from .simulation import calc_super_A
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
@@ -55,7 +55,7 @@ except NameError:
 
 class FitSystem:
 
-    def __init__(self, set_system, m_op, huber_loss=False, huber_delta=1, enable_gpu=False):
+    def __init__(self, set_system, m_op, f_unit='Hz', huber_loss=False, huber_delta=1, enable_gpu=False):
         self.beta_offset = None
         self.set_system = set_system
         self.m_op = m_op
@@ -70,6 +70,7 @@ class FitSystem:
         self.huber_loss = huber_loss
         self.huber_delta = huber_delta
         self.enable_gpu = enable_gpu
+        self.f_unit = f_unit
 
     def s1(self, system, A):
 
@@ -191,6 +192,7 @@ class FitSystem:
                              f"The largest number in fit_orders is {max(fit_orders)}.")
 
         self.measurement_spec = load_spec(path)
+        self.f_unit = self.measurement_spec.config.f_unit
         self.show_plot = show_plot
         self.general_weight = general_weight
         self.beta_offset = beta_offset
@@ -211,7 +213,10 @@ class FitSystem:
         for i in range(1, 5):
             self.f_list[i] = self.measurement_spec.freq[i]
             self.s_list[i] = np.real(self.measurement_spec.S[i])
-            self.err_list[i] = np.real(self.measurement_spec.S_err[i])
+            if self.measurement_spec.S_err[i] is None:
+                self.err_list[i] = 1e-6 * np.ones_like(self.s_list[i])
+            else:
+                self.err_list[i] = np.real(self.measurement_spec.S_err[i])
 
         if f_min is not None:
             for i in range(1, 5):
@@ -271,77 +276,32 @@ class FitSystem:
             fit_orders = [1, 2, 3, 4]
             self.fit_orders = fit_orders
 
-            print('Low Resolution')
+            self.f_list_original = self.f_list.copy()
+            self.s_list_original = self.s_list.copy()
+            self.err_list_original = self.err_list.copy()
 
-            f_list_sampled = [data[::2 ** (i + 3)] for i, data in enumerate(self.f_list)]
+            for res in [100, 50, 20, 10, 5, 2, 1]:
 
-            s_list_sampled = []
-            for i, data in enumerate(self.s_list):
-                if i == 0:
-                    s_list_sampled.append(data[::2 ** (i + 3)])
-                else:
-                    s_list_sampled.append(data[::2 ** (i + 3), ::2 ** (i + 3)])
+                if res == 1:
+                    print('Fitting at full resolution')
 
-            err_list_sampled = []
-            for i, data in enumerate(self.err_list):
-                if i == 0:
-                    err_list_sampled.append(data[::2 ** (i + 3)])
-                else:
-                    err_list_sampled.append(data[::2 ** (i + 3), ::2 ** (i + 3)])
+                for i in range(1, 5):
+                    self.f_list[i] = self.f_list_original[i][::res]
+                    if i == 2:
+                        self.s_list[i] = self.s_list_original[i][::res]
+                        self.err_list[i] = self.err_list_original[i][::res]
+                    elif i > 2:
+                        self.s_list[i] = self.s_list_original[i][::res, ::res]
+                        self.err_list[i] = self.err_list_original[i][::res, ::res]
 
-            result = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
+                result = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
 
-            for p in result.params:
-                fit_params[p].value = result.params[p].value
+                for p in result.params:
+                    fit_params[p].value = result.params[p].value
 
-            print('Medium Resolution')
-
-            f_list_sampled = [data[::2 ** (i + 2)] for i, data in enumerate(self.f_list)]
-
-            s_list_sampled = []
-            for i, data in enumerate(self.s_list):
-                if i == 0:
-                    s_list_sampled.append(data[::2 ** (i + 2)])
-                else:
-                    s_list_sampled.append(data[::2 ** (i + 2), ::2 ** (i + 2)])
-
-            err_list_sampled = []
-            for i, data in enumerate(self.err_list):
-                if i == 0:
-                    err_list_sampled.append(data[::2 ** (i + 2)])
-                else:
-                    err_list_sampled.append(data[::2 ** (i + 2), ::2 ** (i + 2)])
-
-            result = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
-
-            for p in result.params:
-                fit_params[p].value = result.params[p].value
-
-            print('High Resolution')
-
-            f_list_sampled = [data[::2 ** (i + 1)] for i, data in enumerate(self.f_list)]
-
-            s_list_sampled = []
-            for i, data in enumerate(self.s_list):
-                if i == 0:
-                    s_list_sampled.append(data[::2 ** (i + 1)])
-                else:
-                    s_list_sampled.append(data[::2 ** (i + 1), ::2 ** (i + 1)])
-
-            err_list_sampled = []
-            for i, data in enumerate(self.err_list):
-                if i == 0:
-                    err_list_sampled.append(data[::2 ** (i + 1)])
-                else:
-                    err_list_sampled.append(data[::2 ** (i + 1), ::2 ** (i + 1)])
-
-            result = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)  # TODO .._sampled need to be given
-
-            for p in result.params:
-                fit_params[p].value = result.params[p].value
-
-            print('Full Resolution')
-            result = self.start_minimizing(fit_params, method, max_nfev, xtol, ftol)
+                errors = {k: result.params[k].stderr for k in result.params.keys()}
+                self.saved_errors[-1] = errors  # Update the last element with the final errors
+                self.display_params(result.params.valuesdict().copy(), self.initial_params, errors)
 
         else:
             print('Parameter fit_order must be: (order_wise, resolution_wise)')
@@ -442,22 +402,6 @@ class FitSystem:
 
             fig, ax = plt.subplots(nrows=3, ncols=3, figsize=(21, 16), gridspec_kw={"width_ratios": [1, 1.2, 1.2]})
 
-            # fig = plt.figure(figsize=(20, 20))
-            #
-            # # Create two separate GridSpec objects: one for the first two rows, and one for the last row
-            # gs1 = gridspec.GridSpec(2, 3, figure=fig, width_ratios=[1, 1.2, 1.2])
-            # gs2 = gridspec.GridSpec(1, 3, figure=fig, width_ratios=[1, 1, 1])
-            #
-            # # Place them at the same vertical positions
-            # gs1.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, bottom=0.40)
-            # gs2.update(left=0.05, right=0.95, wspace=0.2, hspace=0.2, top=0.35)
-            #
-            # # Create the list of axes
-            # ax_list = [plt.subplot(gs) for gs in [*gs1, *gs2]]
-            #
-            # # Convert the list into a 3x3 NumPy array for easy indexing
-            # ax = np.array(ax_list).reshape(3, 3)
-
             plt.rc('text', usetex=False)
             plt.rc('font', size=10)
             plt.rcParams["axes.axisbelow"] = False
@@ -489,8 +433,8 @@ class FitSystem:
                                       color=[0, 0.5, 0.9], label='meas.')
                     c = ax[0, 1].plot(self.f_list[2], fit_list[2], '--k', alpha=0.8, label='fit')
 
-                    ax[0, 1].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-                    ax[0, 1].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                    ax[0, 1].set_ylabel(r"$S^{(2)}_z$ (" + self.f_unit + r"$^{-1}$)", fontdict={'fontsize': 15})
+                    ax[0, 1].set_xlabel(r"$\omega/ 2 \pi$ (" + self.f_unit + ")", fontdict={'fontsize': 15})
 
                     ax[0, 1].tick_params(axis='both', direction='in', labelsize=14)
                     ax[0, 1].legend()
@@ -502,12 +446,12 @@ class FitSystem:
                                       color=[0, 0.5, 0.9], label='rel. err.')
                     relative_measurement_error = sigma * self.err_list[2] / self.s_list[2]
                     ax[0, 2].fill_between(self.f_list[2], relative_measurement_error,
-                                          -relative_measurement_error, alpha=0.3)
-                    ax[0, 2].plot(self.f_list[2], relative_measurement_error, 'k', alpha=0.5)
-                    ax[0, 2].plot(self.f_list[2], -relative_measurement_error, 'k', alpha=0.5)
+                                          -relative_measurement_error, alpha=0.1)
+                    ax[0, 2].plot(self.f_list[2], relative_measurement_error, 'k', alpha=0.1)
+                    ax[0, 2].plot(self.f_list[2], -relative_measurement_error, 'k', alpha=0.1)
 
-                    ax[0, 2].set_ylabel(r"$S^{(2)}_z$ (kHz$^{-1}$)", fontdict={'fontsize': 15})
-                    ax[0, 2].set_xlabel(r"$\omega/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                    ax[0, 2].set_ylabel(r"$S^{(2)}_z$ (" + self.f_unit + r"$^{-1}$)", fontdict={'fontsize': 15})
+                    ax[0, 2].set_xlabel(r"$\omega/ 2 \pi$ (" + self.f_unit + ")", fontdict={'fontsize': 15})
                     ax[0, 2].tick_params(axis='both', direction='in', labelsize=14)
                     ax[0, 2].set_title(r'rel. err. and fit deviation in $S^{(2)}_z(\omega)$')
                     ax[0, 2].legend()
@@ -536,8 +480,9 @@ class FitSystem:
                         c = ax[j, 0].pcolormesh(x, y, z_both - np.diag(np.diag(z_both) / 2), cmap=cmap, norm=norm,
                                                 zorder=1)
 
-                        ax[j, 0].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                        ax[j, 0].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                        ax[j, 0].set_ylabel("\n $\omega_2/ 2 \pi$ (" + self.f_unit + ")", labelpad=0,
+                                            fontdict={'fontsize': 15})
+                        ax[j, 0].set_xlabel(r"$\omega_1 / 2 \pi$ (" + self.f_unit + ")", fontdict={'fontsize': 15})
 
                         ax[j, 0].tick_params(axis='both', direction='in', labelsize=14)
                         ax[j, 0].set_title('Fit / Measurement')
@@ -556,7 +501,7 @@ class FitSystem:
 
                         err_matrix = np.zeros_like(relative_fit_err)
                         relative_measurement_error = sigma * self.err_list[i] / self.s_list[i]
-                        err_matrix[np.abs(relative_fit_err) < relative_measurement_error] = 1
+                        err_matrix[np.abs(relative_fit_err) < np.abs(relative_measurement_error)] = 1
 
                         relative_fit_err[relative_fit_err > 0.5] = 0 * relative_fit_err[relative_fit_err > 0.5] + 0.5
                         relative_fit_err[relative_fit_err < -0.5] = 0 * relative_fit_err[relative_fit_err < -0.5] - 0.5
@@ -569,8 +514,9 @@ class FitSystem:
                         c = ax[j, 1].pcolormesh(x, y, relative_fit_err, cmap=cmap, norm=norm, zorder=1)
                         ax[j, 1].pcolormesh(x, y, err_matrix, cmap=cmap_sigma, vmin=0, vmax=1, shading='auto')
 
-                        ax[j, 1].set_ylabel("\n $\omega_2/ 2 \pi$ (kHz)", labelpad=0, fontdict={'fontsize': 15})
-                        ax[j, 1].set_xlabel(r"$\omega_1 / 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                        ax[j, 1].set_ylabel("\n $\omega_2/ 2 \pi$ (" + self.f_unit + ")", labelpad=0,
+                                            fontdict={'fontsize': 15})
+                        ax[j, 1].set_xlabel(r"$\omega_1 / 2 \pi$ (" + self.f_unit + ")", fontdict={'fontsize': 15})
 
                         ax[j, 1].tick_params(axis='both', direction='in', labelsize=14)
                         ax[j, 1].set_title('relative error')
@@ -660,7 +606,7 @@ class FitSystem:
                         ax[j, 2].plot(self.f_list[i], s_err_diag_n, 'k', alpha=0.1)
 
                         ax[j, 2].set_ylabel(r"arcsinh scaled values", fontdict={'fontsize': 15})
-                        ax[j, 2].set_xlabel(r"$\omega_1/ 2 \pi$ (kHz)", fontdict={'fontsize': 15})
+                        ax[j, 2].set_xlabel(r"$\omega_1/ 2 \pi$ (" + self.f_unit + ")", fontdict={'fontsize': 15})
 
                         ax[j, 2].tick_params(axis='both', direction='in', labelsize=14)
                         ax[j, 2].legend()

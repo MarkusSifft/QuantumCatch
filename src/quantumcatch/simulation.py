@@ -996,7 +996,7 @@ def calc_liou(rho_, h, c_ops_):
     return liou
 
 
-@njit(cache=True)
+@njit(cache=False)
 def calc_super_liou(h_, c_ops):
     """
     Calculates the superoperator form of the Liouvillian by checking one basis state of the density matrix
@@ -1875,7 +1875,7 @@ class System:  # (SpectrumCalculator):
                      title_in=None, with_noise=False, _normalize=None,
                      roll=False, plot_simulation=False, backend='opencl'):
         """
-        Method for the automated calculation of the polyspectra from the numerical integration of the SME.
+        Old method! Not functioning! Method for the automated calculation of the polyspectra from the numerical integration of the SME.
         Can be used as an alternative to the analytic quantum polyspectra or to estimated measurement time and
         noise levels of the spectra.
 

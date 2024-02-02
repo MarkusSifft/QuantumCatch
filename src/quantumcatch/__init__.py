@@ -32,5 +32,6 @@
 #    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-from src.quantumcatch.simulation import *
-from src.quantumcatch.telegraph_noise_tools import *
+from .simulation import *
+from .telegraph_noise_tools import *
+from .fitting_tools import *

@@ -7,7 +7,19 @@ so-called quantum polyspectra. Here we refer to the polyspectra as second to fou
 (integration of the stochastic master equation) is implemented via the QuTiP toolbox whereas the 
 calculation of polyspectra from Hamiltonians or measurements traces recorded in the lab is performed 
 as described in [this paper](https://link.aps.org/doi/10.1103/PhysRevB.98.205143) and [this paper](https://arxiv.org/abs/2011.07992) which also shows the utilization of quantum 
-polyspectra to extract Hamiltonian parameters from a quantum measurement. 
+polyspectra to extract Hamiltonian parameters from a quantum measurement.
+
+The quantum polyspectra approach enable the characterization of very general quantum systems that may include
+* Environmental damping
+* Measurement backaction (Zeno effect) and arbitrary measurement strength
+* Coherent quantum dynamics
+* Stochastic in- and out-tunneling
+* Single-photon measurements
+* Additional detector noise
+* Simultaneous measurement of non-commuting observables
+* Incorporation of temperatures
+* Completely automatic analysis of arbitrary measurement traces
+* Covers all limiting case of weak spin noise measurements, strong measurements resulting in quantum jumps, and single photon sampling
 
 [This poster](Examples/Overview_Poster.pdf) provides an overview of the quantum polyspectra approach to quantum system characterization. 
 Here is a brief summary: The analysis of a continuous measurement record 𝑧(𝑡) poses a fundamental challenge in 
@@ -25,18 +37,6 @@ measurements with stochastically arriving single photons [3,4]. [1] Hägele et a
 [2] Sifft et al., PRR 3, 033123 (2021), [3] Sifft et al. PRA 107, 052203, [4] Sifft et al., arXiv:2310.10464
 
 
-The quantum polyspectra approach enable the characterization of very general quantum systems that may include
-* Environmental damping
-* Measurement backaction (Zeno effect) and arbitrary measurement strength
-* Coherent quantum dynamics
-* Stochastic in- and out-tunneling
-* Single-photon measurements
-* Additional detector noise
-* Simultaneous measurement of non-commuting observables
-* Incorporation of temperatures
-* Completely automatic analysis of arbitrary measurement traces
-* Covers all limiting case of weak spin noise measurements, strong measurements resulting in quantum jumps, and single photon sampling
-
 ## Installation
 QuantumCatch is available on `pip` and can be installed with 
 ```bash
@@ -44,7 +44,8 @@ pip install quantumcatch
 ```
 
 ### Installation of Arrayfire
-Besides running on CPU, QuantumCatch offers GPU support for Nvidia and AMD cards, which are highly recommended for quantum systems with more 
+Besides running on CPU, QuantumCatch offers GPU support for Nvidia and AMD cards. Depending on the hardware used, the
+usage of a GPU is highly recommended for quantum systems with more 
 than about 10 states. A comprehensive installation guide for Linux + NVidia GPU can be found [here](https://github.com/MarkusSifft/QuantumCatch/wiki/Installation-Guide). 
 For GPU calculations the high performance library Arrayfire is used. The Python wrapper ([see here](https://github.com/arrayfire/arrayfire-python)) 
 is automatically installed when installing SignalSnap, however, [ArrayFire C/C++ libraries](https://arrayfire.com/download) need to be installed separately. 
@@ -67,7 +68,7 @@ polyspectra to their measured counterparts.
 ### Example: Continuous Measurement of a Qunatum Dot's Occupation
 Here we are demonstrating how to simulate a simple quantum point 
 contact measurement of the charge state of a quantum dot. First we have to 
-import the QuantumPolyspecrta package. We will also import QuTip and NumPy.
+import the QuantumCatch package. We will also import QuTip and NumPy.
 The analysis and generation module are imported automatically.
 
 ```python
@@ -195,7 +196,7 @@ fig = system.plot()
 ![quantum dot spectra](Examples/plots/quantum_dot_spectra.png)
 
 ## Support
-The development of the QuantumPolyspectra package is supported by the working group Spectroscopy of Condensed Matter 
+The development of the QunatumCatch package is supported by the working group Spectroscopy of Condensed Matter 
 of the Faculty of Physics and Astronomy at the Ruhr University Bochum.
 
 ## Dependencies

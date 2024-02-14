@@ -195,6 +195,103 @@ fig = system.plot()
 
 ![quantum dot spectra](Examples/plots/quantum_dot_spectra.png)
 
+### Example: From Quantum Polyspectra to the Model Liouvillian
+
+We begin with formulating a model quantum system using standard QuTiP functions.
+
+```python
+import quantumcatch as qc
+import numpy as np
+from qutip import *
+```
+
+The system has to by defined as a function (here ´set_system´) that takes in an array of variable 
+parameters. We will define the parameters soon, here you simply use the ´params´ dictionary 
+with you own keys of choice (here ´gamma_in´, ´gamma_out´, and ´beta´). These parameters will
+be determined by the fitting routine.
+
+```python
+def set_system(params):
+    # ------ Operators and Hamiltonian -----
+    dot_levels = 2
+    a = destroy(dot_levels)
+    n = a.dag() * a
+    rho_0 = ket2dm(basis(dot_levels, 0)) + ket2dm(basis(dot_levels, 1)) 
+    rho_0 /= np.trace(rho_0)
+    H = 0 * n
+    
+    # ------ System Parameters ------
+    c_measure_strength = {
+        'a': params['gamma_out']**0.5,
+        'a_d': params['gamma_in']**0.5,
+    }
+    
+    sc_measure_strength = {
+        'n': params['beta']
+    }
+    
+    c_ops = {
+        'a': a,
+        'a_d': a.dag(),
+    }
+    
+    sc_ops =  {
+        'n': n,
+    }
+    
+    e_ops = {
+        'n': n,
+    }
+
+    system = qc.System(H, rho_0, c_ops, sc_ops, e_ops, c_measure_strength, sc_measure_strength)
+    
+    return system, sc_ops, sc_measure_strength
+```
+
+With this parameterize system and the name of our measurement operator, we now create a fit object:
+
+```python
+m_op = 'n'
+system_fit = qc.FitSystem(set_system, m_op)
+```
+
+Now, we can define the parameters with their starting values and bounds in lmfit fashion.
+Assuming that the path leads to spectra calculated and saved with the SignalSnap library,
+the fit routine is started with the `complete_fit` function. Refer to the documentation 
+for all possible function parameters.
+
+```python
+parameter = {'gamma_in':[300, 0, 1e5, True],
+             'gamma_out': [700, 0, 1e5, True],
+             'beta': [1, 0, 1e12, True],
+             'c': [0, -1e12, 1e12, True]}
+       
+path = 'example_data/polyspectra_for_fit_example.pkl'         
+out = system_fit.complete_fit(path, parameter, method='least_squares', xtol=1e-8, ftol=1e-8, fit_modus='resolution_based',
+                                                            fit_orders=(1,2,3,4))
+```
+
+![fit output](Examples/plots/fit_example.png)
+
+This figure presents a comprehensive set of nine plots designed to evaluate the quality of the fit. The plots are arranged in a 3x3 grid and are interpreted as follows:
+
+- (0,0): Depicts the first-order spectrum, S1, which is proportional to the mean of the measurement. The experimental S1 trace is displayed in blue, accompanied by its 3σ (three standard deviations) error. The fitted S1 is overlaid in orange.
+
+- (0,1): Illustrates both the experimental and theoretical power spectra.
+
+- (0,2): Presents the relative error between the experimental and theoretical power spectra, normalized to the experimental power spectrum, as a blue line. This line can be compared to the 3σ error of the power spectra values.
+
+- (1,0): Displays the theoretical (upper left triangle) and experimental (lower right triangle) bispectra. This combined representation is facilitated by the symmetry properties of the bispectrum, with the diagonal serving as a symmetry axis.
+
+- (1,1): Shows the relative error between the experimental and theoretical bispectra, normalized to the experimental bispectrum. A pixel is colored green when the difference between the experimental and theoretical bispectra is less than the 3σ error of the spectral values.
+
+- (1,2): Features experimental and theoretical bispectral values along the axes (ω1, 0) and the diagonal, accompanied by a 3σ error band.
+
+- (2,0) to (2,2): These plots mirror the type of plots shown for the bispectrum, but now with the trispectrum. 
+
+Each plot provides a unique perspective on the data, collectively offering a robust assessment of the fit's accuracy.
+
+
 ## Support
 The development of the QunatumCatch package is supported by the working group Spectroscopy of Condensed Matter 
 of the Faculty of Physics and Astronomy at the Ruhr University Bochum.

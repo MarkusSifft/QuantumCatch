@@ -205,9 +205,9 @@ import numpy as np
 from qutip import *
 ```
 
-The system has to by defined as a function (here ´set_system´) that takes in an array of variable 
+The system has to by defined as a function (here `set_system`) that takes in an array of variable 
 parameters. We will define the parameters soon, here you simply use the ´params´ dictionary 
-with you own keys of choice (here ´gamma_in´, ´gamma_out´, and ´beta´). These parameters will
+with you own keys of choice (here `gamma_in`, `gamma_out`, and `beta`). These parameters will
 be determined by the fitting routine.
 
 ```python

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "QuantumCatch"
-version = "0.1"
+version = "0.1.1"
 authors = [
   { name="Markus Sifft", email="markus.sifft@rub.de" },
 ]

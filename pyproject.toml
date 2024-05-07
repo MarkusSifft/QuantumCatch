@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "QuantumCatch"
-version = "0.1.1"
+version = "0.2.2"
 authors = [
   { name="Markus Sifft", email="markus.sifft@rub.de" },
 ]
@@ -39,6 +39,7 @@ dependencies = [
     "pandas",
     "lmfit",
     "ipywidgets",
+    "qutip <= 4.7.5",
 ]
 
 keywords = ["signal processing", "spectra", "analysis", "quantum polyspectra",

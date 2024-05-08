@@ -1805,7 +1805,7 @@ class System:  # (SpectrumCalculator):
             dt = (t[1] - t[0])
             # out = self.time_series_data[measure_op] + 1 / 2 / self.measure_strength[measure_op] * noise_data[measure_op] / dt
             out = self.sc_measure_strength[op] ** 2 * self.time_series_data[op] + self.sc_measure_strength[op] / 2 * \
-                  noise_data[op] / dt
+                  noise_data[op] / dt**0.5
             # out = self.time_series_data[measure_op] + 1 / (2 * self.sc_measure_strength[measure_op]) * \
             #       noise_data[measure_op] / dt
             return out

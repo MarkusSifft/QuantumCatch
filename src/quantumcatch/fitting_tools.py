@@ -335,6 +335,29 @@ class FitSystem:
             self.saved_errors.append(None)  # Placeholder for errors
 
     def display_params(self, params, initial_params, errors=None):
+        aic_value = getattr(self.fit_result, 'aic', 'N/A')  # Retrieve AIC value or default to 'N/A'
+
+        if errors is None:
+            self.param_text.value = (
+                    "<h3>Current Parameters:</h3>" + ''.join([
+                '<b>{}</b>: {:.7e} (Initial: {:.3e}, Limits: {} to {})<br>'.format(
+                    k, v, initial_params[k].value, initial_params[k].min, initial_params[k].max
+                ) for k, v in params.items()
+            ]) +
+                    f"<br><b>Current AIC:</b> {aic_value:.3f}"  # Display AIC value
+            )
+        else:
+            self.param_text.value = (
+                    "<h3>Final Parameters:</h3>" + ''.join([
+                '<b>{}</b>: {:.7e} ± {} (Initial: {:.3e}, Limits: {} to {})<br>'.format(
+                    k, v, "{:.7e}".format(errors[k]) if errors[k] is not None else "N/A",
+                    initial_params[k].value, initial_params[k].min, initial_params[k].max
+                ) for k, v in params.items()
+            ]) +
+                    f"<br><b>Final AIC:</b> {aic_value:.3f}"  # Display AIC value
+            )
+
+    def display_params_old(self, params, initial_params, errors=None):
         if errors is None:
             self.param_text.value = "<h3>Current Parameters:</h3>" + ''.join([
                 '<b>{}</b>: {:.7e} (Initial: {:.3e}, Limits: {} to {})<br>'.format(

@@ -1295,7 +1295,7 @@ class System:  # (SpectrumCalculator):
             Set if only the correction terms of the S4 from erratum 10.1103/PhysRevB.102.119901 should be
             calculated
         beta_offset : bool
-            Set if constant offset due to deetector noise should be added to the power spectrum
+            Set if constant offset due to detector noise should be added to the power spectrum
         enable_gpu : bool
             Set if GPU should be used for calculation
         cache_trispec : bool
